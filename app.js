@@ -131,7 +131,7 @@
     });
 
     document.getElementById("wall-zoom").addEventListener("click", (event) => {
-      const action = event.target.dataset.zoom;
+      const action = event.target.closest("[data-zoom]")?.dataset.zoom;
       if (!action || !viewer) return;
       if (action === "in") viewer.viewport.zoomBy(2, null, true);
       if (action === "out") viewer.viewport.zoomBy(0.5, null, true);
@@ -209,7 +209,6 @@
       atlas.resize();
       return;
     }
-    atlasReady = true;
 
     const stage = document.getElementById("atlas-stage");
     const mapCanvas = document.getElementById("atlas-map");
@@ -221,12 +220,37 @@
     const searchInput = document.getElementById("search");
     const results = document.getElementById("search-results");
 
-    const [countriesTopo, lakesGeo, riversGeo, places] = await Promise.all([
-      d3.json("data/countries-50m.json"),
-      d3.json("data/lakes-50m.geojson"),
-      d3.json("data/rivers-50m.geojson"),
-      d3.json("data/places.json")
-    ]);
+    const status = document.getElementById("atlas-status");
+    const setStatus = (message, isError = false) => {
+      if (!status) return;
+      if (!message) {
+        status.hidden = true;
+        status.textContent = "";
+        status.classList.remove("is-error");
+        return;
+      }
+      status.hidden = false;
+      status.textContent = message;
+      status.classList.toggle("is-error", isError);
+    };
+
+    let countriesTopo;
+    let lakesGeo;
+    let riversGeo;
+    let places;
+    try {
+      [countriesTopo, lakesGeo, riversGeo, places] = await Promise.all([
+        d3.json("data/countries-50m.json"),
+        d3.json("data/lakes-50m.geojson"),
+        d3.json("data/rivers-50m.geojson"),
+        d3.json("data/places.json")
+      ]);
+    } catch {
+      setStatus("Could not load map data. Refresh the page to try again.", true);
+      return;
+    }
+    atlasReady = true;
+    setStatus("");
 
     const countries = topojson.feature(countriesTopo, countriesTopo.objects.countries);
     const lakes = lakesGeo.features.filter((d) => d.properties.scalerank <= 2);
@@ -384,7 +408,7 @@
       if (!state.layers.cities && !state.layers.labels) return;
       const compact = isCompactView();
       overCtx.save();
-      overCtx.font = compact ? "600 10px 'Segoe UI', sans-serif" : "600 11px 'Segoe UI', sans-serif";
+      overCtx.font = "600 12px 'Source Sans 3', 'Segoe UI', sans-serif";
       overCtx.textBaseline = "middle";
       const labelCandidates = [];
       for (const place of citySource) {
@@ -495,9 +519,9 @@
 
     function showPlace(place) {
       info.hidden = false;
-      document.getElementById("info-kicker").textContent = place.capital ? "Capital" : "City";
+      const kind = place.capital ? "Capital" : "City";
       document.getElementById("info-title").textContent = place.name;
-      document.getElementById("info-meta").textContent = [place.country, formatPop(place.pop)].filter(Boolean).join(" · ");
+      document.getElementById("info-meta").textContent = [kind, place.country, formatPop(place.pop)].filter(Boolean).join(" · ");
       document.getElementById("info-area").textContent = "";
     }
 
@@ -505,9 +529,8 @@
       state.selected = feature.properties.name;
       const area = km2(feature);
       info.hidden = false;
-      document.getElementById("info-kicker").textContent = "Country";
       document.getElementById("info-title").textContent = feature.properties.name;
-      document.getElementById("info-meta").textContent = "Natural Earth 1:50 million · Equal Earth keeps this area true to scale.";
+      document.getElementById("info-meta").textContent = "Country · Natural Earth 1:50 million. Equal Earth keeps this area true to scale.";
       document.getElementById("info-area").textContent = `Approximate mapped area: ${Math.round(area).toLocaleString()} km²`;
       zoomToFeature(feature);
       drawOverlay();
@@ -538,7 +561,7 @@
       const q = query.trim().toLowerCase();
       if (q.length < 1) {
         results.hidden = true;
-        results.innerHTML = "";
+        results.replaceChildren();
         return;
       }
       const countryHits = countries.features
@@ -550,18 +573,26 @@
         .slice(0, 6)
         .map((d) => ({ kind: "city", ...d }));
       const hits = [...countryHits, ...cityHits].slice(0, 8);
-      results.hidden = hits.length === 0;
-      results.innerHTML = hits.map((hit) => `
-        <li>
-          <button type="button">
-            ${hit.name}
-            <small>${hit.kind === "country" ? "Country" : `${hit.country || "City"}${hit.capital ? " · capital" : ""}`}</small>
-          </button>
-        </li>
-      `).join("");
-      results.querySelectorAll("button").forEach((button, index) => {
+      results.replaceChildren();
+      results.hidden = false;
+      if (hits.length === 0) {
+        const empty = document.createElement("li");
+        empty.className = "search-empty";
+        empty.textContent = `No places match “${query.trim()}”`;
+        results.append(empty);
+        return;
+      }
+      hits.forEach((hit) => {
+        const item = document.createElement("li");
+        const button = document.createElement("button");
+        button.type = "button";
+        const name = document.createTextNode(hit.name);
+        const meta = document.createElement("small");
+        meta.textContent = hit.kind === "country"
+          ? "Country"
+          : `${hit.country || "City"}${hit.capital ? " · capital" : ""}`;
+        button.append(name, meta);
         button.addEventListener("click", () => {
-          const hit = hits[index];
           results.hidden = true;
           searchInput.value = hit.name;
           closeSheets();
@@ -574,6 +605,8 @@
             }
           }
         });
+        item.append(button);
+        results.append(item);
       });
     }
 
@@ -633,6 +666,14 @@
     });
 
     searchInput.addEventListener("input", () => search(searchInput.value));
+    searchInput.addEventListener("keydown", (event) => {
+      if (event.key !== "Escape") return;
+      results.hidden = true;
+      results.replaceChildren();
+      if (searchInput.value) searchInput.value = "";
+      else searchInput.blur();
+      event.stopPropagation();
+    });
 
     document.querySelectorAll("[data-proj]").forEach((button) => {
       button.addEventListener("click", () => {
@@ -665,7 +706,7 @@
     controls.addEventListener("pointerdown", (event) => event.stopPropagation());
 
     document.getElementById("atlas-zoom").addEventListener("click", (event) => {
-      const action = event.target.dataset.zoom;
+      const action = event.target.closest("[data-zoom]")?.dataset.zoom;
       if (!action) return;
       if (action === "home") {
         layout({ reset: true });
@@ -691,6 +732,9 @@
 
     atlas = { resize: () => layout(), zoom };
     layout({ reset: true });
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(() => drawOverlay());
+    }
   }
 
   function setMode(mode) {
@@ -746,60 +790,32 @@
     button.addEventListener("click", () => setMode(button.dataset.mode));
   });
 
-  function githubRepo() {
-    return (window.EQUAL_EARTH_SITE && window.EQUAL_EARTH_SITE.githubRepo) || "brunocabezas/equal-earth-map";
-  }
-
-  function isLocalHost() {
-    return location.protocol === "file:" || location.hostname === "localhost" || location.hostname === "127.0.0.1";
-  }
-
-  function renderAboutVersion(sha, dateIso) {
+  function renderAboutVersion() {
     const el = document.getElementById("about-version");
-    if (!el || !sha) return;
-    const short = sha.slice(0, 7);
-    const date = dateIso ? dateIso.slice(0, 10) : "";
-    const link = document.createElement("a");
-    link.href = `https://github.com/${githubRepo()}/commit/${sha}`;
-    link.target = "_blank";
-    link.rel = "noopener noreferrer";
-    link.tabIndex = -1;
-    link.textContent = short;
-    el.replaceChildren("Version ", link, date ? ` · ${date}` : "");
-  }
-
-  async function loadAboutVersion() {
-    const el = document.getElementById("about-version");
-    if (!el || el.dataset.loaded === "true") return;
-    el.dataset.loaded = "true";
-
-    try {
-      const cacheKey = "equal-earth-version";
-      const cached = sessionStorage.getItem(cacheKey);
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        renderAboutVersion(parsed.sha, parsed.date);
-        return;
-      }
-
-      const res = await fetch(`https://api.github.com/repos/${githubRepo()}/commits/master`, {
-        headers: { Accept: "application/vnd.github+json" }
-      });
-      if (!res.ok) throw new Error("version fetch failed");
-      const data = await res.json();
-      const payload = { sha: data.sha, date: data.commit && data.commit.committer && data.commit.committer.date };
-      sessionStorage.setItem(cacheKey, JSON.stringify(payload));
-      renderAboutVersion(payload.sha, payload.date);
-    } catch {
-      el.textContent = isLocalHost() ? "Version local" : "Version unavailable";
+    if (!el) return;
+    const version = window.EQUAL_EARTH_VERSION || {};
+    const sha = version.commit;
+    if (!sha) {
+      el.textContent = "Version unknown";
+      return;
     }
+    const short = version.short || sha.slice(0, 7);
+    const date = version.builtAt ? String(version.builtAt).slice(0, 10) : "";
+    const rev = document.createElement("span");
+    rev.className = "rev";
+    rev.textContent = short;
+    el.replaceChildren("Version ", rev, date ? ` · ${date}` : "");
   }
 
   document.getElementById("about-open").addEventListener("click", () => {
     about.showModal();
-    loadAboutVersion();
+    document.getElementById("about-close").focus();
   });
   document.getElementById("about-close").addEventListener("click", () => about.close());
+  about.addEventListener("click", (event) => {
+    if (event.target === about) about.close();
+  });
+  renderAboutVersion();
 
   window.addEventListener("resize", () => {
     if (state.mode === "wall" && viewer) viewer.viewport.resize();

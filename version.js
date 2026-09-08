@@ -1,5 +1,5 @@
 window.EQUAL_EARTH_VERSION = {
-  commit: "618a070ad16eb83f0751f97576efc5c0da0551e6",
-  short: "618a070",
-  builtAt: "2026-09-09T01:45:59+02:00"
+  commit: "ee4c133cf7071dff5f47ec74f3e3d4ec07a99207",
+  short: "ee4c133",
+  builtAt: "2026-09-09T01:47:48+02:00"
 };

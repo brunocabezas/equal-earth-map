@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Fold version.js into the commit that was just created. The hash written
+# is HEAD before this amend; the amended commit has a new hash, so About
+# shows a unique build id that will not equal `git log -1` or a GitHub URL.
+if [[ "${EQUAL_EARTH_STAMPING:-}" == "1" ]]; then
+  exit 0
+fi
+
+gitdir=$(git rev-parse --git-dir)
+if [[ -d "$gitdir/rebase-merge" || -d "$gitdir/rebase-apply" || -f "$gitdir/MERGE_HEAD" || -f "$gitdir/CHERRY_PICK_HEAD" || -f "$gitdir/REVERT_HEAD" ]]; then
+  exit 0
+fi
+
+ROOT=$(git rev-parse --show-toplevel)
+"$ROOT/scripts/stamp-version.sh"
+
+git add "$ROOT/version.js"
+if git diff --staged --quiet -- version.js; then
+  exit 0
+fi
+
+export EQUAL_EARTH_STAMPING=1
+git commit --amend --no-edit --no-verify

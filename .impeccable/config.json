@@ -1,0 +1,17 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "flat-type-hierarchy",
+        "value": "*",
+        "files": [
+          "index.html"
+        ],
+        "createdAt": "2026-09-08T23:35:16.195Z",
+        "reason": "Agent: pre-existing About dialog type scale; this edit only adds a version.js script tag"
+      }
+    ]
+  }
+}

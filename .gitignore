@@ -2,3 +2,11 @@
 *.pyc
 __pycache__/
 .vscode/
+
+# Impeccable engine binary (downloaded on first run)
+.cursor/skills/impeccable/scripts/bin/
+
+# Impeccable local/session files
+.impeccable/hook.cache.json
+.impeccable/hook.pending.json
+.impeccable/config.local.json

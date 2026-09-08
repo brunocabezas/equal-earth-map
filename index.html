@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Equal Earth Map — Interactive True-Size World Atlas</title>
+    <meta
+      name="description"
+      content="Browse an interactive Equal Earth world map. Countries keep their true relative sizes, unlike Mercator. Zoom original wall maps or search Natural Earth places."
+    />
+    <link rel="canonical" href="https://brunocabezas.github.io/equal-earth-map/" />
+    <meta name="robots" content="index, follow" />
+    <meta name="author" content="Equal Earth interactive atlas" />
+    <meta name="theme-color" content="#141b23" />
+    <meta name="color-scheme" content="light" />
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="og-image.jpg" />
+    <link rel="manifest" href="site.webmanifest" />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:site_name" content="Equal Earth Map" />
+    <meta property="og:title" content="Equal Earth Map — Interactive True-Size World Atlas" />
+    <meta
+      property="og:description"
+      content="See countries at their true relative sizes. Pan, zoom, and compare Equal Earth with Mercator using Natural Earth data."
+    />
+    <meta property="og:url" content="https://brunocabezas.github.io/equal-earth-map/" />
+    <meta property="og:image" content="https://brunocabezas.github.io/equal-earth-map/og-image.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Equal Earth political world map centered on the Pacific" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Equal Earth Map — Interactive True-Size World Atlas" />
+    <meta
+      name="twitter:description"
+      content="See countries at their true relative sizes. Pan, zoom, and compare Equal Earth with Mercator."
+    />
+    <meta name="twitter:image" content="https://brunocabezas.github.io/equal-earth-map/og-image.jpg" />
+    <link rel="stylesheet" href="styles.css" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "WebApplication",
+            "name": "Equal Earth Map",
+            "url": "https://brunocabezas.github.io/equal-earth-map/",
+            "description": "Interactive Equal Earth world map with Natural Earth vectors and original wall maps.",
+            "applicationCategory": "EducationalApplication",
+            "operatingSystem": "Any",
+            "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+            "inLanguage": "en",
+            "image": "https://brunocabezas.github.io/equal-earth-map/og-image.jpg",
+            "creator": [
+              { "@type": "Person", "name": "Bojan Šavrič" },
+              { "@type": "Person", "name": "Tom Patterson" },
+              { "@type": "Person", "name": "Bernhard Jenny" }
+            ]
+          },
+          {
+            "@type": "Dataset",
+            "name": "Natural Earth 1:50 million",
+            "license": "https://creativecommons.org/publicdomain/zero/1.0/",
+            "creator": { "@type": "Organization", "name": "Natural Earth" },
+            "url": "https://www.naturalearthdata.com/"
+          },
+          {
+            "@type": "FAQPage",
+            "mainEntity": [
+              {
+                "@type": "Question",
+                "name": "What is the Equal Earth projection?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Equal Earth is an equal-area pseudocylindrical map projection. Continents and countries keep their true relative sizes, with more familiar shapes than Gall–Peters."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Why does Africa look larger than on Google Maps?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Google Maps uses Mercator, which inflates land near the poles. Africa is about 14 times larger than Greenland; Equal Earth shows that true size relationship."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "What data does this atlas use?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "The interactive atlas uses Natural Earth 1:50 million vectors. The wall maps are Tom Patterson’s Equal Earth political map and the BMZ physical edition."
+                }
+              }
+            ]
+          }
+        ]
+      }
+    </script>
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <div>
+          <h1>Equal Earth</h1>
+          <p>Countries at their true relative sizes</p>
+        </div>
+      </div>
+      <nav class="mode-switch" role="tablist" aria-label="Map mode">
+        <button type="button" class="mode-btn" data-mode="wall" aria-pressed="false">
+          Wall map
+        </button>
+        <button type="button" class="mode-btn is-active" data-mode="atlas" aria-pressed="true">
+          Interactive atlas
+        </button>
+      </nav>
+      <button type="button" class="about-btn" id="about-open">About</button>
+    </header>
+
+    <main>
+      <section id="wall-view" class="view" aria-label="Original wall maps" hidden>
+        <div id="osd" class="osd"></div>
+        <div class="map-chrome left">
+          <div class="panel">
+            <p class="panel-kicker">Original maps</p>
+            <div class="segmented" role="group" aria-label="Wall map layer">
+              <button type="button" class="seg-btn is-active" data-wall="political">Political</button>
+              <button type="button" class="seg-btn" data-wall="physical">Physical</button>
+            </div>
+            <p class="panel-note" id="wall-caption">
+              Patterson political wall map, Oceania centering (150°E). Drag, scroll, or pinch to explore.
+            </p>
+          </div>
+        </div>
+        <div class="map-chrome right">
+          <div class="zoom-stack" id="wall-zoom">
+            <button type="button" data-zoom="in" aria-label="Zoom in">+</button>
+            <button type="button" data-zoom="out" aria-label="Zoom out">−</button>
+            <button type="button" data-zoom="home" aria-label="Reset view">⌂</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="atlas-view" class="view is-visible" aria-label="Interactive Equal Earth atlas">
+        <svg id="atlas" role="img" aria-label="Equal Earth world map with countries, lakes, rivers, and cities"></svg>
+        <div class="map-chrome left">
+          <div class="panel search-panel">
+            <label class="sr-only" for="search">Search places</label>
+            <input id="search" type="search" placeholder="Search a country or city" autocomplete="off" />
+            <ul id="search-results" hidden></ul>
+          </div>
+          <div class="panel">
+            <p class="panel-kicker">Projection</p>
+            <div class="segmented" role="group" aria-label="Map projection">
+              <button type="button" class="seg-btn is-active" data-proj="equalEarth">Equal Earth</button>
+              <button type="button" class="seg-btn" data-proj="mercator">Mercator</button>
+            </div>
+            <p class="panel-kicker">Center</p>
+            <div class="segmented" role="group" aria-label="Map centering">
+              <button type="button" class="seg-btn is-active" data-center="0">0°</button>
+              <button type="button" class="seg-btn" data-center="-90">90°W</button>
+              <button type="button" class="seg-btn" data-center="150">150°E</button>
+            </div>
+            <p class="panel-kicker">Layers</p>
+            <label class="check"><input type="checkbox" data-layer="countries" checked /> Countries</label>
+            <label class="check"><input type="checkbox" data-layer="lakes" checked /> Lakes</label>
+            <label class="check"><input type="checkbox" data-layer="rivers" checked /> Rivers</label>
+            <label class="check"><input type="checkbox" data-layer="cities" checked /> Cities</label>
+            <label class="check"><input type="checkbox" data-layer="labels" checked /> Labels</label>
+            <label class="check"><input type="checkbox" data-layer="graticule" checked /> Graticule</label>
+          </div>
+          <div class="panel info-panel" id="place-info" hidden>
+            <p class="panel-kicker" id="info-kicker">Selected</p>
+            <h2 id="info-title"></h2>
+            <p id="info-meta"></p>
+            <p id="info-area"></p>
+          </div>
+        </div>
+        <div class="map-chrome right">
+          <div class="zoom-stack" id="atlas-zoom">
+            <button type="button" data-zoom="in" aria-label="Zoom in">+</button>
+            <button type="button" data-zoom="out" aria-label="Zoom out">−</button>
+            <button type="button" data-zoom="home" aria-label="Reset view">⌂</button>
+          </div>
+        </div>
+        <div id="tooltip" class="tooltip" hidden></div>
+      </section>
+    </main>
+
+    <footer class="attrib">
+      Equal Earth projection by Šavrič, Patterson &amp; Jenny · Wall maps by Tom Patterson / BMZ ·
+      Vectors from Natural Earth
+    </footer>
+
+    <dialog id="about">
+      <div class="about-card">
+        <h2>Why this map looks different</h2>
+        <p>
+          Most web maps use Mercator, which inflates countries near the poles. Greenland looks
+          similar in size to Africa there, though Africa is about 14 times larger. Equal Earth is
+          an equal-area projection: landmasses keep their true relative sizes, with more familiar
+          continent shapes than Gall–Peters.
+        </p>
+        <p>
+          The atlas redraws Natural Earth 1:50 million vectors in Equal Earth so countries, rivers,
+          lakes, and cities stay interactive as you pan and zoom. The wall maps are the original
+          Patterson and BMZ sheets, zoomable like a photograph.
+        </p>
+        <p class="fine">
+          Political map: Tom Patterson, public domain. Physical map: BMZ German edition based on
+          Equal Earth / Natural Earth. No cookies are used for visit counts.
+        </p>
+        <button type="button" id="about-close">Close</button>
+      </div>
+    </dialog>
+
+    <script src="site-config.js"></script>
+    <script src="analytics.js"></script>
+    <script src="vendor/openseadragon.min.js"></script>
+    <script src="vendor/d3.min.js"></script>
+    <script src="vendor/topojson.min.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>

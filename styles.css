@@ -1,0 +1,353 @@
+:root {
+  --ink: #1c2430;
+  --muted: #5c6774;
+  --paper: #f4efe4;
+  --ocean: #b9d2df;
+  --panel: rgba(250, 247, 240, 0.94);
+  --line: rgba(28, 36, 48, 0.12);
+  --accent: #c45c4a;
+  --shadow: 0 10px 30px rgba(28, 36, 48, 0.16);
+  --sans: "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  color: var(--ink);
+  font-family: var(--sans);
+  background: #1a222c;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+.topbar {
+  position: relative;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-height: 64px;
+  padding: 10px 16px;
+  background: #141b23;
+  color: #f6f1e8;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.brand h1 {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 1.15rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.brand p {
+  margin: 0;
+  color: #c9c2b4;
+  font-size: 0.75rem;
+}
+
+.mode-switch {
+  display: flex;
+  margin-left: auto;
+  padding: 3px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.mode-btn, .about-btn, .seg-btn, .zoom-stack button, #about-close {
+  font: inherit;
+  cursor: pointer;
+}
+
+.mode-btn {
+  border: 0;
+  border-radius: 999px;
+  padding: 8px 14px;
+  background: transparent;
+  color: #d9d2c4;
+}
+
+.mode-btn.is-active {
+  background: #f6f1e8;
+  color: var(--ink);
+}
+
+.about-btn {
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  padding: 8px 12px;
+  background: transparent;
+  color: #f6f1e8;
+}
+
+main {
+  position: relative;
+  height: calc(100% - 96px);
+}
+
+.view {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.view.is-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.osd, #atlas {
+  width: 100%;
+  height: 100%;
+  background: #c5d5c8;
+}
+
+#atlas {
+  display: block;
+}
+
+.map-chrome {
+  position: absolute;
+  top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: min(340px, calc(100% - 32px));
+  z-index: 3;
+}
+
+.map-chrome.left { left: 16px; }
+.map-chrome.right { right: 16px; left: auto; }
+
+.panel {
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--panel);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(10px);
+}
+
+.panel-kicker {
+  margin: 0 0 8px;
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.panel-note, #info-meta, #info-area {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+.segmented {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+
+.segmented.stacked {
+  flex-direction: column;
+}
+
+.seg-btn {
+  flex: 1;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 7px 8px;
+  background: white;
+  color: var(--ink);
+}
+
+.seg-btn.is-active {
+  background: var(--ink);
+  color: white;
+  border-color: var(--ink);
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 5px 0;
+  font-size: 0.86rem;
+}
+
+.search-panel { padding: 8px; }
+
+#search {
+  width: 100%;
+  border: 0;
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: white;
+  font: inherit;
+  outline: none;
+}
+
+#search-results {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  max-height: 220px;
+  overflow: auto;
+}
+
+#search-results button {
+  width: 100%;
+  border: 0;
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+#search-results button:hover,
+#search-results button.is-active {
+  background: rgba(28, 36, 48, 0.08);
+}
+
+#search-results small {
+  display: block;
+  color: var(--muted);
+}
+
+.info-panel h2 {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 1.3rem;
+}
+
+.zoom-stack {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+}
+
+.zoom-stack button {
+  width: 42px;
+  height: 42px;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: var(--panel);
+  font-size: 1.2rem;
+}
+
+.zoom-stack button:last-child { border-bottom: 0; }
+
+.tooltip {
+  position: absolute;
+  z-index: 4;
+  padding: 6px 9px;
+  border-radius: 8px;
+  background: #141b23;
+  color: white;
+  font-size: 0.8rem;
+  pointer-events: none;
+  transform: translate(12px, 12px);
+}
+
+.attrib {
+  display: flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 16px;
+  background: #10161c;
+  color: #9aa3ad;
+  font-size: 0.72rem;
+}
+
+.country {
+  stroke: rgba(60, 48, 32, 0.35);
+  stroke-width: 0.4;
+  cursor: pointer;
+}
+
+.country.is-hover,
+.country.is-selected {
+  stroke: #141b23;
+  stroke-width: 1.2;
+}
+
+.lakes { fill: #8fb8cc; stroke: none; }
+.rivers { fill: none; stroke: #6a9bb0; stroke-linecap: round; }
+.graticule { fill: none; stroke: rgba(255, 255, 255, 0.28); stroke-width: 0.6; }
+.sphere { fill: var(--ocean); stroke: #7f9aa8; }
+.city { fill: #141b23; stroke: white; }
+.city.is-capital { fill: var(--accent); }
+.label {
+  fill: #243040;
+  font-size: 11px;
+  paint-order: stroke;
+  stroke: rgba(250, 247, 240, 0.9);
+  stroke-width: 3px;
+  pointer-events: none;
+}
+
+dialog {
+  border: 0;
+  border-radius: 18px;
+  padding: 0;
+  background: transparent;
+}
+
+dialog::backdrop { background: rgba(16, 22, 28, 0.55); }
+
+.about-card {
+  width: min(560px, 92vw);
+  padding: 22px 22px 18px;
+  border-radius: 18px;
+  background: #faf7f0;
+}
+
+.about-card h2 {
+  margin: 0 0 10px;
+  font-family: var(--serif);
+}
+
+.about-card p { line-height: 1.5; }
+.fine { color: var(--muted); font-size: 0.85rem; }
+
+#about-close {
+  margin-top: 8px;
+  border: 0;
+  border-radius: 999px;
+  padding: 8px 14px;
+  background: var(--ink);
+  color: white;
+}
+
+.navigator {
+  background: rgba(250, 247, 240, 0.9) !important;
+  border: 1px solid var(--line) !important;
+}
+
+@media (max-width: 720px) {
+  .brand p { display: none; }
+  .map-chrome.left { max-width: calc(100% - 88px); }
+}

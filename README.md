@@ -2,7 +2,7 @@
 
 Interactive, zoomable Equal Earth world map. Countries and continents keep their true relative sizes, unlike Mercator web maps.
 
-Live site: https://brunocabezas.github.io/equal-earth-map/
+Live site: https://trueearthmap.com/
 
 ## What you can do
 

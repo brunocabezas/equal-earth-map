@@ -746,7 +746,59 @@
     button.addEventListener("click", () => setMode(button.dataset.mode));
   });
 
-  document.getElementById("about-open").addEventListener("click", () => about.showModal());
+  function githubRepo() {
+    return (window.EQUAL_EARTH_SITE && window.EQUAL_EARTH_SITE.githubRepo) || "brunocabezas/equal-earth-map";
+  }
+
+  function isLocalHost() {
+    return location.protocol === "file:" || location.hostname === "localhost" || location.hostname === "127.0.0.1";
+  }
+
+  function renderAboutVersion(sha, dateIso) {
+    const el = document.getElementById("about-version");
+    if (!el || !sha) return;
+    const short = sha.slice(0, 7);
+    const date = dateIso ? dateIso.slice(0, 10) : "";
+    const link = document.createElement("a");
+    link.href = `https://github.com/${githubRepo()}/commit/${sha}`;
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    link.tabIndex = -1;
+    link.textContent = short;
+    el.replaceChildren("Version ", link, date ? ` · ${date}` : "");
+  }
+
+  async function loadAboutVersion() {
+    const el = document.getElementById("about-version");
+    if (!el || el.dataset.loaded === "true") return;
+    el.dataset.loaded = "true";
+
+    try {
+      const cacheKey = "equal-earth-version";
+      const cached = sessionStorage.getItem(cacheKey);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        renderAboutVersion(parsed.sha, parsed.date);
+        return;
+      }
+
+      const res = await fetch(`https://api.github.com/repos/${githubRepo()}/commits/master`, {
+        headers: { Accept: "application/vnd.github+json" }
+      });
+      if (!res.ok) throw new Error("version fetch failed");
+      const data = await res.json();
+      const payload = { sha: data.sha, date: data.commit && data.commit.committer && data.commit.committer.date };
+      sessionStorage.setItem(cacheKey, JSON.stringify(payload));
+      renderAboutVersion(payload.sha, payload.date);
+    } catch {
+      el.textContent = isLocalHost() ? "Version local" : "Version unavailable";
+    }
+  }
+
+  document.getElementById("about-open").addEventListener("click", () => {
+    about.showModal();
+    loadAboutVersion();
+  });
   document.getElementById("about-close").addEventListener("click", () => about.close());
 
   window.addEventListener("resize", () => {

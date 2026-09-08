@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://brunocabezas.github.io/equal-earth-map/sitemap.xml

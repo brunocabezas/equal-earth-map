@@ -1,0 +1,17 @@
+{
+  "name": "Equal Earth Map",
+  "short_name": "Equal Earth",
+  "description": "Interactive Equal Earth world map with true relative country sizes.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#1a222c",
+  "theme_color": "#141b23",
+  "lang": "en",
+  "icons": [
+    {
+      "src": "favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

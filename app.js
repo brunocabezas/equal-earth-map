@@ -158,24 +158,50 @@
     });
   }
 
-  function makeProjection(name, width, height) {
+  const MERCATOR_MAX_LAT = 87;
+
+  function mercatorWorld() {
+    return {
+      type: "Polygon",
+      coordinates: [[
+        [-180, -MERCATOR_MAX_LAT],
+        [180, -MERCATOR_MAX_LAT],
+        [180, MERCATOR_MAX_LAT],
+        [-180, MERCATOR_MAX_LAT],
+        [-180, -MERCATOR_MAX_LAT]
+      ]]
+    };
+  }
+
+  function projectionExtent(width, height) {
     const pad = 18;
-    const rotate = [-state.center, 0];
-    const sphere = { type: "Sphere" };
-    let projection;
-    if (name === "mercator") {
-      projection = d3.geoMercator().rotate(rotate).clipExtent([[pad, pad], [width - pad, height - pad]]);
-      projection.fitExtent([[pad, pad], [width - pad, height - pad]], {
-        type: "Polygon",
-        coordinates: [[
-          [-180, -75], [180, -75], [180, 75], [-180, 75], [-180, -75]
-        ]]
-      });
-    } else {
-      projection = d3.geoEqualEarth().rotate(rotate);
-      projection.fitExtent([[pad, pad], [width - pad, height - pad]], sphere);
+    const extent = [[pad, pad], [width - pad, height - pad]];
+    const view = atlasView.getBoundingClientRect();
+    if (!view.width) return extent;
+    const left = document.querySelector("#atlas-view .map-chrome.left");
+    if (left) {
+      const box = left.getBoundingClientRect();
+      if (box.width > view.width * 0.55) {
+        extent[0][1] = Math.max(pad, Math.round(box.bottom - view.top + 16));
+      }
     }
-    return projection;
+    return extent;
+  }
+
+  function makeProjection(name, width, height) {
+    const rotate = [-state.center, 0];
+    const extent = projectionExtent(width, height);
+    if (name === "mercator") {
+      const projection = d3.geoMercator().rotate(rotate);
+      projection.fitExtent(extent, mercatorWorld());
+      const extra = Math.max(width, height) * 2;
+      projection.clipExtent([
+        [extent[0][0] - extra, extent[0][1] - extra],
+        [extent[1][0] + extra, extent[1][1] + extra]
+      ]);
+      return projection;
+    }
+    return d3.geoEqualEarth().rotate(rotate).fitExtent(extent, { type: "Sphere" });
   }
 
   async function initAtlas() {
@@ -275,7 +301,7 @@
 
     function rebuildPaths() {
       path = d3.geoPath(projection);
-      spherePath = new Path2D(path({ type: "Sphere" }));
+      spherePath = new Path2D(path(state.projectionName === "mercator" ? mercatorWorld() : { type: "Sphere" }));
       graticulePath = new Path2D(path(graticule));
       countryCache = countries.features.map((feature) => ({
         feature,
@@ -300,9 +326,11 @@
       mapCtx.scale(t.k, t.k);
       mapCtx.fillStyle = "#b9d2df";
       mapCtx.fill(spherePath);
-      mapCtx.strokeStyle = "#7f9aa8";
-      mapCtx.lineWidth = 1 / t.k;
-      mapCtx.stroke(spherePath);
+      if (state.projectionName !== "mercator") {
+        mapCtx.strokeStyle = "#7f9aa8";
+        mapCtx.lineWidth = 1 / t.k;
+        mapCtx.stroke(spherePath);
+      }
       if (state.layers.graticule) {
         mapCtx.strokeStyle = "rgba(255,255,255,0.28)";
         mapCtx.lineWidth = 0.7 / t.k;

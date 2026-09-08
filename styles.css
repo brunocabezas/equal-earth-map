@@ -114,14 +114,42 @@ main {
   pointer-events: auto;
 }
 
-.osd, #atlas {
+.osd, #atlas-stage {
   width: 100%;
   height: 100%;
   background: #c5d5c8;
 }
 
-#atlas {
-  display: block;
+#atlas-stage {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  touch-action: none;
+  cursor: grab;
+}
+
+#atlas-stage:active {
+  cursor: grabbing;
+}
+
+#atlas-map,
+#atlas-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 0 0;
+}
+
+#atlas-map {
+  will-change: transform;
+}
+
+#atlas-overlay {
+  pointer-events: none;
+}
+
+#atlas-stage.is-zooming #atlas-overlay {
+  opacity: 0;
 }
 
 .map-chrome {

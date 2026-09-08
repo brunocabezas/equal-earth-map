@@ -106,11 +106,11 @@
         </div>
       </div>
       <nav class="mode-switch" role="tablist" aria-label="Map mode">
-        <button type="button" class="mode-btn" data-mode="wall" aria-pressed="false">
-          Wall map
-        </button>
         <button type="button" class="mode-btn is-active" data-mode="atlas" aria-pressed="true">
           Interactive atlas
+        </button>
+        <button type="button" class="mode-btn" data-mode="wall" aria-pressed="false">
+          Wall map
         </button>
       </nav>
       <button type="button" class="about-btn" id="about-open">About</button>
@@ -141,7 +141,10 @@
       </section>
 
       <section id="atlas-view" class="view is-visible" aria-label="Interactive Equal Earth atlas">
-        <svg id="atlas" role="img" aria-label="Equal Earth world map with countries, lakes, rivers, and cities"></svg>
+        <div id="atlas-stage" role="img" aria-label="Equal Earth world map with countries, lakes, rivers, and cities">
+          <canvas id="atlas-map"></canvas>
+          <canvas id="atlas-overlay"></canvas>
+        </div>
         <div class="map-chrome left">
           <div class="panel search-panel">
             <label class="sr-only" for="search">Search places</label>

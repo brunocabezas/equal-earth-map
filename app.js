@@ -148,7 +148,11 @@
     }
     atlasReady = true;
 
-    const svg = d3.select("#atlas");
+    const stage = document.getElementById("atlas-stage");
+    const mapCanvas = document.getElementById("atlas-map");
+    const overlayCanvas = document.getElementById("atlas-overlay");
+    const mapCtx = mapCanvas.getContext("2d", { alpha: false });
+    const overCtx = overlayCanvas.getContext("2d");
     const tooltip = document.getElementById("tooltip");
     const info = document.getElementById("place-info");
     const searchInput = document.getElementById("search");
@@ -162,160 +166,244 @@
     ]);
 
     const countries = topojson.feature(countriesTopo, countriesTopo.objects.countries);
-    const g = svg.append("g");
-    const spherePath = g.append("path").attr("class", "sphere");
-    const graticulePath = g.append("path").attr("class", "graticule");
-    const countryLayer = g.append("g").attr("class", "countries");
-    const lakeLayer = g.append("g").attr("class", "lakes");
-    const riverLayer = g.append("g").attr("class", "rivers");
-    const cityLayer = g.append("g").attr("class", "cities");
-    const labelLayer = g.append("g").attr("class", "labels");
+    const lakes = lakesGeo.features.filter((d) => d.properties.scalerank <= 2);
+    const rivers = riversGeo.features.filter((d) => d.properties.featurecla !== "Lake Centerline");
+    const citySource = places.filter((place) => place.capital || place.rank <= 3 || place.pop >= 1e6);
+    const graticule = d3.geoGraticule10();
+
+    let width = 0;
+    let height = 0;
+    let dpr = 1;
+    let projection;
+    let path;
+    let baked = d3.zoomIdentity;
+    let currentTransform = d3.zoomIdentity;
+    let hoverName = null;
+    let countryCache = [];
+    let lakePath;
+    let riverPaths = [];
+    let spherePath;
+    let graticulePath;
+    let interacting = false;
 
     const zoom = d3.zoom()
       .scaleExtent([0.8, 28])
+      .duration(0)
       .wheelDelta((event) => {
         const unit = event.deltaMode === 1 ? 0.12 : event.deltaMode ? 1 : 0.006;
         return -event.deltaY * unit * (event.ctrlKey ? 8 : 1);
       })
+      .on("start", (event) => {
+        if (!event.sourceEvent) return;
+        interacting = true;
+        stage.classList.add("is-zooming");
+      })
       .on("zoom", (event) => {
-        g.attr("transform", event.transform);
-        applyDetail(event.transform.k);
+        currentTransform = event.transform;
+        applyCss(event.transform);
+      })
+      .on("end", (event) => {
+        currentTransform = event.transform;
+        interacting = false;
+        bake(event.transform);
+        stage.classList.remove("is-zooming");
+        drawOverlay();
       });
 
-    svg.call(zoom);
+    d3.select(stage).call(zoom);
 
-    let projection;
-    let path;
-
-    function applyDetail(k) {
-      riverLayer.selectAll("path").style("display", (d) => {
-        if (!state.layers.rivers) return "none";
-        if (k < 1.8) return d.properties.scalerank <= 3 ? null : "none";
-        return d.properties.scalerank <= 6 ? null : "none";
-      });
-      cityLayer.selectAll("circle")
-        .attr("r", (d) => (d.capital ? 3.2 : 2.1) / k)
-        .attr("stroke-width", 0.7 / k)
-        .style("display", (d) => {
-          if (!state.layers.cities) return "none";
-          if (k < 1.5) return d.capital ? null : "none";
-          if (k < 3.2) return d.capital || d.rank <= 2 || d.pop > 3e6 ? null : "none";
-          return null;
-        });
-      labelLayer.selectAll("text")
-        .attr("transform", (d) => `translate(${d.x},${d.y}) scale(${1 / k})`)
-        .style("display", k > 2 && state.layers.labels ? null : "none");
+    function applyCss(t) {
+      const s = t.k / baked.k;
+      mapCanvas.style.transform = `translate(${t.x - baked.x * s}px, ${t.y - baked.y * s}px) scale(${s})`;
     }
 
-    function viewLonLat(width, height, transform) {
+    function sizeCanvases() {
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const w = Math.round(width * dpr);
+      const h = Math.round(height * dpr);
+      if (mapCanvas.width === w && mapCanvas.height === h) {
+        mapCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        overCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        return;
+      }
+      for (const canvas of [mapCanvas, overlayCanvas]) {
+        canvas.width = w;
+        canvas.height = h;
+        canvas.style.width = `${width}px`;
+        canvas.style.height = `${height}px`;
+      }
+      mapCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      overCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    function rebuildPaths() {
+      path = d3.geoPath(projection);
+      spherePath = new Path2D(path({ type: "Sphere" }));
+      graticulePath = new Path2D(path(graticule));
+      countryCache = countries.features.map((feature) => ({
+        feature,
+        name: feature.properties.name,
+        color: colorFor(feature.properties.name),
+        path2d: new Path2D(path(feature))
+      }));
+      lakePath = new Path2D(path({ type: "FeatureCollection", features: lakes }));
+      riverPaths = rivers.map((feature) => ({
+        rank: feature.properties.scalerank,
+        path2d: new Path2D(path(feature))
+      }));
+    }
+
+    function bake(t) {
+      baked = t;
+      mapCanvas.style.transform = "none";
+      mapCtx.fillStyle = "#b9d2df";
+      mapCtx.fillRect(0, 0, width, height);
+      mapCtx.save();
+      mapCtx.translate(t.x, t.y);
+      mapCtx.scale(t.k, t.k);
+      mapCtx.fillStyle = "#b9d2df";
+      mapCtx.fill(spherePath);
+      mapCtx.strokeStyle = "#7f9aa8";
+      mapCtx.lineWidth = 1 / t.k;
+      mapCtx.stroke(spherePath);
+      if (state.layers.graticule) {
+        mapCtx.strokeStyle = "rgba(255,255,255,0.28)";
+        mapCtx.lineWidth = 0.7 / t.k;
+        mapCtx.stroke(graticulePath);
+      }
+      if (state.layers.countries) {
+        mapCtx.strokeStyle = "rgba(60,48,32,0.35)";
+        mapCtx.lineWidth = 0.6 / t.k;
+        for (const item of countryCache) {
+          mapCtx.fillStyle = item.color;
+          mapCtx.fill(item.path2d);
+          mapCtx.stroke(item.path2d);
+        }
+      }
+      if (state.layers.lakes) {
+        mapCtx.fillStyle = "#8fb8cc";
+        mapCtx.fill(lakePath);
+      }
+      if (state.layers.rivers) {
+        mapCtx.strokeStyle = "#6a9bb0";
+        mapCtx.lineCap = "round";
+        for (const river of riverPaths) {
+          if ((t.k < 1.8 && river.rank > 3) || river.rank > 6) continue;
+          mapCtx.lineWidth = (river.rank <= 2 ? 1.15 : 0.65) / t.k;
+          mapCtx.stroke(river.path2d);
+        }
+      }
+      mapCtx.restore();
+    }
+
+    function drawOverlay() {
+      overCtx.clearRect(0, 0, width, height);
+      const t = currentTransform;
+      const highlight = hoverName || state.selected;
+      if (highlight) {
+        const item = countryCache.find((entry) => entry.name === highlight);
+        if (item) {
+          overCtx.save();
+          overCtx.translate(t.x, t.y);
+          overCtx.scale(t.k, t.k);
+          overCtx.filter = hoverName === item.name ? "brightness(1.14) saturate(1.2)" : "none";
+          overCtx.fillStyle = item.color;
+          overCtx.fill(item.path2d);
+          overCtx.filter = "none";
+          overCtx.strokeStyle = hoverName === item.name ? "#9a4032" : "#141b23";
+          overCtx.lineWidth = (hoverName === item.name ? 2 : 1.6) / t.k;
+          overCtx.stroke(item.path2d);
+          overCtx.restore();
+        }
+      }
+      if (!state.layers.cities && !state.layers.labels) return;
+      overCtx.save();
+      overCtx.font = "600 11px 'Segoe UI', sans-serif";
+      overCtx.textBaseline = "middle";
+      for (const place of citySource) {
+        const xy = projection([place.lon, place.lat]);
+        if (!xy) continue;
+        const [x, y] = t.apply(xy);
+        const showCity = state.layers.cities && (
+          t.k >= 3.2 || place.capital || (t.k >= 1.5 && (place.rank <= 2 || place.pop > 3e6)) || (t.k < 1.5 && place.capital)
+        );
+        if (showCity) {
+          overCtx.beginPath();
+          overCtx.fillStyle = place.capital ? "#c45c4a" : "#141b23";
+          overCtx.arc(x, y, place.capital ? 3.2 : 2.1, 0, Math.PI * 2);
+          overCtx.fill();
+          overCtx.strokeStyle = "#fff";
+          overCtx.lineWidth = 1;
+          overCtx.stroke();
+        }
+        if (state.layers.labels && t.k > 2 && (place.capital || place.rank <= 1 || place.pop > 5e6)) {
+          overCtx.strokeStyle = "rgba(250,247,240,0.9)";
+          overCtx.lineWidth = 3;
+          overCtx.lineJoin = "round";
+          overCtx.fillStyle = "#243040";
+          overCtx.strokeText(place.name, x + 6, y);
+          overCtx.fillText(place.name, x + 6, y);
+        }
+      }
+      overCtx.restore();
+    }
+
+    function viewLonLat(transform) {
       if (!projection || !transform || !transform.k) return null;
-      const cx = (width / 2 - transform.x) / transform.k;
-      const cy = (height / 2 - transform.y) / transform.k;
-      const lonlat = projection.invert([cx, cy]);
+      const lonlat = projection.invert([(width / 2 - transform.x) / transform.k, (height / 2 - transform.y) / transform.k]);
       if (!lonlat || !Number.isFinite(lonlat[0]) || !Number.isFinite(lonlat[1])) return null;
       return lonlat;
     }
 
     function layout({ reset = false } = {}) {
-      const node = svg.node();
-      const width = node.clientWidth || node.parentElement.clientWidth;
-      const height = node.clientHeight || node.parentElement.clientHeight;
-      const prev = d3.zoomTransform(svg.node());
-      const lonlat = reset ? null : viewLonLat(width, height, prev);
+      width = stage.clientWidth || atlasView.clientWidth;
+      height = stage.clientHeight || atlasView.clientHeight;
+      const prev = currentTransform;
+      const lonlat = reset ? null : viewLonLat(prev);
       const keepScale = !reset && prev.k ? prev.k : 1;
-      svg.attr("viewBox", `0 0 ${width} ${height}`);
       projection = makeProjection(state.projectionName, width, height);
-      path = d3.geoPath(projection);
-      draw();
+      rebuildPaths();
+      sizeCanvases();
+      let next = d3.zoomIdentity;
       if (lonlat) {
         const xy = projection(lonlat);
         if (xy && Number.isFinite(xy[0]) && Number.isFinite(xy[1])) {
-          svg.call(
-            zoom.transform,
-            d3.zoomIdentity.translate(width / 2, height / 2).scale(keepScale).translate(-xy[0], -xy[1])
-          );
-          return;
+          next = d3.zoomIdentity.translate(width / 2, height / 2).scale(keepScale).translate(-xy[0], -xy[1]);
+        }
+      } else if (!reset && prev.k) {
+        next = prev;
+      }
+      currentTransform = next;
+      baked = next;
+      mapCanvas.style.transform = "none";
+      d3.select(stage).call(zoom.transform, next);
+      bake(next);
+      drawOverlay();
+    }
+
+    function countryAt(screenX, screenY) {
+      const [x, y] = currentTransform.invert([screenX, screenY]);
+      for (let i = countryCache.length - 1; i >= 0; i -= 1) {
+        if (mapCtx.isPointInPath(countryCache[i].path2d, x * dpr, y * dpr, "evenodd")) {
+          return countryCache[i];
         }
       }
-      svg.call(zoom.transform, reset || !prev.k ? d3.zoomIdentity : prev);
+      return null;
     }
 
-    function draw() {
-      spherePath.datum({ type: "Sphere" }).attr("d", path);
-      graticulePath.datum(d3.geoGraticule10()).attr("d", path)
-        .style("display", state.layers.graticule ? null : "none");
-
-      countryLayer.selectAll("path")
-        .data(countries.features, (d) => d.properties.name)
-        .join("path")
-        .attr("class", "country")
-        .attr("fill", (d) => colorFor(d.properties.name))
-        .attr("d", path)
-        .classed("is-selected", (d) => state.selected && d.properties.name === state.selected)
-        .style("display", state.layers.countries ? null : "none")
-        .on("pointerenter", function (event, d) {
-          d3.select(this).classed("is-hover", true).raise();
-          showTip(event, d.properties.name);
-        })
-        .on("pointermove", (event, d) => showTip(event, d.properties.name))
-        .on("pointerleave", function () {
-          d3.select(this).classed("is-hover", false);
-          hideTip();
-        })
-        .on("click", (event, d) => {
-          event.stopPropagation();
-          selectCountry(d);
-        });
-
-      lakeLayer.selectAll("path")
-        .data(lakesGeo.features.filter((d) => d.properties.scalerank <= 2))
-        .join("path")
-        .attr("class", "lakes")
-        .attr("d", path)
-        .style("display", state.layers.lakes ? null : "none");
-
-      riverLayer.selectAll("path")
-        .data(riversGeo.features.filter((d) => d.properties.featurecla !== "Lake Centerline"))
-        .join("path")
-        .attr("d", path)
-        .style("display", state.layers.rivers ? null : "none");
-
-      const projectedPlaces = places
-        .filter((place) => place.capital || place.rank <= 3 || place.pop >= 1e6)
-        .map((place) => {
-          const xy = projection([place.lon, place.lat]);
-          return xy ? { ...place, x: xy[0], y: xy[1] } : null;
-        })
-        .filter(Boolean);
-
-      cityLayer.selectAll("circle")
-        .data(projectedPlaces, (d) => `${d.name}-${d.lon}`)
-        .join("circle")
-        .attr("class", (d) => d.capital ? "city is-capital" : "city")
-        .attr("cx", (d) => d.x)
-        .attr("cy", (d) => d.y)
-        .on("pointermove", (event, d) => showTip(event, `${d.name}${d.country ? ` · ${d.country}` : ""}`))
-        .on("pointerleave", hideTip)
-        .on("click", (event, d) => {
-          event.stopPropagation();
-          showPlace(d);
-          zoomToPoint(d.x, d.y, 8);
-        });
-
-      const labeled = projectedPlaces.filter((d) => d.capital || d.rank <= 1 || d.pop > 5e6);
-      labelLayer.selectAll("text")
-        .data(labeled, (d) => d.name)
-        .join("text")
-        .attr("class", "label")
-        .attr("x", 6)
-        .attr("y", 4)
-        .text((d) => d.name);
-
-      applyDetail(d3.zoomTransform(svg.node()).k);
+    function cityAt(screenX, screenY) {
+      if (!state.layers.cities) return null;
+      for (const place of citySource) {
+        const xy = projection([place.lon, place.lat]);
+        if (!xy) continue;
+        const [x, y] = currentTransform.apply(xy);
+        const r = place.capital ? 6 : 4;
+        if ((screenX - x) ** 2 + (screenY - y) ** 2 <= r * r) return place;
+      }
+      return null;
     }
 
-    function showTip(event, text) {
-      const [x, y] = d3.pointer(event, atlasView);
+    function showTip(x, y, text) {
       tooltip.hidden = false;
       tooltip.textContent = text;
       tooltip.style.left = `${x}px`;
@@ -336,7 +424,6 @@
 
     function selectCountry(feature) {
       state.selected = feature.properties.name;
-      countryLayer.selectAll("path").classed("is-selected", (d) => d.properties.name === feature.properties.name);
       const area = km2(feature);
       info.hidden = false;
       document.getElementById("info-kicker").textContent = "Country";
@@ -344,6 +431,7 @@
       document.getElementById("info-meta").textContent = "Natural Earth 1:50 million · Equal Earth keeps this area true to scale.";
       document.getElementById("info-area").textContent = `Approximate mapped area: ${Math.round(area).toLocaleString()} km²`;
       zoomToFeature(feature);
+      drawOverlay();
       track("select_country", { name: feature.properties.name });
     }
 
@@ -353,21 +441,17 @@
       const dy = Math.max(bounds[1][1] - bounds[0][1], 1);
       const x = (bounds[0][0] + bounds[1][0]) / 2;
       const y = (bounds[0][1] + bounds[1][1]) / 2;
-      const node = svg.node();
-      const width = node.clientWidth;
-      const height = node.clientHeight;
       const scale = Math.max(1.2, Math.min(16, 0.72 / Math.max(dx / width, dy / height)));
-      svg.call(
+      d3.select(stage).call(
         zoom.transform,
         d3.zoomIdentity.translate(width / 2, height / 2).scale(scale).translate(-x, -y)
       );
     }
 
     function zoomToPoint(x, y, scale) {
-      const node = svg.node();
-      svg.call(
+      d3.select(stage).call(
         zoom.transform,
-        d3.zoomIdentity.translate(node.clientWidth / 2, node.clientHeight / 2).scale(scale).translate(-x, -y)
+        d3.zoomIdentity.translate(width / 2, height / 2).scale(scale).translate(-x, -y)
       );
     }
 
@@ -388,9 +472,9 @@
         .map((d) => ({ kind: "city", ...d }));
       const hits = [...countryHits, ...cityHits].slice(0, 8);
       results.hidden = hits.length === 0;
-      results.innerHTML = hits.map((hit, index) => `
+      results.innerHTML = hits.map((hit) => `
         <li>
-          <button type="button" data-i="${index}">
+          <button type="button">
             ${hit.name}
             <small>${hit.kind === "country" ? "Country" : `${hit.country || "City"}${hit.capital ? " · capital" : ""}`}</small>
           </button>
@@ -413,9 +497,56 @@
       });
     }
 
-    svg.on("click", () => {
-      state.selected = null;
-      countryLayer.selectAll("path").classed("is-selected", false);
+    stage.addEventListener("pointermove", (event) => {
+      if (interacting) return;
+      const [vx, vy] = d3.pointer(event, atlasView);
+      const [sx, sy] = d3.pointer(event, stage);
+      const city = cityAt(sx, sy);
+      if (city) {
+        if (hoverName !== null) {
+          hoverName = null;
+          drawOverlay();
+        }
+        showTip(vx, vy, `${city.name}${city.country ? ` · ${city.country}` : ""}`);
+        stage.style.cursor = "pointer";
+        return;
+      }
+      const hit = countryAt(sx, sy);
+      const next = hit ? hit.name : null;
+      if (next !== hoverName) {
+        hoverName = next;
+        drawOverlay();
+      }
+      if (hit) {
+        showTip(vx, vy, hit.name);
+        stage.style.cursor = "pointer";
+      } else {
+        hideTip();
+        stage.style.cursor = "grab";
+      }
+    });
+
+    stage.addEventListener("pointerleave", () => {
+      hoverName = null;
+      hideTip();
+      drawOverlay();
+    });
+
+    stage.addEventListener("click", (event) => {
+      const [sx, sy] = d3.pointer(event, stage);
+      const city = cityAt(sx, sy);
+      if (city) {
+        showPlace(city);
+        const xy = projection([city.lon, city.lat]);
+        if (xy) zoomToPoint(xy[0], xy[1], 8);
+        return;
+      }
+      const hit = countryAt(sx, sy);
+      if (hit) selectCountry(hit.feature);
+      else {
+        state.selected = null;
+        drawOverlay();
+      }
     });
 
     searchInput.addEventListener("input", () => search(searchInput.value));
@@ -440,7 +571,8 @@
     document.querySelectorAll("[data-layer]").forEach((input) => {
       input.addEventListener("change", () => {
         state.layers[input.dataset.layer] = input.checked;
-        draw();
+        bake(currentTransform);
+        drawOverlay();
       });
     });
 
@@ -451,8 +583,7 @@
         layout({ reset: true });
         return;
       }
-      const factor = action === "in" ? 2 : 0.5;
-      svg.call(zoom.scaleBy, factor);
+      d3.select(stage).call(zoom.scaleBy, action === "in" ? 2 : 0.5);
     });
 
     window.addEventListener("resize", () => {

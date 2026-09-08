@@ -284,20 +284,36 @@ main {
 
 .country {
   stroke: rgba(60, 48, 32, 0.35);
-  stroke-width: 0.4;
+  stroke-width: 0.6px;
   cursor: pointer;
+  vector-effect: non-scaling-stroke;
 }
 
 .country.is-hover,
 .country.is-selected {
   stroke: #141b23;
-  stroke-width: 1.2;
+  stroke-width: 1.4px;
 }
 
 .lakes { fill: #8fb8cc; stroke: none; }
-.rivers { fill: none; stroke: #6a9bb0; stroke-linecap: round; }
-.graticule { fill: none; stroke: rgba(255, 255, 255, 0.28); stroke-width: 0.6; }
-.sphere { fill: var(--ocean); stroke: #7f9aa8; }
+.rivers {
+  fill: none;
+  stroke: #6a9bb0;
+  stroke-width: 1px;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+}
+.graticule {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.28);
+  stroke-width: 0.7px;
+  vector-effect: non-scaling-stroke;
+}
+.sphere {
+  fill: var(--ocean);
+  stroke: #7f9aa8;
+  vector-effect: non-scaling-stroke;
+}
 .city { fill: #141b23; stroke: white; }
 .city.is-capital { fill: var(--accent); }
 .label {

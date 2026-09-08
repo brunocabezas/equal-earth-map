@@ -77,12 +77,15 @@
       minZoomImageRatio: 0.6,
       maxZoomPixelRatio: 2.4,
       homeFillsViewer: true,
-      animationTime: 0.6,
-      springStiffness: 8,
+      animationTime: 0.08,
+      springStiffness: 24,
+      zoomPerScroll: 1.6,
+      zoomPerClick: 2,
       gestureSettingsMouse: {
         clickToZoom: false,
         dblClickToZoom: true,
-        flickEnabled: true
+        flickEnabled: true,
+        zoomToRefPoint: true
       },
       tileSources: {
         type: "image",
@@ -93,9 +96,9 @@
     document.getElementById("wall-zoom").addEventListener("click", (event) => {
       const action = event.target.dataset.zoom;
       if (!action || !viewer) return;
-      if (action === "in") viewer.viewport.zoomBy(1.4);
-      if (action === "out") viewer.viewport.zoomBy(0.7);
-      if (action === "home") viewer.viewport.goHome();
+      if (action === "in") viewer.viewport.zoomBy(2, null, true);
+      if (action === "out") viewer.viewport.zoomBy(0.5, null, true);
+      if (action === "home") viewer.viewport.goHome(true);
       viewer.viewport.applyConstraints();
     });
 
@@ -170,26 +173,26 @@
 
     const zoom = d3.zoom()
       .scaleExtent([0.8, 28])
+      .wheelDelta((event) => {
+        const unit = event.deltaMode === 1 ? 0.12 : event.deltaMode ? 1 : 0.006;
+        return -event.deltaY * unit * (event.ctrlKey ? 8 : 1);
+      })
       .on("zoom", (event) => {
         g.attr("transform", event.transform);
         applyDetail(event.transform.k);
       });
 
-    svg.call(zoom).on("dblclick.zoom", null);
+    svg.call(zoom);
 
     let projection;
     let path;
 
     function applyDetail(k) {
-      const stroke = 0.45 / k;
-      countryLayer.selectAll("path").attr("stroke-width", stroke);
-      riverLayer.selectAll("path")
-        .attr("stroke-width", (d) => (d.properties.scalerank <= 2 ? 1.15 : 0.65) / k)
-        .style("display", (d) => {
-          if (!state.layers.rivers) return "none";
-          if (k < 1.8) return d.properties.scalerank <= 3 ? null : "none";
-          return d.properties.scalerank <= 6 ? null : "none";
-        });
+      riverLayer.selectAll("path").style("display", (d) => {
+        if (!state.layers.rivers) return "none";
+        if (k < 1.8) return d.properties.scalerank <= 3 ? null : "none";
+        return d.properties.scalerank <= 6 ? null : "none";
+      });
       cityLayer.selectAll("circle")
         .attr("r", (d) => (d.capital ? 3.2 : 2.1) / k)
         .attr("stroke-width", 0.7 / k)
@@ -347,7 +350,7 @@
       const width = node.clientWidth;
       const height = node.clientHeight;
       const scale = Math.max(1.2, Math.min(16, 0.72 / Math.max(dx / width, dy / height)));
-      svg.transition().duration(700).call(
+      svg.call(
         zoom.transform,
         d3.zoomIdentity.translate(width / 2, height / 2).scale(scale).translate(-x, -y)
       );
@@ -355,7 +358,7 @@
 
     function zoomToPoint(x, y, scale) {
       const node = svg.node();
-      svg.transition().duration(700).call(
+      svg.call(
         zoom.transform,
         d3.zoomIdentity.translate(node.clientWidth / 2, node.clientHeight / 2).scale(scale).translate(-x, -y)
       );
@@ -441,8 +444,8 @@
         layout({ reset: true });
         return;
       }
-      const factor = action === "in" ? 1.4 : 0.7;
-      svg.transition().duration(250).call(zoom.scaleBy, factor);
+      const factor = action === "in" ? 2 : 0.5;
+      svg.call(zoom.scaleBy, factor);
     });
 
     window.addEventListener("resize", () => {

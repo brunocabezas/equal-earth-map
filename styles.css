@@ -444,45 +444,57 @@ dialog::backdrop { background: rgba(16, 22, 28, 0.55); }
 
 @media (max-width: 720px) {
   .topbar {
-    gap: 8px;
-    min-height: 52px;
-    padding: 8px max(10px, env(safe-area-inset-right)) 8px max(10px, env(safe-area-inset-left));
-    padding-top: max(8px, env(safe-area-inset-top));
+    gap: 6px;
+    min-height: 44px;
+    padding: 4px max(8px, env(safe-area-inset-right)) 4px max(8px, env(safe-area-inset-left));
+    padding-top: max(4px, env(safe-area-inset-top));
   }
 
-  .brand h1 { font-size: 1rem; }
+  .brand h1 { font-size: 0.86rem; }
   .brand p { display: none; }
 
   .label-full { display: none; }
   .label-short { display: inline; }
 
-  .mode-switch { margin-left: auto; }
+  .mode-switch {
+    margin-left: auto;
+    padding: 2px;
+  }
 
   .mode-btn, .about-btn {
-    padding: 8px 10px;
-    font-size: 0.85rem;
+    padding: 5px 8px;
+    font-size: 0.72rem;
   }
 
   .map-chrome {
     max-width: none;
+    gap: 6px;
   }
 
   .map-chrome.left {
-    left: 10px;
-    right: 10px;
-    top: 10px;
+    left: 8px;
+    right: 8px;
+    top: 8px;
   }
 
   .map-chrome.right {
     top: auto;
-    bottom: max(12px, env(safe-area-inset-bottom));
-    right: 10px;
+    bottom: max(8px, env(safe-area-inset-bottom));
+    right: 8px;
     z-index: 5;
+  }
+
+  body.sheet-open .map-chrome.left {
+    z-index: 8;
+  }
+
+  body.sheet-open .topbar {
+    z-index: 9;
   }
 
   .chrome-row {
     display: flex;
-    gap: 8px;
+    gap: 6px;
     align-items: stretch;
   }
 
@@ -490,6 +502,8 @@ dialog::backdrop { background: rgba(16, 22, 28, 0.55); }
     flex: 1;
     min-width: 0;
     margin: 0;
+    padding: 4px;
+    border-radius: 10px;
   }
 
   .sheet-toggle {
@@ -498,25 +512,26 @@ dialog::backdrop { background: rgba(16, 22, 28, 0.55); }
     justify-content: center;
     flex-shrink: 0;
     border: 1px solid var(--line);
-    border-radius: 14px;
-    padding: 0 14px;
+    border-radius: 10px;
+    padding: 0 10px;
     background: var(--panel);
     box-shadow: var(--shadow);
     color: var(--ink);
-    font-size: 0.86rem;
+    font-size: 0.72rem;
     font-weight: 600;
   }
 
   .sheet {
     display: none;
     position: fixed;
-    left: 10px;
-    right: 10px;
-    bottom: max(10px, env(safe-area-inset-bottom));
-    z-index: 8;
-    max-height: min(70dvh, 520px);
+    left: 8px;
+    right: 8px;
+    bottom: max(8px, env(safe-area-inset-bottom));
+    z-index: 9;
+    max-height: min(62dvh, 360px);
     overflow: auto;
     -webkit-overflow-scrolling: touch;
+    pointer-events: auto;
   }
 
   .sheet.is-open { display: block; }
@@ -525,13 +540,20 @@ dialog::backdrop { background: rgba(16, 22, 28, 0.55); }
     width: 100%;
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 0 8px;
+    gap: 0 6px;
+    padding: 8px 10px;
+    border-radius: 12px;
   }
 
   .sheet-head,
   .sheet .panel-kicker,
   .sheet .segmented {
     grid-column: 1 / -1;
+  }
+
+  .panel-kicker {
+    margin: 0 0 4px;
+    font-size: 0.58rem;
   }
 
   body.sheet-open .map-chrome.right {
@@ -543,7 +565,7 @@ dialog::backdrop { background: rgba(16, 22, 28, 0.55); }
     align-items: center;
     justify-content: space-between;
     gap: 8px;
-    margin-bottom: 8px;
+    margin-bottom: 4px;
   }
 
   .sheet-head .panel-kicker { margin: 0; }
@@ -551,10 +573,10 @@ dialog::backdrop { background: rgba(16, 22, 28, 0.55); }
   .sheet-close {
     border: 0;
     border-radius: 999px;
-    padding: 6px 10px;
+    padding: 4px 8px;
     background: rgba(28, 36, 48, 0.08);
     color: var(--ink);
-    font-size: 0.82rem;
+    font-size: 0.72rem;
   }
 
   .sheet-backdrop {
@@ -569,27 +591,35 @@ dialog::backdrop { background: rgba(16, 22, 28, 0.55); }
     display: block;
   }
 
+  .segmented { margin-bottom: 6px; gap: 3px; }
+
   .seg-btn {
-    padding: 10px 8px;
-    min-height: 44px;
+    padding: 6px 6px;
+    min-height: 32px;
+    font-size: 0.72rem;
   }
 
   .check {
-    min-height: 40px;
-    font-size: 1rem;
+    min-height: 32px;
+    margin: 1px 0;
+    font-size: 0.78rem;
+    cursor: pointer;
   }
 
   .info-panel {
     position: fixed;
-    left: 10px;
-    right: 64px;
+    left: 8px;
+    right: 52px;
     top: auto;
-    bottom: max(12px, env(safe-area-inset-bottom));
+    bottom: max(8px, env(safe-area-inset-bottom));
     z-index: 4;
-    padding-right: 40px;
+    padding: 8px 32px 8px 10px;
+    border-radius: 12px;
   }
 
-  .info-panel h2 { font-size: 1.1rem; }
+  .info-panel h2 { font-size: 0.95rem; }
+
+  #info-meta, #info-area { font-size: 0.72rem; }
 
   .info-close { display: block; }
 
@@ -598,17 +628,22 @@ dialog::backdrop { background: rgba(16, 22, 28, 0.55); }
     display: none;
   }
 
-  .wall-panel { padding: 8px; }
+  .wall-panel { padding: 6px; }
+
+  #search {
+    padding: 7px 10px;
+  }
 
   .zoom-stack button {
-    width: 44px;
-    height: 44px;
+    width: 36px;
+    height: 36px;
+    font-size: 1.05rem;
   }
 
   .attrib {
-    min-height: 26px;
-    padding: 0 10px;
-    font-size: 0.64rem;
+    min-height: 22px;
+    padding: 0 8px;
+    font-size: 0.58rem;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -623,12 +658,12 @@ dialog::backdrop { background: rgba(16, 22, 28, 0.55); }
   .attrib { display: none; }
 
   .sheet {
-    max-height: 78dvh;
+    max-height: min(58dvh, 280px);
   }
 
   .info-panel {
-    right: 64px;
-    max-height: 36dvh;
+    right: 52px;
+    max-height: 30dvh;
     overflow: auto;
   }
 }

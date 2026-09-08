@@ -36,6 +36,43 @@
   const atlasView = document.getElementById("atlas-view");
   const about = document.getElementById("about");
 
+  function isCompactView() {
+    return window.matchMedia("(max-width: 720px)").matches;
+  }
+
+  function placePriority(place) {
+    if (place.capital && (place.rank <= 1 || place.pop > 5e6)) return 4;
+    if (place.capital) return 3;
+    if (place.pop > 5e6) return 2;
+    if (place.rank <= 1) return 1;
+    return 0;
+  }
+
+  function showCityDot(place, k, compact) {
+    if (!state.layers.cities) return false;
+    if (compact) {
+      if (k < 2.4) return false;
+      if (k < 4.5) return place.capital && (place.rank <= 1 || place.pop > 3e6);
+      if (k < 6.5) return place.capital || place.rank <= 2 || place.pop > 3e6;
+      return true;
+    }
+    return k >= 3.2 || place.capital || (k >= 1.5 && (place.rank <= 2 || place.pop > 3e6)) || (k < 1.5 && place.capital);
+  }
+
+  function showPlaceLabel(place, k, compact) {
+    if (!state.layers.labels) return false;
+    if (compact) {
+      if (k < 6) return false;
+      if (k < 9) return place.capital && (place.rank <= 1 || place.pop > 2e6);
+      return place.capital || place.rank <= 1 || place.pop > 3e6;
+    }
+    return k > 2 && (place.capital || place.rank <= 1 || place.pop > 5e6);
+  }
+
+  function boxesOverlap(a, b) {
+    return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+  }
+
   function colorFor(name) {
     let hash = 0;
     for (let i = 0; i < name.length; i += 1) hash = name.charCodeAt(i) + ((hash << 5) - hash);
@@ -317,17 +354,17 @@
         }
       }
       if (!state.layers.cities && !state.layers.labels) return;
+      const compact = isCompactView();
       overCtx.save();
-      overCtx.font = "600 11px 'Segoe UI', sans-serif";
+      overCtx.font = compact ? "600 10px 'Segoe UI', sans-serif" : "600 11px 'Segoe UI', sans-serif";
       overCtx.textBaseline = "middle";
+      const labelCandidates = [];
       for (const place of citySource) {
         const xy = projection([place.lon, place.lat]);
         if (!xy) continue;
         const [x, y] = t.apply(xy);
-        const showCity = state.layers.cities && (
-          t.k >= 3.2 || place.capital || (t.k >= 1.5 && (place.rank <= 2 || place.pop > 3e6)) || (t.k < 1.5 && place.capital)
-        );
-        if (showCity) {
+        if (x < -40 || y < -20 || x > width + 40 || y > height + 20) continue;
+        if (showCityDot(place, t.k, compact)) {
           overCtx.beginPath();
           overCtx.fillStyle = place.capital ? "#c45c4a" : "#141b23";
           overCtx.arc(x, y, place.capital ? 3.2 : 2.1, 0, Math.PI * 2);
@@ -336,14 +373,23 @@
           overCtx.lineWidth = 1;
           overCtx.stroke();
         }
-        if (state.layers.labels && t.k > 2 && (place.capital || place.rank <= 1 || place.pop > 5e6)) {
-          overCtx.strokeStyle = "rgba(250,247,240,0.9)";
-          overCtx.lineWidth = 3;
-          overCtx.lineJoin = "round";
-          overCtx.fillStyle = "#243040";
-          overCtx.strokeText(place.name, x + 6, y);
-          overCtx.fillText(place.name, x + 6, y);
+        if (showPlaceLabel(place, t.k, compact)) {
+          labelCandidates.push({ place, x, y });
         }
+      }
+      labelCandidates.sort((a, b) => placePriority(b.place) - placePriority(a.place));
+      const placed = [];
+      overCtx.strokeStyle = "rgba(250,247,240,0.9)";
+      overCtx.lineWidth = 3;
+      overCtx.lineJoin = "round";
+      overCtx.fillStyle = "#243040";
+      for (const item of labelCandidates) {
+        const w = overCtx.measureText(item.place.name).width;
+        const box = { x: item.x + 4, y: item.y - 7, w: w + 8, h: 14 };
+        if (placed.some((other) => boxesOverlap(box, other))) continue;
+        placed.push(box);
+        overCtx.strokeText(item.place.name, item.x + 6, item.y);
+        overCtx.fillText(item.place.name, item.x + 6, item.y);
       }
       overCtx.restore();
     }
@@ -583,7 +629,12 @@
         bake(currentTransform);
         drawOverlay();
       });
+      input.addEventListener("click", (event) => event.stopPropagation());
     });
+
+    const controls = document.getElementById("atlas-controls");
+    controls.addEventListener("click", (event) => event.stopPropagation());
+    controls.addEventListener("pointerdown", (event) => event.stopPropagation());
 
     document.getElementById("atlas-zoom").addEventListener("click", (event) => {
       const action = event.target.dataset.zoom;
@@ -654,7 +705,8 @@
     }
   }
 
-  document.getElementById("atlas-controls-toggle").addEventListener("click", () => {
+  document.getElementById("atlas-controls-toggle").addEventListener("click", (event) => {
+    event.stopPropagation();
     toggleSheet("atlas-controls");
   });
   document.querySelectorAll(".sheet-close").forEach((button) => {

@@ -414,6 +414,11 @@
       tooltip.hidden = true;
     }
 
+    function hidePlace() {
+      state.selected = null;
+      info.hidden = true;
+    }
+
     function showPlace(place) {
       info.hidden = false;
       document.getElementById("info-kicker").textContent = place.capital ? "Capital" : "City";
@@ -485,6 +490,7 @@
           const hit = hits[index];
           results.hidden = true;
           searchInput.value = hit.name;
+          closeSheets();
           if (hit.kind === "country") selectCountry(hit.feature);
           else {
             const xy = projection([hit.lon, hit.lat]);
@@ -536,15 +542,18 @@
       const [sx, sy] = d3.pointer(event, stage);
       const city = cityAt(sx, sy);
       if (city) {
+        closeSheets();
         showPlace(city);
         const xy = projection([city.lon, city.lat]);
         if (xy) zoomToPoint(xy[0], xy[1], 8);
         return;
       }
       const hit = countryAt(sx, sy);
-      if (hit) selectCountry(hit.feature);
-      else {
-        state.selected = null;
+      if (hit) {
+        closeSheets();
+        selectCountry(hit.feature);
+      } else {
+        hidePlace();
         drawOverlay();
       }
     });
@@ -586,9 +595,20 @@
       d3.select(stage).call(zoom.scaleBy, action === "in" ? 2 : 0.5);
     });
 
-    window.addEventListener("resize", () => {
-      if (state.mode === "atlas") layout();
+    document.getElementById("info-close").addEventListener("click", (event) => {
+      event.stopPropagation();
+      hidePlace();
+      drawOverlay();
     });
+
+    window.addEventListener("resize", onViewportChange);
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener("resize", onViewportChange);
+    }
+
+    function onViewportChange() {
+      if (state.mode === "atlas") layout();
+    }
 
     atlas = { resize: () => layout(), zoom };
     layout({ reset: true });
@@ -605,6 +625,7 @@
     atlasView.classList.toggle("is-visible", mode === "atlas");
     wallView.hidden = mode !== "wall";
     atlasView.hidden = mode !== "atlas";
+    closeSheets();
     if (mode === "atlas") initAtlas();
     if (mode === "wall") {
       if (!viewer) initWall();
@@ -613,6 +634,34 @@
     track("mode", { mode });
   }
 
+  function closeSheets() {
+    document.querySelectorAll(".sheet.is-open").forEach((sheet) => sheet.classList.remove("is-open"));
+    document.querySelectorAll(".sheet-toggle").forEach((button) => button.setAttribute("aria-expanded", "false"));
+    document.body.classList.remove("sheet-open");
+  }
+
+  function toggleSheet(id) {
+    const sheet = document.getElementById(id);
+    const button = document.querySelector(`[aria-controls="${id}"]`);
+    const open = !sheet.classList.contains("is-open");
+    closeSheets();
+    if (open) {
+      const results = document.getElementById("search-results");
+      if (results) results.hidden = true;
+      sheet.classList.add("is-open");
+      if (button) button.setAttribute("aria-expanded", "true");
+      document.body.classList.add("sheet-open");
+    }
+  }
+
+  document.getElementById("atlas-controls-toggle").addEventListener("click", () => {
+    toggleSheet("atlas-controls");
+  });
+  document.querySelectorAll(".sheet-close").forEach((button) => {
+    button.addEventListener("click", closeSheets);
+  });
+  document.getElementById("sheet-backdrop").addEventListener("click", closeSheets);
+
   document.querySelectorAll(".mode-btn").forEach((button) => {
     button.addEventListener("click", () => setMode(button.dataset.mode));
   });
@@ -620,13 +669,20 @@
   document.getElementById("about-open").addEventListener("click", () => about.showModal());
   document.getElementById("about-close").addEventListener("click", () => about.close());
 
+  window.addEventListener("resize", () => {
+    if (state.mode === "wall" && viewer) viewer.viewport.resize();
+  });
+
   window.addEventListener("keydown", (event) => {
     if (event.target.matches("input, textarea")) return;
     const zoomRoot = state.mode === "wall" ? document.getElementById("wall-zoom") : document.getElementById("atlas-zoom");
     if (event.key === "+" || event.key === "=") zoomRoot.querySelector("[data-zoom=in]").click();
     if (event.key === "-" || event.key === "_") zoomRoot.querySelector("[data-zoom=out]").click();
     if (event.key === "0") zoomRoot.querySelector("[data-zoom=home]").click();
-    if (event.key === "Escape") about.close();
+    if (event.key === "Escape") {
+      closeSheets();
+      about.close();
+    }
   });
 
   setMode("atlas");

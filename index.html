@@ -8,7 +8,7 @@
       name="description"
       content="Browse an interactive Equal Earth world map. Countries keep their true relative sizes, unlike Mercator. Zoom original wall maps or search Natural Earth places."
     />
-    <link rel="canonical" href="https://trueearthmap.com/" />
+    <link rel="canonical" href="https://brunocabezas.github.io/equal-earth-map/" />
     <meta name="robots" content="index, follow" />
     <meta name="author" content="Equal Earth interactive atlas" />
     <meta name="theme-color" content="#141b23" />
@@ -24,8 +24,8 @@
       property="og:description"
       content="See countries at their true relative sizes. Pan, zoom, and compare Equal Earth with Mercator using Natural Earth data."
     />
-    <meta property="og:url" content="https://trueearthmap.com/" />
-    <meta property="og:image" content="https://trueearthmap.com/og-image.jpg" />
+    <meta property="og:url" content="https://brunocabezas.github.io/equal-earth-map/" />
+    <meta property="og:image" content="https://brunocabezas.github.io/equal-earth-map/og-image.jpg" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content="Equal Earth political world map centered on the Pacific" />
@@ -35,7 +35,7 @@
       name="twitter:description"
       content="See countries at their true relative sizes. Pan, zoom, and compare Equal Earth with Mercator."
     />
-    <meta name="twitter:image" content="https://trueearthmap.com/og-image.jpg" />
+    <meta name="twitter:image" content="https://brunocabezas.github.io/equal-earth-map/og-image.jpg" />
     <link rel="stylesheet" href="styles.css" />
     <script type="application/ld+json">
       {
@@ -44,13 +44,13 @@
           {
             "@type": "WebApplication",
             "name": "Equal Earth Map",
-            "url": "https://trueearthmap.com/",
+            "url": "https://brunocabezas.github.io/equal-earth-map/",
             "description": "Interactive Equal Earth world map with Natural Earth vectors and original wall maps.",
             "applicationCategory": "EducationalApplication",
             "operatingSystem": "Any",
             "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
             "inLanguage": "en",
-            "image": "https://trueearthmap.com/og-image.jpg",
+            "image": "https://brunocabezas.github.io/equal-earth-map/og-image.jpg",
             "creator": [
               { "@type": "Person", "name": "Bojan Šavrič" },
               { "@type": "Person", "name": "Tom Patterson" },
@@ -100,12 +100,10 @@
   <body>
     <header class="topbar">
       <div class="brand">
-        <div>
-          <h1>Equal Earth</h1>
-          <p>Countries at their true relative sizes</p>
-        </div>
+        <h1>Equal Earth</h1>
+        <p>Countries at their true relative sizes</p>
       </div>
-      <nav class="mode-switch" role="tablist" aria-label="Map mode">
+      <nav class="mode-switch" role="group" aria-label="Map mode">
         <button type="button" class="mode-btn is-active" data-mode="atlas" aria-pressed="true">
           <span class="label-full">Interactive atlas</span>
           <span class="label-short">Atlas</span>
@@ -123,7 +121,6 @@
         <div id="osd" class="osd"></div>
         <div class="map-chrome left">
           <div class="panel wall-panel">
-            <p class="panel-kicker">Original maps</p>
             <div class="segmented" role="group" aria-label="Wall map layer">
               <button type="button" class="seg-btn is-active" data-wall="political">Political</button>
               <button type="button" class="seg-btn" data-wall="physical">Physical</button>
@@ -135,9 +132,15 @@
         </div>
         <div class="map-chrome right">
           <div class="zoom-stack" id="wall-zoom">
-            <button type="button" data-zoom="in" aria-label="Zoom in">+</button>
-            <button type="button" data-zoom="out" aria-label="Zoom out">−</button>
-            <button type="button" data-zoom="home" aria-label="Reset view">⌂</button>
+            <button type="button" data-zoom="in" aria-label="Zoom in">
+              <svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8h9M8 3.5v9" /></svg>
+            </button>
+            <button type="button" data-zoom="out" aria-label="Zoom out">
+              <svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8h9" /></svg>
+            </button>
+            <button type="button" data-zoom="home" aria-label="Reset view">
+              <svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 6.5V3.5h3M13 6.5V3.5h-3M3 9.5v3h3M13 9.5v3h-3" /></svg>
+            </button>
           </div>
         </div>
       </section>
@@ -147,46 +150,63 @@
           <canvas id="atlas-map"></canvas>
           <canvas id="atlas-overlay"></canvas>
         </div>
+        <p id="atlas-status" class="atlas-status" role="status">Loading Natural Earth data…</p>
         <div class="map-chrome left">
           <div class="chrome-row">
             <div class="panel search-panel">
-              <label class="sr-only" for="search">Search places</label>
-              <input id="search" type="search" placeholder="Search a country or city" autocomplete="off" enterkeyhint="search" />
+              <label class="search-field" for="search">
+                <svg class="icon search-icon" viewBox="0 0 16 16" aria-hidden="true">
+                  <circle cx="7" cy="7" r="4.25" />
+                  <path d="M10.2 10.2 13.5 13.5" />
+                </svg>
+                <span class="sr-only">Search a country or city</span>
+                <input id="search" type="search" placeholder="Ghana, Tokyo…" autocomplete="off" enterkeyhint="search" />
+              </label>
               <ul id="search-results" hidden></ul>
             </div>
             <button type="button" class="sheet-toggle" id="atlas-controls-toggle" aria-expanded="false" aria-controls="atlas-controls">
+              <svg class="icon" viewBox="0 0 16 16" aria-hidden="true">
+                <path d="M2.5 4.5h11M4 8h8M5.5 11.5h5" />
+              </svg>
               Layers
             </button>
           </div>
           <div class="sheet" id="atlas-controls">
             <div class="panel">
               <div class="sheet-head">
-                <p class="panel-kicker">Map options</p>
-                <button type="button" class="sheet-close" aria-label="Close map options">Close</button>
+                <h2>Map options</h2>
+                <button type="button" class="sheet-close">Close</button>
               </div>
-              <p class="panel-kicker">Projection</p>
-              <div class="segmented" role="group" aria-label="Map projection">
-                <button type="button" class="seg-btn is-active" data-proj="equalEarth">Equal Earth</button>
-                <button type="button" class="seg-btn" data-proj="mercator">Mercator</button>
-              </div>
-              <p class="panel-kicker">Center</p>
-              <div class="segmented" role="group" aria-label="Map centering">
-                <button type="button" class="seg-btn is-active" data-center="0">0°</button>
-                <button type="button" class="seg-btn" data-center="-90">90°W</button>
-                <button type="button" class="seg-btn" data-center="150">150°E</button>
-              </div>
-              <p class="panel-kicker">Layers</p>
-              <label class="check"><input type="checkbox" data-layer="countries" checked /> Countries</label>
-              <label class="check"><input type="checkbox" data-layer="lakes" checked /> Lakes</label>
-              <label class="check"><input type="checkbox" data-layer="rivers" checked /> Rivers</label>
-              <label class="check"><input type="checkbox" data-layer="cities" checked /> Cities</label>
-              <label class="check"><input type="checkbox" data-layer="labels" checked /> Labels</label>
-              <label class="check"><input type="checkbox" data-layer="graticule" checked /> Graticule</label>
+              <fieldset>
+                <legend>Projection</legend>
+                <div class="segmented" role="group" aria-label="Map projection">
+                  <button type="button" class="seg-btn is-active" data-proj="equalEarth">Equal Earth</button>
+                  <button type="button" class="seg-btn" data-proj="mercator">Mercator</button>
+                </div>
+              </fieldset>
+              <fieldset>
+                <legend>Center</legend>
+                <div class="segmented" role="group" aria-label="Map centering">
+                  <button type="button" class="seg-btn is-active" data-center="0">0°</button>
+                  <button type="button" class="seg-btn" data-center="-90">90°W</button>
+                  <button type="button" class="seg-btn" data-center="150">150°E</button>
+                </div>
+              </fieldset>
+              <fieldset class="layer-set">
+                <legend>Layers</legend>
+                <label class="check"><input type="checkbox" data-layer="countries" checked /> Countries</label>
+                <label class="check"><input type="checkbox" data-layer="lakes" checked /> Lakes</label>
+                <label class="check"><input type="checkbox" data-layer="rivers" checked /> Rivers</label>
+                <label class="check"><input type="checkbox" data-layer="cities" checked /> Cities</label>
+                <label class="check"><input type="checkbox" data-layer="labels" checked /> Labels</label>
+                <label class="check"><input type="checkbox" data-layer="graticule" checked /> Graticule</label>
+              </fieldset>
             </div>
           </div>
           <div class="panel info-panel" id="place-info" hidden>
-            <button type="button" class="info-close" id="info-close" aria-label="Clear selection">×</button>
-            <p class="panel-kicker" id="info-kicker">Selected</p>
+            <button type="button" class="info-close" id="info-close" aria-label="Clear selection">
+              <svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" /></svg>
+            </button>
             <h2 id="info-title"></h2>
             <p id="info-meta"></p>
             <p id="info-area"></p>
@@ -194,9 +214,15 @@
         </div>
         <div class="map-chrome right">
           <div class="zoom-stack" id="atlas-zoom">
-            <button type="button" data-zoom="in" aria-label="Zoom in">+</button>
-            <button type="button" data-zoom="out" aria-label="Zoom out">−</button>
-            <button type="button" data-zoom="home" aria-label="Reset view">⌂</button>
+            <button type="button" data-zoom="in" aria-label="Zoom in">
+              <svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8h9M8 3.5v9" /></svg>
+            </button>
+            <button type="button" data-zoom="out" aria-label="Zoom out">
+              <svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8h9" /></svg>
+            </button>
+            <button type="button" data-zoom="home" aria-label="Reset view">
+              <svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 6.5V3.5h3M13 6.5V3.5h-3M3 9.5v3h3M13 9.5v3h-3" /></svg>
+            </button>
           </div>
         </div>
         <div id="tooltip" class="tooltip" hidden></div>

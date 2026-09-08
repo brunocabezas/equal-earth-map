@@ -289,19 +289,29 @@ main {
   vector-effect: non-scaling-stroke;
 }
 
-.country.is-hover,
-.country.is-selected {
-  stroke: #141b23;
-  stroke-width: 1.4px;
+.country.is-hover {
+  stroke: #9a4032;
+  stroke-width: 2px;
+  filter: brightness(1.14) saturate(1.2);
 }
 
-.lakes { fill: #8fb8cc; stroke: none; }
+.country.is-selected {
+  stroke: #141b23;
+  stroke-width: 2px;
+}
+
+.country.is-hover.is-selected {
+  stroke: #9a4032;
+}
+
+.lakes { fill: #8fb8cc; stroke: none; pointer-events: none; }
 .rivers {
   fill: none;
   stroke: #6a9bb0;
   stroke-width: 1px;
   stroke-linecap: round;
   vector-effect: non-scaling-stroke;
+  pointer-events: none;
 }
 .graticule {
   fill: none;

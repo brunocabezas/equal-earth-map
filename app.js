@@ -253,8 +253,15 @@
         .attr("d", path)
         .classed("is-selected", (d) => state.selected && d.properties.name === state.selected)
         .style("display", state.layers.countries ? null : "none")
+        .on("pointerenter", function (event, d) {
+          d3.select(this).classed("is-hover", true).raise();
+          showTip(event, d.properties.name);
+        })
         .on("pointermove", (event, d) => showTip(event, d.properties.name))
-        .on("pointerleave", hideTip)
+        .on("pointerleave", function () {
+          d3.select(this).classed("is-hover", false);
+          hideTip();
+        })
         .on("click", (event, d) => {
           event.stopPropagation();
           selectCountry(d);

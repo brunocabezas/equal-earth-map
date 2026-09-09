@@ -790,21 +790,29 @@
     button.addEventListener("click", () => setMode(button.dataset.mode));
   });
 
+  function githubRepo() {
+    return (window.EQUAL_EARTH_SITE && window.EQUAL_EARTH_SITE.githubRepo) || "brunocabezas/equal-earth-map";
+  }
+
   function renderAboutVersion() {
     const el = document.getElementById("about-version");
     if (!el) return;
     const version = window.EQUAL_EARTH_VERSION || {};
     const sha = version.commit;
-    if (!sha) {
-      el.textContent = "Version unknown";
+    const short = version.short || (sha ? sha.slice(0, 7) : "");
+    if (!sha || short === "local") {
+      el.textContent = "Version local";
       return;
     }
-    const short = version.short || sha.slice(0, 7);
     const date = version.builtAt ? String(version.builtAt).slice(0, 10) : "";
-    const rev = document.createElement("span");
-    rev.className = "rev";
-    rev.textContent = short;
-    el.replaceChildren("Version ", rev, date ? ` · ${date}` : "");
+    const link = document.createElement("a");
+    link.className = "rev";
+    link.href = `https://github.com/${githubRepo()}/commit/${sha}`;
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    link.tabIndex = -1;
+    link.textContent = short;
+    el.replaceChildren("Version ", link, date ? ` · ${date}` : "");
   }
 
   document.getElementById("about-open").addEventListener("click", () => {

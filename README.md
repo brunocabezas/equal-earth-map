@@ -19,15 +19,9 @@ Then open http://127.0.0.1:8765/
 
 ## Version in About
 
-The About dialog reads `version.js`, which is shipped with the site. That way the hash you see is from the files that are actually running, not from a live GitHub lookup.
+GitHub Pages writes the deployed commit into `version.js` when it publishes the site. About shows that hash, so it matches the commit GitHub actually shipped.
 
-After each commit, a git hook writes the new hash into `version.js` and amends so it stays one commit. Install the hook once in this clone:
-
-```bash
-cp .githooks/post-commit .git/hooks/post-commit
-```
-
-The hook does not run during rebase or merge.
+Locally it shows `local`. There is no git hook.
 
 ## Data
 

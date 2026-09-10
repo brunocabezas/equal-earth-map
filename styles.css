@@ -35,18 +35,24 @@
 }
 
 :root {
-  --ink: #1c2430;
-  --ink-soft: #5a4e42;
-  --paper: #f3eee4;
-  --panel: #f7f3eb;
+  --ink: #054a52;
+  --ink-soft: #4d7378;
+  --paper: #edf6f9;
+  --panel: #f4fafb;
   --ocean: #b9d2df;
-  --line: rgba(44, 36, 28, 0.14);
-  --accent: #c45c4a;
-  --night: #141b23;
-  --night-deep: #10161c;
-  --cream: #f6f1e8;
-  --cream-soft: #d9cfbf;
-  --shadow: 0 8px 22px rgba(16, 22, 28, 0.18);
+  --ocean-deep: #6a9bb0;
+  --line: rgba(5, 74, 82, 0.14);
+  --accent: #c26148;
+  --accent-bright: #e29578;
+  --accent-text: #a84c38;
+  --night: #006d77;
+  --night-deep: #032f34;
+  --cream: #edf6f9;
+  --cream-soft: #d4e8ea;
+  --field: #ffffff;
+  --field-hover: #ffddd2;
+  --stage: #b9d2df;
+  --shadow: 0 8px 22px rgba(3, 47, 52, 0.18);
   --sans: "Source Sans 3", "Segoe UI", sans-serif;
   --serif: "Source Serif 4", "Iowan Old Style", Georgia, serif;
   --radius: 8px;
@@ -83,7 +89,7 @@ html, body {
 }
 
 ::selection {
-  background: rgba(196, 92, 74, 0.28);
+  background: rgba(194, 97, 72, 0.28);
   color: var(--ink);
 }
 
@@ -161,7 +167,7 @@ html, body {
   margin-left: auto;
   padding: 3px;
   border-radius: 999px;
-  background: rgba(246, 241, 232, 0.08);
+  background: rgba(237, 246, 249, 0.08);
 }
 
 .label-short { display: none; }
@@ -194,7 +200,7 @@ html, body {
 
 .mode-btn:hover {
   color: var(--cream);
-  background: rgba(246, 241, 232, 0.08);
+  background: rgba(237, 246, 249, 0.08);
 }
 
 .mode-btn.is-active {
@@ -208,7 +214,7 @@ html, body {
 }
 
 .about-btn {
-  border: 1px solid rgba(246, 241, 232, 0.22);
+  border: 1px solid rgba(237, 246, 249, 0.22);
   border-radius: 999px;
   min-height: var(--control);
   padding: 0 14px;
@@ -220,8 +226,8 @@ html, body {
 }
 
 .about-btn:hover {
-  background: rgba(246, 241, 232, 0.1);
-  border-color: rgba(246, 241, 232, 0.4);
+  background: rgba(237, 246, 249, 0.1);
+  border-color: rgba(237, 246, 249, 0.4);
 }
 
 main {
@@ -246,7 +252,7 @@ main {
 .osd, #atlas-stage {
   width: 100%;
   height: 100%;
-  background: #c5d5c8;
+  background: var(--stage);
 }
 
 #atlas-stage {
@@ -357,6 +363,94 @@ legend {
   line-height: 1.45;
 }
 
+.proj-key {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  color: var(--ink-soft);
+  font-size: var(--type-meta);
+  font-weight: 550;
+  line-height: 1.3;
+}
+
+.proj-key li,
+.overlay-legend span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.swatch {
+  display: block;
+  width: 14px;
+  height: 10px;
+  flex-shrink: 0;
+  border-radius: 2px;
+}
+
+.swatch-ee {
+  background: #ffddd2;
+  border: 1px solid rgba(5, 74, 82, 0.4);
+}
+
+.swatch-merc {
+  background: rgba(194, 97, 72, 0.18);
+  border: 1.5px solid var(--accent);
+}
+
+.overlay-legend {
+  display: none;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  padding: 8px 12px;
+  color: var(--ink-soft);
+  font-size: var(--type-meta);
+  font-weight: 550;
+}
+
+.proj-key[hidden],
+.overlay-legend[hidden],
+#info-measures[hidden] {
+  display: none;
+}
+
+#info-measures {
+  margin: 10px 0 0;
+  padding: 0;
+  border-top: 1px solid var(--line);
+}
+
+#info-measures > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: baseline;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+#info-measures > div:last-child {
+  border-bottom: 0;
+}
+
+#info-measures dt {
+  color: var(--ink-soft);
+  font-size: var(--type-meta);
+  font-weight: 650;
+}
+
+#info-measures dd {
+  margin: 0;
+  color: var(--ink);
+  font-size: var(--type-ui);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
 .segmented {
   display: flex;
   gap: var(--space-1);
@@ -368,7 +462,7 @@ legend {
   border-radius: 999px;
   min-height: var(--control);
   padding: 0 8px;
-  background: #fffdf8;
+  background: var(--field);
   color: var(--ink);
   font-size: var(--type-ui);
   font-weight: 550;
@@ -376,7 +470,7 @@ legend {
 }
 
 .seg-btn:hover {
-  background: #efe8dc;
+  background: var(--field-hover);
 }
 
 .seg-btn.is-active {
@@ -434,7 +528,7 @@ legend {
 }
 
 .info-close:hover {
-  background: rgba(28, 36, 48, 0.08);
+  background: rgba(5, 74, 82, 0.08);
   color: var(--ink);
 }
 
@@ -446,7 +540,7 @@ legend {
   gap: 8px;
   padding: 0 10px 0 12px;
   border-radius: var(--radius);
-  background: #fffdf8;
+  background: var(--field);
 }
 
 .search-icon {
@@ -502,7 +596,7 @@ legend {
 
 #search-results button:hover,
 #search-results button.is-active {
-  background: rgba(44, 36, 28, 0.08);
+  background: rgba(5, 74, 82, 0.08);
 }
 
 #search-results small {
@@ -549,7 +643,7 @@ legend {
 }
 
 .zoom-stack button:hover {
-  background: #efe8dc;
+  background: var(--field-hover);
 }
 
 .zoom-stack button:last-child { border-bottom: 0; }
@@ -580,31 +674,31 @@ legend {
 }
 
 .country {
-  stroke: rgba(60, 48, 32, 0.35);
+  stroke: rgba(5, 74, 82, 0.28);
   stroke-width: 0.6px;
   cursor: pointer;
   vector-effect: non-scaling-stroke;
 }
 
 .country.is-hover {
-  stroke: #9a4032;
+  stroke: var(--accent);
   stroke-width: 2px;
   filter: brightness(1.14) saturate(1.2);
 }
 
 .country.is-selected {
-  stroke: #141b23;
+  stroke: var(--night-deep);
   stroke-width: 2px;
 }
 
 .country.is-hover.is-selected {
-  stroke: #9a4032;
+  stroke: var(--accent);
 }
 
 .lakes { fill: #8fb8cc; stroke: none; pointer-events: none; }
 .rivers {
   fill: none;
-  stroke: #6a9bb0;
+  stroke: var(--ocean-deep);
   stroke-width: 1px;
   stroke-linecap: round;
   vector-effect: non-scaling-stroke;
@@ -612,22 +706,22 @@ legend {
 }
 .graticule {
   fill: none;
-  stroke: rgba(255, 255, 255, 0.28);
+  stroke: rgba(237, 246, 249, 0.35);
   stroke-width: 0.7px;
   vector-effect: non-scaling-stroke;
 }
 .sphere {
   fill: var(--ocean);
-  stroke: #7f9aa8;
+  stroke: var(--ocean-deep);
   vector-effect: non-scaling-stroke;
 }
-.city { fill: #141b23; stroke: white; }
-.city.is-capital { fill: var(--accent); }
+.city { fill: var(--night-deep); stroke: white; }
+.city.is-capital { fill: var(--accent-bright); }
 .label {
-  fill: #243040;
+  fill: var(--ink);
   font-size: 12px;
   paint-order: stroke;
-  stroke: rgba(250, 247, 240, 0.9);
+  stroke: rgba(237, 246, 249, 0.9);
   stroke-width: 3px;
   pointer-events: none;
 }
@@ -640,7 +734,7 @@ dialog {
   color: var(--ink);
 }
 
-dialog::backdrop { background: rgba(16, 22, 28, 0.55); }
+dialog::backdrop { background: rgba(3, 47, 52, 0.55); }
 
 .about-card {
   width: min(560px, 92vw);
@@ -649,6 +743,7 @@ dialog::backdrop { background: rgba(16, 22, 28, 0.55); }
   padding: 24px 24px 20px;
   border-radius: 16px;
   background: var(--panel);
+  scrollbar-color: var(--ink-soft) var(--panel);
 }
 
 .about-card h1,
@@ -696,11 +791,11 @@ dialog::backdrop { background: rgba(16, 22, 28, 0.55); }
 }
 
 #about-close:hover {
-  background: #2a3440;
+  background: var(--night-deep);
 }
 
 .navigator {
-  background: rgba(247, 243, 235, 0.94) !important;
+  background: rgba(244, 250, 251, 0.94) !important;
   border: 1px solid var(--line) !important;
 }
 
@@ -718,13 +813,13 @@ dialog::backdrop { background: rgba(16, 22, 28, 0.55); }
   display: inline-flex;
   align-items: center;
   min-height: var(--control);
-  color: var(--accent);
+  color: var(--accent-text);
   font-weight: 650;
   text-underline-offset: 3px;
 }
 
 .missing-link:hover {
-  color: #9a4032;
+  color: var(--ink);
 }
 
 @media (max-width: 720px) {
@@ -817,18 +912,32 @@ dialog::backdrop { background: rgba(16, 22, 28, 0.55); }
     right: 8px;
     bottom: max(8px, env(safe-area-inset-bottom));
     z-index: 9;
-    max-height: min(62dvh, 400px);
-    overflow: auto;
-    -webkit-overflow-scrolling: touch;
+    max-height: calc(100dvh - 7.5rem);
     pointer-events: auto;
   }
 
-  .sheet.is-open { display: block; }
+  .sheet.is-open {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
 
   .sheet .panel {
     width: 100%;
-    padding: 12px;
+    min-height: 0;
+    max-height: calc(100dvh - 7.5rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
+    padding: 12px 12px 16px;
     border-radius: var(--radius-lg);
+    scrollbar-color: rgba(5, 74, 82, 0.35) transparent;
+  }
+
+  .sheet .panel-note,
+  .sheet .proj-key {
+    display: none;
   }
 
   .layer-set {
@@ -856,13 +965,13 @@ dialog::backdrop { background: rgba(16, 22, 28, 0.55); }
     align-items: center;
     justify-content: space-between;
     gap: var(--space-2);
-    margin-bottom: var(--space-3);
+    margin-bottom: var(--space-2);
   }
 
   .sheet-head h2 {
     margin: 0;
     font-family: var(--sans);
-    font-size: 1.25rem;
+    font-size: 1.05rem;
     font-weight: 650;
     letter-spacing: -0.01em;
     line-height: 1.2;
@@ -873,7 +982,7 @@ dialog::backdrop { background: rgba(16, 22, 28, 0.55); }
     border-radius: 999px;
     min-height: 32px;
     padding: 0 10px;
-    background: rgba(28, 36, 48, 0.08);
+    background: rgba(5, 74, 82, 0.08);
     color: var(--ink);
     font-size: var(--type-ui);
     font-weight: 550;
@@ -884,11 +993,15 @@ dialog::backdrop { background: rgba(16, 22, 28, 0.55); }
     position: fixed;
     inset: 0;
     z-index: 7;
-    background: rgba(16, 22, 28, 0.4);
+    background: rgba(3, 47, 52, 0.4);
   }
 
   body.sheet-open .sheet-backdrop {
     display: block;
+  }
+
+  .sheet fieldset {
+    margin-bottom: var(--space-2);
   }
 
   .seg-btn {
@@ -896,7 +1009,7 @@ dialog::backdrop { background: rgba(16, 22, 28, 0.55); }
   }
 
   .check {
-    min-height: 36px;
+    min-height: 32px;
     margin: 0;
   }
 
@@ -917,6 +1030,16 @@ dialog::backdrop { background: rgba(16, 22, 28, 0.55); }
   }
 
   #info-meta, #info-area { font-size: var(--type-ui); }
+
+  .overlay-legend:not([hidden]) {
+    display: flex;
+    padding: 6px 10px;
+    border-radius: 10px;
+  }
+
+  #atlas-view:has(#place-info:not([hidden])) .overlay-legend {
+    display: none;
+  }
 
   .info-close { display: grid; }
 
@@ -944,8 +1067,9 @@ dialog::backdrop { background: rgba(16, 22, 28, 0.55); }
 @media (max-width: 720px) and (max-height: 500px) {
   .attrib { display: none; }
 
-  .sheet {
-    max-height: min(58dvh, 280px);
+  .sheet,
+  .sheet .panel {
+    max-height: calc(100dvh - 5.5rem);
   }
 
   .info-panel {

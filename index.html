@@ -12,7 +12,7 @@
     <meta name="robots" content="index, follow" />
     <meta name="google-site-verification" content="Veh-jW6bby_QXCCJP9wlzjsK-h1Fbvfc5zWNtBTKSVU" />
     <meta name="author" content="Equal Earth interactive atlas" />
-    <meta name="theme-color" content="#141b23" />
+    <meta name="theme-color" content="#006d77" />
     <meta name="color-scheme" content="light" />
     <link rel="icon" href="favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="og-image.jpg" />
@@ -179,11 +179,23 @@
                 <button type="button" class="sheet-close">Close</button>
               </div>
               <fieldset>
-                <legend>Projection</legend>
-                <div class="segmented" role="group" aria-label="Map projection">
-                  <button type="button" class="seg-btn is-active" data-proj="equalEarth">Equal Earth</button>
-                  <button type="button" class="seg-btn" data-proj="mercator">Mercator</button>
+                <legend>Projections</legend>
+                <div class="segmented" role="group" aria-label="Map projections">
+                  <button type="button" class="seg-btn is-active" data-proj="equalEarth" aria-pressed="true">Equal Earth</button>
+                  <button type="button" class="seg-btn" data-proj="mercator" aria-pressed="false">Mercator</button>
                 </div>
+                <p class="panel-note" id="proj-hint">Turn both on, then click a country to compare true and apparent size.</p>
+                <ul class="proj-key" id="proj-key" hidden>
+                  <li><span class="swatch swatch-ee" aria-hidden="true"></span> Equal Earth · true area</li>
+                  <li><span class="swatch swatch-merc" aria-hidden="true"></span> Mercator · same shape, apparent size</li>
+                </ul>
+                <fieldset id="compare-set" hidden>
+                  <legend>Show size overlay</legend>
+                  <div class="segmented" role="group" aria-label="When to show Mercator size">
+                    <button type="button" class="seg-btn is-active" data-compare="hover" aria-pressed="true">On hover</button>
+                    <button type="button" class="seg-btn" data-compare="always" aria-pressed="false">Always</button>
+                  </div>
+                </fieldset>
               </fieldset>
               <fieldset>
                 <legend>Center</legend>
@@ -204,12 +216,17 @@
               </fieldset>
             </div>
           </div>
+          <div class="panel overlay-legend" id="overlay-legend" hidden>
+            <span><span class="swatch swatch-ee" aria-hidden="true"></span> True area</span>
+            <span><span class="swatch swatch-merc" aria-hidden="true"></span> Mercator size</span>
+          </div>
           <div class="panel info-panel" id="place-info" hidden>
             <button type="button" class="info-close" id="info-close" aria-label="Clear selection">
               <svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" /></svg>
             </button>
             <h2 id="info-title"></h2>
             <p id="info-meta"></p>
+            <dl id="info-measures" hidden></dl>
             <p id="info-area"></p>
           </div>
         </div>
@@ -244,7 +261,8 @@
           Most web maps use Mercator, which inflates countries near the poles. Greenland looks
           similar in size to Africa there, though Africa is about 14 times larger. Equal Earth is
           an equal-area projection: landmasses keep their true relative sizes, with more familiar
-          continent shapes than Gall–Peters.
+          continent shapes than Gall–Peters. Turn both projections on, then click a country: a red
+          outline shows Mercator’s apparent size as the same shape, scaled up.
         </p>
         <p>
           The atlas redraws Natural Earth 1:50 million vectors in Equal Earth so countries, rivers,
@@ -260,12 +278,12 @@
       </div>
     </dialog>
 
-    <script src="site-config.js"></script>
+    <script src="dist/site-config.js"></script>
     <script src="version.js"></script>
-    <script src="analytics.js"></script>
+    <script src="dist/analytics.js"></script>
     <script src="vendor/openseadragon.min.js"></script>
     <script src="vendor/d3.min.js"></script>
     <script src="vendor/topojson.min.js"></script>
-    <script src="app.js"></script>
+    <script src="dist/app.js"></script>
   </body>
 </html>

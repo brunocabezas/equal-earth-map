@@ -12,10 +12,13 @@ Live site: https://trueearthmap.com/
 ## Run locally
 
 ```bash
-python3 -m http.server 8765
+bun install
+bun run serve
 ```
 
-Then open http://127.0.0.1:8765/
+That compiles TypeScript from `src/` into `dist/`, then serves the site. Open http://127.0.0.1:8765/
+
+`bun run check` type-checks without emitting files. npm works the same way if you prefer it.
 
 ## Version in About
 
@@ -34,4 +37,4 @@ Locally it shows `local`. There is no git hook.
 
 Visit counts use [GoatCounter](https://www.goatcounter.com/) (no cookies). Create a site named `equal-earth-map`, then open https://equal-earth-map.goatcounter.com/ to see visitors.
 
-Optional PostHog: set `posthogKey` in `site-config.js`.
+Optional PostHog: set `posthogKey` in `src/site-config.ts`.

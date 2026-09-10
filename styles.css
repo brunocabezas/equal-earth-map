@@ -413,7 +413,8 @@ legend {
 
 .proj-key[hidden],
 .overlay-legend[hidden],
-#info-measures[hidden] {
+#info-measures[hidden],
+#compare-set[hidden] {
   display: none;
 }
 

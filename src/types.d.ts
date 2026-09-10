@@ -96,6 +96,18 @@ interface CountryCacheItem {
   name: string;
   color: string;
   path2d: Path2D;
+  centroid: [number, number];
+  bounds: [[number, number], [number, number]];
+}
+
+interface OverlayGhost {
+  item: CountryCacheItem;
+  scale: number;
+  centroid: [number, number];
+  x0: number;
+  y0: number;
+  x1: number;
+  y1: number;
 }
 
 interface RiverPath {

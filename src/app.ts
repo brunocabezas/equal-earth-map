@@ -44,6 +44,7 @@
     "#e8d0c4", "#dcc8bc", "#c9d8d2", "#e4ddd4",
     "#ffd8cc", "#d0ddd8", "#ecd4c8"
   ] as const;
+  const OVERLAY_HOVER_MIN_FACTOR = 1.5;
   const MAP = {
     ocean: "#b9d2df",
     lake: "#8fb8cc",
@@ -53,10 +54,10 @@
     hover: "#054a52",
     hoverFill: "rgba(5,74,82,0.07)",
     selected: "#032f34",
-    mercFill: "rgba(194,97,72,0.18)",
+    mercFill: "rgba(194,97,72,0.4)",
     mercStroke: "#c26148",
-    mercMuteFill: "rgba(152, 162, 168, 0.78)",
-    mercMuteStroke: "rgba(120, 130, 136, 0.9)",
+    mercMuteFill: "rgba(77,115,120,0.2)",
+    mercMuteStroke: "rgba(77,115,120,0.55)",
     capital: "#e29578",
     city: "#032f34",
     label: "#054a52",
@@ -409,8 +410,10 @@
     let countryCache: CountryCacheItem[] = [];
     const countryByName = new Map<string, CountryCacheItem>();
     let overlayGhosts: CountryCacheItem[] = [];
+    let overlayHoverGhosts: OverlayGhost[] = [];
     let clipToSphere = false;
     let overlayFrame = 0;
+    let pendingPointer: { vx: number; vy: number; sx: number; sy: number } | null = null;
     let hideGhosts: OverlayGhost[] = [];
     let hideGhostsKey = "";
     let hideMask: Uint8ClampedArray | null = null;
@@ -527,6 +530,11 @@
       for (const item of countryCache) countryByName.set(item.name, item);
       overlayGhosts = countryCache.filter((item) => item.apparent > 0);
       overlayGhosts.sort((a, b) => b.apparent - a.apparent);
+      overlayHoverGhosts = overlayGhosts.flatMap((item) => {
+        if (mercatorFactor(item.name) < OVERLAY_HOVER_MIN_FACTOR) return [];
+        const ghost = ghostHideData(item);
+        return ghost ? [ghost] : [];
+      });
       hideGhostsKey = "";
       lakePath = asPath2D(path, { type: "FeatureCollection", features: lakes });
       riverPaths = rivers.map((feature) => ({
@@ -540,6 +548,12 @@
       if (stats?.ratio == null || stats.ratio <= 0) return 0;
       const scale = Math.sqrt(stats.ratio);
       return name === "Antarctica" ? Math.min(scale, 4) : scale;
+    }
+
+    function mercatorFactor(name: string) {
+      const ratio = sizeIndex.get(name)?.ratio;
+      if (ratio == null || ratio <= 0) return 1;
+      return ratio >= 1 ? ratio : 1 / ratio;
     }
 
     function apparentScaleFor(name: string) {
@@ -800,7 +814,7 @@
       const ghosts = apparentItemsToBake();
       const always = state.compareMode === "always" && ghosts.length > 0;
       if (always) {
-        for (const item of ghosts) drawApparentFill(mapCtx, item, t.k);
+        for (const item of ghosts) drawApparentFill(mapCtx, item, t.k, { muted: true });
       }
       paintCountries(mapCtx, t.k);
       if (!always) {
@@ -808,7 +822,7 @@
       }
       drawWater(mapCtx, t.k);
       if (always) {
-        for (const item of ghosts) strokeApparent(mapCtx, item, t.k);
+        for (const item of ghosts) strokeApparent(mapCtx, item, t.k, { muted: true });
       }
       mapCtx.restore();
       if (ghosts.length) coverOutsideSphere(t);
@@ -818,29 +832,53 @@
       if (overlayFrame) return;
       overlayFrame = requestAnimationFrame(() => {
         overlayFrame = 0;
-        drawOverlay();
+        const pending = pendingPointer;
+        pendingPointer = null;
+        if (pending) applyPointer(pending.vx, pending.vy, pending.sx, pending.sy);
+        else drawOverlay();
       });
+    }
+
+    function applyPointer(vx: number, vy: number, sx: number, sy: number) {
+      const city = cityAt(sx, sy);
+      if (city) {
+        if (hoverName !== null) {
+          hoverName = null;
+          drawOverlay();
+        }
+        showTip(vx, vy, `${city.name}${city.country ? ` · ${city.country}` : ""}`);
+        stage.style.cursor = "pointer";
+        return;
+      }
+      const hit = countryHitAt(sx, sy);
+      const next = hit ? hit.name : null;
+      if (next !== hoverName) {
+        hoverName = next;
+        drawOverlay();
+      }
+      if (hit) {
+        const stats = sizeIndex.get(hit.name);
+        const inflation = overlayMode() || state.projections.mercator
+          ? formatInflation(stats?.ratio)
+          : null;
+        const tip = inflation
+          ? `${hit.name} · Mercator ${inflation}`
+          : hit.name;
+        showTip(vx, vy, tip);
+        stage.style.cursor = "pointer";
+      } else {
+        hideTip();
+        stage.style.cursor = "grab";
+      }
     }
 
     function drawOverlay() {
       overCtx.clearRect(0, 0, width, height);
       const t = currentTransform;
       const highlight = hoverName || state.selected;
-      const ghosts = apparentItemsToBake();
       overCtx.save();
       overCtx.translate(t.x, t.y);
       overCtx.scale(t.k, t.k);
-      if (state.compareMode === "always" && hoverName) {
-        for (const item of ghosts) {
-          if (item.name === hoverName) continue;
-          drawApparentFill(overCtx, item, t.k, { muted: true });
-        }
-        paintCountries(overCtx, t.k);
-        for (const item of ghosts) {
-          if (item.name === hoverName) continue;
-          strokeApparent(overCtx, item, t.k, { muted: true });
-        }
-      }
       if (highlight) {
         const item = countryByName.get(highlight);
         if (item && state.compareMode === "hover" && item.name !== state.selected) {
@@ -957,13 +995,12 @@
     }
 
     function overlayAt(screenX: number, screenY: number) {
-      if (state.compareMode !== "always" || !overlayMode() || !state.layers.countries) return null;
+      if (state.compareMode !== "always" || !overlayHoverGhosts.length) return null;
       const xy = currentTransform.invert([screenX, screenY]);
       if (!validPoint(xy)) return null;
       const [x, y] = xy;
-      const ghosts = currentHideGhosts();
-      for (let i = ghosts.length - 1; i >= 0; i -= 1) {
-        const ghost = ghosts[i];
+      for (let i = overlayHoverGhosts.length - 1; i >= 0; i -= 1) {
+        const ghost = overlayHoverGhosts[i];
         if (x < ghost.x0 || x > ghost.x1 || y < ghost.y0 || y > ghost.y1) continue;
         const local: [number, number] = [
           ghost.centroid[0] + (x - ghost.centroid[0]) / ghost.scale,
@@ -1184,39 +1221,12 @@
       if (interacting) return;
       const [vx, vy] = d3.pointer(event, atlasView);
       const [sx, sy] = d3.pointer(event, stage);
-      const city = cityAt(sx, sy);
-      if (city) {
-        if (hoverName !== null) {
-          hoverName = null;
-          scheduleOverlay();
-        }
-        showTip(vx, vy, `${city.name}${city.country ? ` · ${city.country}` : ""}`);
-        stage.style.cursor = "pointer";
-        return;
-      }
-      const hit = countryHitAt(sx, sy);
-      const next = hit ? hit.name : null;
-      if (next !== hoverName) {
-        hoverName = next;
-        scheduleOverlay();
-      }
-      if (hit) {
-        const stats = sizeIndex.get(hit.name);
-        const inflation = overlayMode() || state.projections.mercator
-          ? formatInflation(stats?.ratio)
-          : null;
-        const tip = inflation
-          ? `${hit.name} · Mercator ${inflation}`
-          : hit.name;
-        showTip(vx, vy, tip);
-        stage.style.cursor = "pointer";
-      } else {
-        hideTip();
-        stage.style.cursor = "grab";
-      }
+      pendingPointer = { vx, vy, sx, sy };
+      scheduleOverlay();
     });
 
     stage.addEventListener("pointerleave", () => {
+      pendingPointer = null;
       hoverName = null;
       hideTip();
       drawOverlay();

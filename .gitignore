@@ -3,13 +3,15 @@
 __pycache__/
 .vscode/
 
-# Impeccable engine binary (downloaded on first run)
-.cursor/skills/impeccable/scripts/bin/
+# Local Cursor skills, hooks, and agents. Install them on the machine;
+# do not vendor a design-agent toolchain in this atlas repo.
+.cursor/
 
 # Impeccable local/session files
 .impeccable/hook.cache.json
 .impeccable/hook.pending.json
 .impeccable/config.local.json
+.impeccable/critique/
 
 # TypeScript build
 node_modules/

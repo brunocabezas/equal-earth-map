@@ -189,7 +189,7 @@ Night and ice do the structure. Coral is the only warm UI accent. Ocean and peac
 
 ## Layout
 
-Full-viewport app shell: night top bar (min-height 64px, 48px on small screens), flex-grown map, night footer. Legend cards stack in the top-left (`16px` / `8px` on small screens), max 340px. Zoom stack top-right on desktop, bottom-right on viewports ≤720px. Layers become a bottom sheet on small screens. Spacing scale is 4 / 8 / 12 / 16 / 24.
+Full-viewport app shell: night top bar (min-height 64px, 48px on small screens), flex-grown map, night footer. Search, Mercator size, and Layers sit in one chrome row at the top-left. Map options (center, layers) live in a sheet at every size — a floating ice card on desktop, a bottom sheet on viewports ≤720px. The place card scrolls inside the remaining map height so size numbers stay above the footer. Zoom stack top-right on desktop, bottom-right on viewports ≤720px. Spacing scale is 4 / 8 / 12 / 16 / 24.
 
 ## Elevation & Depth
 

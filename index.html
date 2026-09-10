@@ -147,7 +147,7 @@
       </section>
 
       <section id="atlas-view" class="view is-visible" aria-label="Interactive Equal Earth atlas">
-        <div id="atlas-stage" role="img" aria-label="Equal Earth world map with countries, lakes, rivers, and cities">
+        <div id="atlas-stage" role="img" aria-label="Equal Earth map with Mercator size outlines. Click a country for the numbers.">
           <canvas id="atlas-map"></canvas>
           <canvas id="atlas-overlay"></canvas>
         </div>
@@ -161,10 +161,14 @@
                   <path d="M10.2 10.2 13.5 13.5" />
                 </svg>
                 <span class="sr-only">Search a country or city</span>
-                <input id="search" type="search" placeholder="Ghana, Tokyo…" autocomplete="off" enterkeyhint="search" />
+                <input id="search" type="search" placeholder="Greenland…" autocomplete="off" enterkeyhint="search" />
               </label>
               <ul id="search-results" hidden></ul>
             </div>
+            <button type="button" class="compare-btn is-active" id="mercator-size" aria-pressed="true">
+              <span class="label-full">Mercator size</span>
+              <span class="label-short">Size</span>
+            </button>
             <button type="button" class="sheet-toggle" id="atlas-controls-toggle" aria-expanded="false" aria-controls="atlas-controls">
               <svg class="icon" viewBox="0 0 16 16" aria-hidden="true">
                 <path d="M2.5 4.5h11M4 8h8M5.5 11.5h5" />
@@ -178,25 +182,6 @@
                 <h2>Map options</h2>
                 <button type="button" class="sheet-close">Close</button>
               </div>
-              <fieldset>
-                <legend>Projections</legend>
-                <div class="segmented" role="group" aria-label="Map projections">
-                  <button type="button" class="seg-btn is-active" data-proj="equalEarth" aria-pressed="true">Equal Earth</button>
-                  <button type="button" class="seg-btn" data-proj="mercator" aria-pressed="false">Mercator</button>
-                </div>
-                <p class="panel-note" id="proj-hint">Turn both on, then click a country to compare true and apparent size.</p>
-                <ul class="proj-key" id="proj-key" hidden>
-                  <li><span class="swatch swatch-ee" aria-hidden="true"></span> Equal Earth · true area</li>
-                  <li><span class="swatch swatch-merc" aria-hidden="true"></span> Mercator · same shape, apparent size</li>
-                </ul>
-              </fieldset>
-              <fieldset id="compare-set" hidden>
-                <legend>Show size overlay</legend>
-                <div class="segmented" role="group" aria-label="When to show Mercator size">
-                  <button type="button" class="seg-btn is-active" data-compare="hover" aria-pressed="true">On hover</button>
-                  <button type="button" class="seg-btn" data-compare="always" aria-pressed="false">Always</button>
-                </div>
-              </fieldset>
               <fieldset>
                 <legend>Center</legend>
                 <div class="segmented" role="group" aria-label="Map centering">
@@ -216,9 +201,9 @@
               </fieldset>
             </div>
           </div>
-          <div class="panel overlay-legend" id="overlay-legend" hidden>
-            <span><span class="swatch swatch-ee" aria-hidden="true"></span> True area</span>
-            <span><span class="swatch swatch-merc" aria-hidden="true"></span> Mercator size</span>
+          <div class="panel overlay-legend" id="overlay-legend">
+            <span><span class="swatch swatch-ee" aria-hidden="true"></span> True size</span>
+            <span><span class="swatch swatch-merc" aria-hidden="true"></span> Looks this big on Mercator</span>
           </div>
           <div class="panel info-panel" id="place-info" hidden>
             <button type="button" class="info-close" id="info-close" aria-label="Clear selection">
@@ -261,8 +246,8 @@
           Most web maps use Mercator, which inflates countries near the poles. Greenland looks
           similar in size to Africa there, though Africa is about 14 times larger. Equal Earth is
           an equal-area projection: landmasses keep their true relative sizes, with more familiar
-          continent shapes than Gall–Peters. Turn both projections on, then click a country: a red
-          outline shows Mercator’s apparent size as the same shape, scaled up.
+          continent shapes than Gall–Peters. Red outlines show how large those countries look on
+          Mercator. Click one for the numbers.
         </p>
         <p>
           The atlas redraws Natural Earth 1:50 million vectors in Equal Earth so countries, rivers,

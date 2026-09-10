@@ -13,14 +13,6 @@
     return value === "political" || value === "physical";
   }
 
-  function isProjectionName(value: string | undefined): value is ProjectionName {
-    return value === "equalEarth" || value === "mercator";
-  }
-
-  function isCompareMode(value: string | undefined): value is CompareMode {
-    return value === "hover" || value === "always";
-  }
-
   function isLayerName(value: string | undefined): value is LayerName {
     return value === "countries" || value === "lakes" || value === "rivers"
       || value === "cities" || value === "labels" || value === "graticule";
@@ -77,7 +69,7 @@
     wallLayer: "political",
     projections: {
       equalEarth: true,
-      mercator: false
+      mercator: true
     },
     center: 0,
     layers: {
@@ -88,7 +80,7 @@
       labels: true,
       graticule: true
     },
-    compareMode: "hover",
+    compareMode: "always",
     selected: null
   };
 
@@ -684,9 +676,22 @@
       ctx.restore();
     }
 
+    function alwaysRatioFloor() {
+      const k = currentTransform.k;
+      if (k < 1.45) return 2.4;
+      if (k < 2.8) return 1.35;
+      return 1.08;
+    }
+
     function apparentItemsToBake() {
       if (!overlayMode() || !state.layers.countries) return [];
-      if (state.compareMode === "always") return overlayGhosts;
+      if (state.compareMode === "always") {
+        const floor = alwaysRatioFloor();
+        return overlayGhosts.filter((item) => {
+          const stats = sizeIndex.get(item.name);
+          return Boolean(stats && stats.ratio != null && stats.ratio >= floor);
+        });
+      }
       const selectedItem = state.selected ? countryByName.get(state.selected) : undefined;
       return selectedItem && selectedItem.apparent > 0 ? [selectedItem] : [];
     }
@@ -1264,70 +1269,33 @@
 
     function syncProjectionUI() {
       const overlay = overlayMode();
-      document.querySelectorAll<HTMLElement>("[data-proj]").forEach((node) => {
-        const name = node.dataset.proj;
-        const on = isProjectionName(name) ? Boolean(state.projections[name]) : false;
-        node.classList.toggle("is-active", on);
-        node.setAttribute("aria-pressed", String(on));
-      });
-      const hint = document.getElementById("proj-hint");
-      const key = document.getElementById("proj-key");
-      const legend = document.getElementById("overlay-legend");
-      const compareSet = document.getElementById("compare-set");
-      if (hint) {
-        hint.hidden = false;
-        hint.textContent = overlay
-          ? (state.compareMode === "always"
-            ? "Every measurable country gets a centered overlay. Zoom in to see even tiny size differences."
-            : "Hover a country to see Mercator’s apparent size. Dots under the overlay are hidden.")
-          : "Turn both on, then hover a country to compare true and apparent size.";
+      const compareBtn = document.getElementById("mercator-size");
+      if (compareBtn) {
+        compareBtn.classList.toggle("is-active", overlay);
+        compareBtn.setAttribute("aria-pressed", String(overlay));
       }
-      if (key) key.hidden = !overlay;
+      const legend = document.getElementById("overlay-legend");
       if (legend) legend.hidden = !overlay;
-      if (compareSet) compareSet.hidden = !overlay;
-      document.querySelectorAll<HTMLElement>("[data-compare]").forEach((node) => {
-        const on = node.dataset.compare === state.compareMode;
-        node.classList.toggle("is-active", on);
-        node.setAttribute("aria-pressed", String(on));
-      });
       stage.setAttribute(
         "aria-label",
         overlay
-          ? "Equal Earth map. Click a country to show Mercator’s apparent size as a scaled outline."
-          : baseProjectionName() === "mercator"
-            ? "Mercator world map"
-            : "Equal Earth world map with countries, lakes, rivers, and cities"
+          ? "Equal Earth map with Mercator size outlines. Click a country for the numbers."
+          : "Equal Earth world map with countries, lakes, rivers, and cities"
       );
     }
 
-    document.querySelectorAll<HTMLElement>("[data-proj]").forEach((button) => {
-      button.addEventListener("click", () => {
-        const name = button.dataset.proj;
-        if (!isProjectionName(name)) return;
-        const other: ProjectionName = name === "equalEarth" ? "mercator" : "equalEarth";
-        if (state.projections[name] && !state.projections[other]) return;
-        state.projections[name] = !state.projections[name];
-        syncProjectionUI();
-        layout();
-        const selected = selectedFeature();
-        if (selected) updateCountryInfo(selected);
-        track("projection", {
-          equalEarth: state.projections.equalEarth,
-          mercator: state.projections.mercator
-        });
-      });
-    });
-
-    document.querySelectorAll<HTMLElement>("[data-compare]").forEach((button) => {
-      button.addEventListener("click", () => {
-        const mode = button.dataset.compare;
-        if (!isCompareMode(mode) || mode === state.compareMode) return;
-        state.compareMode = mode;
-        hideGhostsKey = "";
-        syncProjectionUI();
-        bake(currentTransform);
-        drawOverlay();
-        track("compare_mode", { mode });
+    requireElement("mercator-size").addEventListener("click", () => {
+      state.projections.equalEarth = true;
+      state.projections.mercator = !state.projections.mercator;
+      if (state.projections.mercator) state.compareMode = "always";
+      hideGhostsKey = "";
+      syncProjectionUI();
+      layout();
+      const selected = selectedFeature();
+      if (selected) updateCountryInfo(selected);
+      track("projection", {
+        equalEarth: state.projections.equalEarth,
+        mercator: state.projections.mercator
       });
     });
 

@@ -956,6 +956,28 @@
       return null;
     }
 
+    function overlayAt(screenX: number, screenY: number) {
+      if (state.compareMode !== "always" || !overlayMode() || !state.layers.countries) return null;
+      const xy = currentTransform.invert([screenX, screenY]);
+      if (!validPoint(xy)) return null;
+      const [x, y] = xy;
+      const ghosts = currentHideGhosts();
+      for (let i = ghosts.length - 1; i >= 0; i -= 1) {
+        const ghost = ghosts[i];
+        if (x < ghost.x0 || x > ghost.x1 || y < ghost.y0 || y > ghost.y1) continue;
+        const local: [number, number] = [
+          ghost.centroid[0] + (x - ghost.centroid[0]) / ghost.scale,
+          ghost.centroid[1] + (y - ghost.centroid[1]) / ghost.scale
+        ];
+        if (pointInPath2d(ghost.item.path2d, local)) return ghost.item;
+      }
+      return null;
+    }
+
+    function countryHitAt(screenX: number, screenY: number) {
+      return countryAt(screenX, screenY) ?? overlayAt(screenX, screenY);
+    }
+
     function cityAt(screenX: number, screenY: number) {
       if (!state.layers.cities) return null;
       const hide = currentHideGhosts().length > 0;
@@ -1172,7 +1194,7 @@
         stage.style.cursor = "pointer";
         return;
       }
-      const hit = countryAt(sx, sy);
+      const hit = countryHitAt(sx, sy);
       const next = hit ? hit.name : null;
       if (next !== hoverName) {
         hoverName = next;
@@ -1210,7 +1232,7 @@
         if (xy) zoomToPoint(xy[0], xy[1], 8);
         return;
       }
-      const hit = countryAt(sx, sy);
+      const hit = countryHitAt(sx, sy);
       if (hit) {
         closeSheets();
         selectCountry(hit.feature);

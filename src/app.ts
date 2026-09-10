@@ -1,10 +1,49 @@
 (() => {
+  function requireElement<T extends HTMLElement>(id: string): T {
+    const el = document.getElementById(id);
+    if (!el) throw new Error(`Missing #${id}`);
+    return el as T;
+  }
+
+  function isViewMode(value: string | undefined): value is ViewMode {
+    return value === "atlas" || value === "wall";
+  }
+
+  function isWallLayer(value: string | undefined): value is WallLayer {
+    return value === "political" || value === "physical";
+  }
+
+  function isProjectionName(value: string | undefined): value is ProjectionName {
+    return value === "equalEarth" || value === "mercator";
+  }
+
+  function isCompareMode(value: string | undefined): value is CompareMode {
+    return value === "hover" || value === "always";
+  }
+
+  function isLayerName(value: string | undefined): value is LayerName {
+    return value === "countries" || value === "lakes" || value === "rivers"
+      || value === "cities" || value === "labels" || value === "graticule";
+  }
+
+  function isZoomAction(value: string | undefined): value is ZoomAction {
+    return value === "in" || value === "out" || value === "home";
+  }
+
+  function hasPath<T extends { path2d: Path2D | null }>(item: T): item is T & { path2d: Path2D } {
+    return item.path2d !== null;
+  }
+
+  function isPlaceList(value: unknown): value is Place[] {
+    return Array.isArray(value);
+  }
+
   const PALETTE = [
     "#ffddd2", "#f3cfc0", "#e8c4b4", "#f5d4c8",
     "#d4e8ea", "#c5ddd6", "#b8d4cc", "#cfe0dc",
     "#e8d0c4", "#dcc8bc", "#c9d8d2", "#e4ddd4",
     "#ffd8cc", "#d0ddd8", "#ecd4c8"
-  ];
+  ] as const;
   const MAP = {
     ocean: "#b9d2df",
     lake: "#8fb8cc",
@@ -20,16 +59,16 @@
     label: "#054a52",
     labelHalo: "rgba(237,246,249,0.9)",
     graticule: "rgba(237,246,249,0.35)"
-  };
+  } as const satisfies DeepReadonly<Record<string, string>>;
 
-  const WALL_CAPTIONS = {
+  const WALL_CAPTIONS: Record<WallLayer, string> = {
     political:
       "Patterson political wall map, Oceania centering (150°E). Drag, scroll, pinch, or double-click to explore.",
     physical:
       "BMZ physical Equal Earth map with terrain, vegetation, and ocean floor. Drag, scroll, pinch, or double-click to explore."
   };
 
-  const state = {
+  const state: AtlasState = {
     mode: "atlas",
     wallLayer: "political",
     projections: {
@@ -53,23 +92,23 @@
     return state.projections.equalEarth && state.projections.mercator;
   }
 
-  function baseProjectionName() {
+  function baseProjectionName(): ProjectionName {
     return state.projections.equalEarth ? "equalEarth" : "mercator";
   }
 
-  let viewer = null;
+  let viewer: OsdViewer | null = null;
   let atlasReady = false;
-  let atlas = null;
+  let atlas: { resize: () => void } | null = null;
 
-  const wallView = document.getElementById("wall-view");
-  const atlasView = document.getElementById("atlas-view");
-  const about = document.getElementById("about");
+  const wallView = requireElement("wall-view");
+  const atlasView = requireElement("atlas-view");
+  const about = requireElement<HTMLDialogElement>("about");
 
   function isCompactView() {
     return window.matchMedia("(max-width: 720px)").matches;
   }
 
-  function placePriority(place) {
+  function placePriority(place: Place) {
     if (place.capital && (place.rank <= 1 || place.pop > 5e6)) return 4;
     if (place.capital) return 3;
     if (place.pop > 5e6) return 2;
@@ -77,56 +116,56 @@
     return 0;
   }
 
-  function showCityDot(place, k, compact) {
+  function showCityDot(place: Place, k: number, compact: boolean) {
     if (!state.layers.cities) return false;
     if (compact) {
       if (k < 2.4) return false;
-      if (k < 4.5) return place.capital && (place.rank <= 1 || place.pop > 3e6);
-      if (k < 6.5) return place.capital || place.rank <= 2 || place.pop > 3e6;
+      if (k < 4.5) return Boolean(place.capital && (place.rank <= 1 || place.pop > 3e6));
+      if (k < 6.5) return Boolean(place.capital || place.rank <= 2 || place.pop > 3e6);
       return true;
     }
-    return k >= 3.2 || place.capital || (k >= 1.5 && (place.rank <= 2 || place.pop > 3e6)) || (k < 1.5 && place.capital);
+    return k >= 3.2 || Boolean(place.capital) || (k >= 1.5 && (place.rank <= 2 || place.pop > 3e6)) || (k < 1.5 && Boolean(place.capital));
   }
 
-  function showPlaceLabel(place, k, compact) {
+  function showPlaceLabel(place: Place, k: number, compact: boolean) {
     if (!state.layers.labels) return false;
     if (compact) {
       if (k < 6) return false;
-      if (k < 9) return place.capital && (place.rank <= 1 || place.pop > 2e6);
-      return place.capital || place.rank <= 1 || place.pop > 3e6;
+      if (k < 9) return Boolean(place.capital && (place.rank <= 1 || place.pop > 2e6));
+      return Boolean(place.capital || place.rank <= 1 || place.pop > 3e6);
     }
-    return k > 2 && (place.capital || place.rank <= 1 || place.pop > 5e6);
+    return k > 2 && Boolean(place.capital || place.rank <= 1 || place.pop > 5e6);
   }
 
-  function boxesOverlap(a, b) {
+  function boxesOverlap(a: LabelBox, b: LabelBox) {
     return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
   }
 
-  function colorFor(name) {
+  function colorFor(name: string) {
     let hash = 0;
     for (let i = 0; i < name.length; i += 1) hash = name.charCodeAt(i) + ((hash << 5) - hash);
     return PALETTE[Math.abs(hash) % PALETTE.length];
   }
 
-  function formatPop(n) {
+  function formatPop(n: number) {
     if (!n) return "";
     if (n >= 1e6) return `${(n / 1e6).toFixed(n >= 1e7 ? 0 : 1)} million`;
     if (n >= 1e3) return `${Math.round(n / 1e3)} thousand`;
     return String(n);
   }
 
-  function km2(feature) {
+  function km2(feature: CountryFeature) {
     return d3.geoArea(feature) * 6371.0088 * 6371.0088;
   }
 
-  function formatAreaKm2(area, { approx = false } = {}) {
+  function formatAreaKm2(area: number, { approx = false }: { approx?: boolean } = {}) {
     if (!Number.isFinite(area) || area <= 0) return "—";
     const rounded = Math.round(area);
     const text = `${rounded.toLocaleString()} km²`;
     return approx ? `~${text}` : text;
   }
 
-  function formatInflation(ratio) {
+  function formatInflation(ratio: number | null | undefined) {
     if (ratio == null || !Number.isFinite(ratio) || ratio <= 0) return null;
     if (ratio >= 0.85 && ratio <= 1.18) return "about the same";
     if (ratio > 1) {
@@ -138,7 +177,7 @@
     return `${n}× smaller`;
   }
 
-  function equatorAnchor(projection, lon0) {
+  function equatorAnchor(projection: GeoProjection, lon0: number) {
     const origin = projection([lon0, 0]);
     const east = projection([lon0 + 1, 0]);
     if (!origin || !east) return null;
@@ -148,7 +187,7 @@
     };
   }
 
-  function alignProjectionTo(source, target, width, height, lon0) {
+  function alignProjectionTo(source: GeoProjection, target: GeoProjection, width: number, height: number, lon0: number) {
     const desired = equatorAnchor(target, lon0);
     if (!desired) return source;
     source.translate([width / 2, height / 2]);
@@ -172,7 +211,7 @@
     return { ee, merc };
   }
 
-  function track(event, props) {
+  function track<K extends keyof AnalyticsEvents>(event: K, props: AnalyticsEvents[K]) {
     if (typeof window.goatcounter === "object" && typeof window.goatcounter.count === "function") {
       window.goatcounter.count({
         path: `event/${event}`,
@@ -212,25 +251,27 @@
       }
     });
 
-    document.getElementById("wall-zoom").addEventListener("click", (event) => {
-      const action = event.target.closest("[data-zoom]")?.dataset.zoom;
-      if (!action || !viewer) return;
-      if (action === "in") viewer.viewport.zoomBy(2, null, true);
-      if (action === "out") viewer.viewport.zoomBy(0.5, null, true);
+    requireElement("wall-zoom").addEventListener("click", (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const action = target.closest("[data-zoom]")?.getAttribute("data-zoom") ?? undefined;
+      if (!isZoomAction(action) || !viewer) return;
+      if (action === "in") viewer.viewport.zoomBy(2, undefined, true);
+      if (action === "out") viewer.viewport.zoomBy(0.5, undefined, true);
       if (action === "home") viewer.viewport.goHome(true);
       viewer.viewport.applyConstraints();
     });
 
-    document.querySelectorAll("[data-wall]").forEach((button) => {
+    document.querySelectorAll<HTMLElement>("[data-wall]").forEach((button) => {
       button.addEventListener("click", () => {
         const layer = button.dataset.wall;
-        if (layer === state.wallLayer || !viewer) return;
+        if (!isWallLayer(layer) || layer === state.wallLayer || !viewer) return;
         const bounds = viewer.viewport.getBounds();
         state.wallLayer = layer;
-        document.querySelectorAll("[data-wall]").forEach((node) => {
+        document.querySelectorAll<HTMLElement>("[data-wall]").forEach((node) => {
           node.classList.toggle("is-active", node === button);
         });
-        document.getElementById("wall-caption").textContent = WALL_CAPTIONS[layer];
+        requireElement("wall-caption").textContent = WALL_CAPTIONS[layer];
         viewer.addOnceHandler("open", () => {
           viewer.viewport.fitBounds(bounds, true);
         });
@@ -242,7 +283,7 @@
 
   const MERCATOR_MAX_LAT = 87;
 
-  function mercatorWorld() {
+  function mercatorWorld(): GeoJSON.Polygon {
     return {
       type: "Polygon",
       coordinates: [[
@@ -255,9 +296,9 @@
     };
   }
 
-  function projectionExtent(width, height) {
+  function projectionExtent(width: number, height: number): [[number, number], [number, number]] {
     const pad = 18;
-    const extent = [[pad, pad], [width - pad, height - pad]];
+    const extent: [[number, number], [number, number]] = [[pad, pad], [width - pad, height - pad]];
     const view = atlasView.getBoundingClientRect();
     if (!view.width) return extent;
     const left = document.querySelector("#atlas-view .map-chrome.left");
@@ -270,8 +311,8 @@
     return extent;
   }
 
-  function makeProjection(name, width, height) {
-    const rotate = [-state.center, 0];
+  function makeProjection(name: ProjectionName, width: number, height: number) {
+    const rotate: [number, number] = [-state.center, 0];
     const extent = projectionExtent(width, height);
     if (name === "mercator") {
       const projection = d3.geoMercator().rotate(rotate);
@@ -288,22 +329,25 @@
 
   async function initAtlas() {
     if (atlasReady) {
-      atlas.resize();
+      atlas?.resize();
       return;
     }
 
-    const stage = document.getElementById("atlas-stage");
-    const mapCanvas = document.getElementById("atlas-map");
-    const overlayCanvas = document.getElementById("atlas-overlay");
-    const mapCtx = mapCanvas.getContext("2d", { alpha: false });
-    const overCtx = overlayCanvas.getContext("2d");
-    const tooltip = document.getElementById("tooltip");
-    const info = document.getElementById("place-info");
-    const searchInput = document.getElementById("search");
-    const results = document.getElementById("search-results");
+    const stage = requireElement("atlas-stage");
+    const mapCanvas = requireElement<HTMLCanvasElement>("atlas-map");
+    const overlayCanvas = requireElement<HTMLCanvasElement>("atlas-overlay");
+    const mapCtxMaybe = mapCanvas.getContext("2d", { alpha: false });
+    const overCtxMaybe = overlayCanvas.getContext("2d");
+    if (!mapCtxMaybe || !overCtxMaybe) return;
+    const mapCtx = mapCtxMaybe;
+    const overCtx = overCtxMaybe;
+    const tooltip = requireElement("tooltip");
+    const info = requireElement("place-info");
+    const searchInput = requireElement<HTMLInputElement>("search");
+    const results = requireElement("search-results");
 
     const status = document.getElementById("atlas-status");
-    const setStatus = (message, isError = false) => {
+    const setStatus = (message: string, isError = false) => {
       if (!status) return;
       if (!message) {
         status.hidden = true;
@@ -316,45 +360,50 @@
       status.classList.toggle("is-error", isError);
     };
 
-    let countriesTopo;
-    let lakesGeo;
-    let riversGeo;
-    let places;
+    let countriesTopo: CountriesTopology | undefined;
+    let lakesGeo: LakeCollection | undefined;
+    let riversGeo: RiverCollection | undefined;
+    let places: Place[] | undefined;
     try {
       [countriesTopo, lakesGeo, riversGeo, places] = await Promise.all([
-        d3.json("data/countries-50m.json"),
-        d3.json("data/lakes-50m.geojson"),
-        d3.json("data/rivers-50m.geojson"),
-        d3.json("data/places.json")
+        d3.json<CountriesTopology>("data/countries-50m.json"),
+        d3.json<LakeCollection>("data/lakes-50m.geojson"),
+        d3.json<RiverCollection>("data/rivers-50m.geojson"),
+        d3.json<Place[]>("data/places.json")
       ]);
     } catch {
+      setStatus("Could not load map data. Refresh the page to try again.", true);
+      return;
+    }
+    if (!countriesTopo || !lakesGeo || !riversGeo || !isPlaceList(places) || !countriesTopo.objects.countries) {
       setStatus("Could not load map data. Refresh the page to try again.", true);
       return;
     }
     atlasReady = true;
     setStatus("");
 
-    const countries = topojson.feature(countriesTopo, countriesTopo.objects.countries);
-    const lakes = lakesGeo.features.filter((d) => d.properties.scalerank <= 2);
-    const rivers = riversGeo.features.filter((d) => d.properties.featurecla !== "Lake Centerline");
-    const citySource = places.filter((place) => place.capital || place.rank <= 3 || place.pop >= 1e6);
+    const countries = topojson.feature(countriesTopo, countriesTopo.objects.countries) as CountryCollection;
+    const lakes = lakesGeo.features.filter((d: LakeFeature) => d.properties.scalerank <= 2);
+    const rivers = riversGeo.features.filter((d: RiverFeature) => d.properties.featurecla !== "Lake Centerline");
+    const placeList = places;
+    const citySource = placeList.filter((place) => place.capital || place.rank <= 3 || place.pop >= 1e6);
     const graticule = d3.geoGraticule10();
 
     let width = 0;
     let height = 0;
     let dpr = 1;
-    let projection;
-    let path;
-    let baked = d3.zoomIdentity;
-    let currentTransform = d3.zoomIdentity;
-    let hoverName = null;
-    let countryCache = [];
-    let lakePath;
-    let riverPaths = [];
-    let spherePath;
-    let graticulePath;
+    let projection: GeoProjection;
+    let path: GeoPath;
+    let baked: ZoomTransform = d3.zoomIdentity;
+    let currentTransform: ZoomTransform = d3.zoomIdentity;
+    let hoverName: string | null = null;
+    let countryCache: CountryCacheItem[] = [];
+    let lakePath: Path2D | null;
+    let riverPaths: RiverPath[] = [];
+    let spherePath: Path2D | null;
+    let graticulePath: Path2D | null;
     let interacting = false;
-    const sizeIndex = new Map();
+    const sizeIndex = new Map<string, SizeStats>();
     {
       const pair = makeMeasurePair();
       const eePath = d3.geoPath(pair.ee);
@@ -366,12 +415,12 @@
         const ratio = eeArea > 1 ? mercArea / eeArea : null;
         sizeIndex.set(feature.properties.name, {
           trueKm2,
-          ratio: Number.isFinite(ratio) && ratio > 0 ? ratio : null
+          ratio: Number.isFinite(ratio) && ratio !== null && ratio > 0 ? ratio : null
         });
       }
     }
 
-    const zoom = d3.zoom()
+    const zoom = d3.zoom<HTMLElement, unknown>()
       .scaleExtent([0.8, 28])
       .duration(0)
       .wheelDelta((event) => {
@@ -397,7 +446,7 @@
 
     d3.select(stage).call(zoom);
 
-    function applyCss(t) {
+    function applyCss(t: ZoomTransform) {
       const s = t.k / baked.k;
       mapCanvas.style.transform = `translate(${t.x - baked.x * s}px, ${t.y - baked.y * s}px) scale(${s})`;
     }
@@ -421,12 +470,12 @@
       overCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
     }
 
-    function asPath2D(generator, object) {
+    function asPath2D(generator: GeoPath, object: D3GeoObject) {
       const d = generator(object);
       return d ? new Path2D(d) : null;
     }
 
-    function validPoint(xy) {
+    function validPoint(xy: [number, number] | null | undefined): xy is [number, number] {
       return Array.isArray(xy) && Number.isFinite(xy[0]) && Number.isFinite(xy[1]);
     }
 
@@ -440,21 +489,21 @@
         name: feature.properties.name,
         color: colorFor(feature.properties.name),
         path2d: asPath2D(path, feature)
-      })).filter((item) => item.path2d);
+      })).filter(hasPath);
       lakePath = asPath2D(path, { type: "FeatureCollection", features: lakes });
       riverPaths = rivers.map((feature) => ({
         rank: feature.properties.scalerank,
         path2d: asPath2D(path, feature)
-      })).filter((item) => item.path2d);
+      })).filter(hasPath);
     }
 
-    function apparentScaleFor(name) {
+    function apparentScaleFor(name: string) {
       if (!overlayMode() || name === "Antarctica") return 0;
       const stats = sizeIndex.get(name);
-      return stats && stats.ratio >= 1.35 ? Math.sqrt(stats.ratio) : 0;
+      return stats && stats.ratio != null && stats.ratio >= 1.35 ? Math.sqrt(stats.ratio) : 0;
     }
 
-    function drawWater(ctx, zoomK, clipPath) {
+    function drawWater(ctx: CanvasRenderingContext2D, zoomK: number, clipPath?: Path2D | null) {
       if (!state.layers.lakes && !state.layers.rivers) return;
       ctx.save();
       if (clipPath) ctx.clip(clipPath, "evenodd");
@@ -484,7 +533,7 @@
       return selectedItem && apparentScaleFor(selectedItem.name) > 0 ? [selectedItem] : [];
     }
 
-    function drawApparentSize(ctx, item, zoomK) {
+    function drawApparentSize(ctx: CanvasRenderingContext2D, item: CountryCacheItem, zoomK: number) {
       const apparent = apparentScaleFor(item.name);
       const centroid = path.centroid(item.feature);
       if (!apparent || !validPoint(centroid)) return false;
@@ -502,7 +551,7 @@
       return true;
     }
 
-    function bake(t) {
+    function bake(t: ZoomTransform) {
       baked = t;
       mapCanvas.style.transform = "none";
       mapCtx.fillStyle = MAP.ocean;
@@ -575,7 +624,7 @@
       overCtx.save();
       overCtx.font = "600 12px 'Source Sans 3', 'Segoe UI', sans-serif";
       overCtx.textBaseline = "middle";
-      const labelCandidates = [];
+      const labelCandidates: { place: Place; x: number; y: number }[] = [];
       for (const place of citySource) {
         const xy = projection([place.lon, place.lat]);
         if (!xy) continue;
@@ -595,7 +644,7 @@
         }
       }
       labelCandidates.sort((a, b) => placePriority(b.place) - placePriority(a.place));
-      const placed = [];
+      const placed: LabelBox[] = [];
       overCtx.strokeStyle = MAP.labelHalo;
       overCtx.lineWidth = 3;
       overCtx.lineJoin = "round";
@@ -611,14 +660,16 @@
       overCtx.restore();
     }
 
-    function viewLonLat(transform) {
+    function viewLonLat(transform: ZoomTransform) {
       if (!projection || !transform || !transform.k) return null;
-      const lonlat = projection.invert([(width / 2 - transform.x) / transform.k, (height / 2 - transform.y) / transform.k]);
+      const invert = projection.invert;
+      if (!invert) return null;
+      const lonlat = invert.call(projection, [(width / 2 - transform.x) / transform.k, (height / 2 - transform.y) / transform.k]);
       if (!lonlat || !Number.isFinite(lonlat[0]) || !Number.isFinite(lonlat[1])) return null;
       return lonlat;
     }
 
-    function layout({ reset = false } = {}) {
+    function layout({ reset = false }: { reset?: boolean } = {}) {
       width = stage.clientWidth || atlasView.clientWidth;
       height = stage.clientHeight || atlasView.clientHeight;
       const prev = currentTransform;
@@ -644,17 +695,18 @@
       drawOverlay();
     }
 
-    function countryAt(screenX, screenY) {
+    function countryAt(screenX: number, screenY: number) {
       const [x, y] = currentTransform.invert([screenX, screenY]);
       for (let i = countryCache.length - 1; i >= 0; i -= 1) {
-        if (mapCtx.isPointInPath(countryCache[i].path2d, x * dpr, y * dpr, "evenodd")) {
-          return countryCache[i];
+        const item = countryCache[i];
+        if (item && mapCtx.isPointInPath(item.path2d, x * dpr, y * dpr, "evenodd")) {
+          return item;
         }
       }
       return null;
     }
 
-    function cityAt(screenX, screenY) {
+    function cityAt(screenX: number, screenY: number) {
       if (!state.layers.cities) return null;
       for (const place of citySource) {
         const xy = projection([place.lon, place.lat]);
@@ -666,7 +718,7 @@
       return null;
     }
 
-    function showTip(x, y, text) {
+    function showTip(x: number, y: number, text: string) {
       tooltip.hidden = false;
       tooltip.textContent = text;
       tooltip.style.left = `${x}px`;
@@ -688,7 +740,7 @@
       bake(currentTransform);
     }
 
-    function renderMeasures(rows) {
+    function renderMeasures(rows: MeasureRow[]) {
       const dl = document.getElementById("info-measures");
       if (!dl) return;
       dl.replaceChildren();
@@ -713,18 +765,18 @@
       return countries.features.find((d) => d.properties.name === state.selected) || null;
     }
 
-    function updateCountryInfo(feature) {
+    function updateCountryInfo(feature: CountryFeature) {
       const stats = sizeIndex.get(feature.properties.name) || { trueKm2: km2(feature), ratio: null };
       info.hidden = false;
-      document.getElementById("info-title").textContent = feature.properties.name;
+      requireElement("info-title").textContent = feature.properties.name;
       const comparing = overlayMode();
       const mercOn = state.projections.mercator;
       if (comparing) {
-        document.getElementById("info-meta").textContent = "Country · Natural Earth 1:50 million. Red outline is Mercator’s apparent size.";
+        requireElement("info-meta").textContent = "Country · Natural Earth 1:50 million. Red outline is Mercator’s apparent size.";
       } else if (mercOn) {
-        document.getElementById("info-meta").textContent = "Country · Natural Earth 1:50 million. Mercator inflates land toward the poles.";
+        requireElement("info-meta").textContent = "Country · Natural Earth 1:50 million. Mercator inflates land toward the poles.";
       } else {
-        document.getElementById("info-meta").textContent = "Country · Natural Earth 1:50 million. Equal Earth keeps relative area true.";
+        requireElement("info-meta").textContent = "Country · Natural Earth 1:50 million. Equal Earth keeps relative area true.";
       }
 
       const rows = [{ label: "True area", value: formatAreaKm2(stats.trueKm2) }];
@@ -739,8 +791,8 @@
       }
       renderMeasures(rows);
 
-      const area = document.getElementById("info-area");
-      if (comparing && stats.ratio > 1.12) {
+      const area = requireElement("info-area");
+      if (comparing && stats.ratio != null && stats.ratio > 1.12) {
         area.textContent = "The red outline is the same country scaled to Mercator's apparent size.";
       } else if (comparing) {
         area.textContent = "Near the equator the two projections agree closely on size, so there is no extra outline.";
@@ -753,16 +805,16 @@
       }
     }
 
-    function showPlace(place) {
+    function showPlace(place: Place) {
       info.hidden = false;
       const kind = place.capital ? "Capital" : "City";
-      document.getElementById("info-title").textContent = place.name;
-      document.getElementById("info-meta").textContent = [kind, place.country, formatPop(place.pop)].filter(Boolean).join(" · ");
+      requireElement("info-title").textContent = place.name;
+      requireElement("info-meta").textContent = [kind, place.country, formatPop(place.pop)].filter((part): part is string => Boolean(part)).join(" · ");
       renderMeasures([]);
-      document.getElementById("info-area").textContent = "";
+      requireElement("info-area").textContent = "";
     }
 
-    function selectCountry(feature) {
+    function selectCountry(feature: CountryFeature) {
       state.selected = feature.properties.name;
       updateCountryInfo(feature);
       bake(currentTransform);
@@ -771,7 +823,7 @@
       track("select_country", { name: feature.properties.name });
     }
 
-    function zoomToFeature(feature) {
+    function zoomToFeature(feature: CountryFeature) {
       const bounds = path.bounds(feature);
       const centroid = path.centroid(feature);
       const origin = validPoint(centroid)
@@ -780,7 +832,7 @@
       let inflate = 1;
       if (overlayMode()) {
         const stats = sizeIndex.get(feature.properties.name);
-        if (stats && stats.ratio > 1.12) inflate = Math.sqrt(stats.ratio);
+        if (stats && stats.ratio != null && stats.ratio > 1.12) inflate = Math.sqrt(stats.ratio);
       }
       const x0 = origin[0] + (bounds[0][0] - origin[0]) * inflate;
       const y0 = origin[1] + (bounds[0][1] - origin[1]) * inflate;
@@ -795,29 +847,29 @@
       );
     }
 
-    function zoomToPoint(x, y, scale) {
+    function zoomToPoint(x: number, y: number, scale: number) {
       d3.select(stage).call(
         zoom.transform,
         d3.zoomIdentity.translate(width / 2, height / 2).scale(scale).translate(-x, -y)
       );
     }
 
-    function search(query) {
+    function search(query: string) {
       const q = query.trim().toLowerCase();
       if (q.length < 1) {
         results.hidden = true;
         results.replaceChildren();
         return;
       }
-      const countryHits = countries.features
+      const countryHits: CountryHit[] = countries.features
         .filter((d) => d.properties.name.toLowerCase().includes(q))
         .slice(0, 6)
         .map((d) => ({ kind: "country", name: d.properties.name, feature: d }));
-      const cityHits = places
+      const cityHits: CityHit[] = placeList
         .filter((d) => d.name.toLowerCase().includes(q))
         .slice(0, 6)
         .map((d) => ({ kind: "city", ...d }));
-      const hits = [...countryHits, ...cityHits].slice(0, 8);
+      const hits: SearchHit[] = [...countryHits, ...cityHits].slice(0, 8);
       results.replaceChildren();
       results.hidden = false;
       if (hits.length === 0) {
@@ -929,8 +981,9 @@
 
     function syncProjectionUI() {
       const overlay = overlayMode();
-      document.querySelectorAll("[data-proj]").forEach((node) => {
-        const on = Boolean(state.projections[node.dataset.proj]);
+      document.querySelectorAll<HTMLElement>("[data-proj]").forEach((node) => {
+        const name = node.dataset.proj;
+        const on = isProjectionName(name) ? Boolean(state.projections[name]) : false;
         node.classList.toggle("is-active", on);
         node.setAttribute("aria-pressed", String(on));
       });
@@ -949,7 +1002,7 @@
       if (key) key.hidden = !overlay;
       if (legend) legend.hidden = !overlay;
       if (compareSet) compareSet.hidden = !overlay;
-      document.querySelectorAll("[data-compare]").forEach((node) => {
+      document.querySelectorAll<HTMLElement>("[data-compare]").forEach((node) => {
         const on = node.dataset.compare === state.compareMode;
         node.classList.toggle("is-active", on);
         node.setAttribute("aria-pressed", String(on));
@@ -964,10 +1017,11 @@
       );
     }
 
-    document.querySelectorAll("[data-proj]").forEach((button) => {
+    document.querySelectorAll<HTMLElement>("[data-proj]").forEach((button) => {
       button.addEventListener("click", () => {
         const name = button.dataset.proj;
-        const other = name === "equalEarth" ? "mercator" : "equalEarth";
+        if (!isProjectionName(name)) return;
+        const other: ProjectionName = name === "equalEarth" ? "mercator" : "equalEarth";
         if (state.projections[name] && !state.projections[other]) return;
         state.projections[name] = !state.projections[name];
         syncProjectionUI();
@@ -981,30 +1035,34 @@
       });
     });
 
-    document.querySelectorAll("[data-center]").forEach((button) => {
+    document.querySelectorAll<HTMLElement>("[data-center]").forEach((button) => {
       button.addEventListener("click", () => {
         state.center = Number(button.dataset.center);
-        document.querySelectorAll("[data-center]").forEach((node) => node.classList.toggle("is-active", node === button));
+        document.querySelectorAll<HTMLElement>("[data-center]").forEach((node) => node.classList.toggle("is-active", node === button));
         layout();
       });
     });
 
-    document.querySelectorAll("[data-layer]").forEach((input) => {
+    document.querySelectorAll<HTMLInputElement>("[data-layer]").forEach((input) => {
       input.addEventListener("change", () => {
-        state.layers[input.dataset.layer] = input.checked;
+        const layer = input.dataset.layer;
+        if (!isLayerName(layer)) return;
+        state.layers[layer] = input.checked;
         bake(currentTransform);
         drawOverlay();
       });
       input.addEventListener("click", (event) => event.stopPropagation());
     });
 
-    const controls = document.getElementById("atlas-controls");
+    const controls = requireElement("atlas-controls");
     controls.addEventListener("click", (event) => event.stopPropagation());
     controls.addEventListener("pointerdown", (event) => event.stopPropagation());
 
-    document.getElementById("atlas-zoom").addEventListener("click", (event) => {
-      const action = event.target.closest("[data-zoom]")?.dataset.zoom;
-      if (!action) return;
+    requireElement("atlas-zoom").addEventListener("click", (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const action = target.closest("[data-zoom]")?.getAttribute("data-zoom") ?? undefined;
+      if (!isZoomAction(action)) return;
       if (action === "home") {
         layout({ reset: true });
         return;
@@ -1012,7 +1070,7 @@
       d3.select(stage).call(zoom.scaleBy, action === "in" ? 2 : 0.5);
     });
 
-    document.getElementById("info-close").addEventListener("click", (event) => {
+    requireElement("info-close").addEventListener("click", (event) => {
       event.stopPropagation();
       hidePlace();
       drawOverlay();
@@ -1027,7 +1085,7 @@
       if (state.mode === "atlas") layout();
     }
 
-    atlas = { resize: () => layout(), zoom };
+    atlas = { resize: () => layout() };
     syncProjectionUI();
     layout({ reset: true });
     if (document.fonts && document.fonts.ready) {
@@ -1035,9 +1093,9 @@
     }
   }
 
-  function setMode(mode) {
+  function setMode(mode: ViewMode) {
     state.mode = mode;
-    document.querySelectorAll(".mode-btn").forEach((button) => {
+    document.querySelectorAll<HTMLElement>(".mode-btn").forEach((button) => {
       const active = button.dataset.mode === mode;
       button.classList.toggle("is-active", active);
       button.setAttribute("aria-pressed", String(active));
@@ -1061,8 +1119,8 @@
     document.body.classList.remove("sheet-open");
   }
 
-  function toggleSheet(id) {
-    const sheet = document.getElementById(id);
+  function toggleSheet(id: string) {
+    const sheet = requireElement(id);
     const button = document.querySelector(`[aria-controls="${id}"]`);
     const open = !sheet.classList.contains("is-open");
     closeSheets();
@@ -1075,17 +1133,19 @@
     }
   }
 
-  document.getElementById("atlas-controls-toggle").addEventListener("click", (event) => {
+  requireElement("atlas-controls-toggle").addEventListener("click", (event) => {
     event.stopPropagation();
     toggleSheet("atlas-controls");
   });
   document.querySelectorAll(".sheet-close").forEach((button) => {
     button.addEventListener("click", closeSheets);
   });
-  document.getElementById("sheet-backdrop").addEventListener("click", closeSheets);
+  requireElement("sheet-backdrop").addEventListener("click", closeSheets);
 
-  document.querySelectorAll(".mode-btn").forEach((button) => {
-    button.addEventListener("click", () => setMode(button.dataset.mode));
+  document.querySelectorAll<HTMLElement>(".mode-btn").forEach((button) => {
+    button.addEventListener("click", () => {
+      if (isViewMode(button.dataset.mode)) setMode(button.dataset.mode);
+    });
   });
 
   function githubRepo() {
@@ -1095,14 +1155,14 @@
   function renderAboutVersion() {
     const el = document.getElementById("about-version");
     if (!el) return;
-    const version = window.EQUAL_EARTH_VERSION || {};
-    const sha = version.commit;
-    const short = version.short || (sha ? sha.slice(0, 7) : "");
+    const version = window.EQUAL_EARTH_VERSION;
+    const sha = version?.commit;
+    const short = version?.short || (sha ? sha.slice(0, 7) : "");
     if (!sha || short === "local") {
       el.textContent = "Version local";
       return;
     }
-    const date = version.builtAt ? String(version.builtAt).slice(0, 10) : "";
+    const date = version?.builtAt ? String(version.builtAt).slice(0, 10) : "";
     const link = document.createElement("a");
     link.className = "rev";
     link.href = `https://github.com/${githubRepo()}/commit/${sha}`;
@@ -1113,11 +1173,11 @@
     el.replaceChildren("Version ", link, date ? ` · ${date}` : "");
   }
 
-  document.getElementById("about-open").addEventListener("click", () => {
+  document.getElementById("about-open")?.addEventListener("click", () => {
     about.showModal();
-    document.getElementById("about-close").focus();
+    requireElement("about-close").focus();
   });
-  document.getElementById("about-close").addEventListener("click", () => about.close());
+  requireElement("about-close").addEventListener("click", () => about.close());
   about.addEventListener("click", (event) => {
     if (event.target === about) about.close();
   });
@@ -1128,11 +1188,12 @@
   });
 
   window.addEventListener("keydown", (event) => {
-    if (event.target.matches("input, textarea")) return;
+    if (event.target instanceof HTMLElement && event.target.matches("input, textarea")) return;
     const zoomRoot = state.mode === "wall" ? document.getElementById("wall-zoom") : document.getElementById("atlas-zoom");
-    if (event.key === "+" || event.key === "=") zoomRoot.querySelector("[data-zoom=in]").click();
-    if (event.key === "-" || event.key === "_") zoomRoot.querySelector("[data-zoom=out]").click();
-    if (event.key === "0") zoomRoot.querySelector("[data-zoom=home]").click();
+    if (!zoomRoot) return;
+    if (event.key === "+" || event.key === "=") zoomRoot.querySelector<HTMLElement>("[data-zoom=in]")?.click();
+    if (event.key === "-" || event.key === "_") zoomRoot.querySelector<HTMLElement>("[data-zoom=out]")?.click();
+    if (event.key === "0") zoomRoot.querySelector<HTMLElement>("[data-zoom=home]")?.click();
     if (event.key === "Escape") {
       closeSheets();
       about.close();

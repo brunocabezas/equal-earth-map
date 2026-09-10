@@ -10,3 +10,8 @@ __pycache__/
 .impeccable/hook.cache.json
 .impeccable/hook.pending.json
 .impeccable/config.local.json
+
+# TypeScript build
+node_modules/
+dist/
+*.js.map

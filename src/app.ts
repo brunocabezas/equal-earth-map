@@ -407,6 +407,10 @@
     let currentTransform: ZoomTransform = d3.zoomIdentity;
     let hoverName: string | null = null;
     let countryCache: CountryCacheItem[] = [];
+    const countryByName = new Map<string, CountryCacheItem>();
+    let overlayGhosts: CountryCacheItem[] = [];
+    let clipToSphere = false;
+    let overlayFrame = 0;
     let hideGhosts: OverlayGhost[] = [];
     let hideGhostsKey = "";
     let hideMask: Uint8ClampedArray | null = null;
@@ -496,8 +500,10 @@
     function rebuildPaths() {
       path = d3.geoPath(projection);
       const baseName = baseProjectionName();
+      clipToSphere = baseName !== "mercator";
       spherePath = asPath2D(path, baseName === "mercator" ? mercatorWorld() : { type: "Sphere" });
       graticulePath = asPath2D(path, graticule);
+      const overlayOn = overlayMode();
       countryCache = countries.features.flatMap((feature) => {
         const path2d = asPath2D(path, feature);
         if (!path2d) return [];
@@ -506,15 +512,21 @@
         const center: [number, number] = validPoint(centroid)
           ? centroid
           : [(bounds[0][0] + bounds[1][0]) / 2, (bounds[0][1] + bounds[1][1]) / 2];
+        const name = feature.properties.name;
         return [{
           feature,
-          name: feature.properties.name,
-          color: colorFor(feature.properties.name),
+          name,
+          color: colorFor(name),
           path2d,
           bounds,
-          centroid: center
+          centroid: center,
+          apparent: overlayOn ? scaleForName(name) : 0
         }];
       });
+      countryByName.clear();
+      for (const item of countryCache) countryByName.set(item.name, item);
+      overlayGhosts = countryCache.filter((item) => item.apparent > 0);
+      overlayGhosts.sort((a, b) => b.apparent - a.apparent);
       hideGhostsKey = "";
       lakePath = asPath2D(path, { type: "FeatureCollection", features: lakes });
       riverPaths = rivers.map((feature) => ({
@@ -523,12 +535,15 @@
       })).filter(hasPath);
     }
 
-    function apparentScaleFor(name: string) {
-      if (!overlayMode()) return 0;
+    function scaleForName(name: string) {
       const stats = sizeIndex.get(name);
-      if (!stats || stats.ratio == null || stats.ratio <= 0) return 0;
+      if (stats?.ratio == null || stats.ratio <= 0) return 0;
       const scale = Math.sqrt(stats.ratio);
       return name === "Antarctica" ? Math.min(scale, 4) : scale;
+    }
+
+    function apparentScaleFor(name: string) {
+      return countryByName.get(name)?.apparent ?? 0;
     }
 
     function itemCentroid(item: CountryCacheItem) {
@@ -543,7 +558,7 @@
     }
 
     function ghostHideData(item: CountryCacheItem): OverlayGhost | null {
-      const scale = apparentScaleFor(item.name);
+      const scale = item.apparent;
       const centroid = itemCentroid(item);
       if (!scale || !validPoint(centroid)) return null;
       const [[x0, y0], [x1, y1]] = item.bounds;
@@ -567,8 +582,8 @@
       if (state.compareMode === "always") return apparentItemsToBake();
       const name = hoverName || state.selected;
       if (!name) return [];
-      const item = countryCache.find((entry) => entry.name === name);
-      return item && apparentScaleFor(item.name) > 0 ? [item] : [];
+      const item = countryByName.get(name);
+      return item && item.apparent > 0 ? [item] : [];
     }
 
     function rebuildHideMask(ghosts: OverlayGhost[]) {
@@ -657,12 +672,9 @@
 
     function apparentItemsToBake() {
       if (!overlayMode() || !state.layers.countries) return [];
-      if (state.compareMode === "always") {
-        return countryCache.filter((item) => apparentScaleFor(item.name) > 0);
-      }
-      if (!state.selected) return [];
-      const selectedItem = countryCache.find((entry) => entry.name === state.selected);
-      return selectedItem && apparentScaleFor(selectedItem.name) > 0 ? [selectedItem] : [];
+      if (state.compareMode === "always") return overlayGhosts;
+      const selectedItem = state.selected ? countryByName.get(state.selected) : undefined;
+      return selectedItem && selectedItem.apparent > 0 ? [selectedItem] : [];
     }
 
     function withApparentTransform(
@@ -671,11 +683,11 @@
       fn: (apparent: number) => void,
       { clip = false }: { clip?: boolean } = {}
     ) {
-      const apparent = apparentScaleFor(item.name);
+      const apparent = item.apparent;
       const centroid = itemCentroid(item);
       if (!apparent || !validPoint(centroid)) return 0;
       ctx.save();
-      if (clip && spherePath && baseProjectionName() !== "mercator") ctx.clip(spherePath);
+      if (clip && clipToSphere && spherePath) ctx.clip(spherePath);
       ctx.translate(centroid[0], centroid[1]);
       ctx.scale(apparent, apparent);
       ctx.translate(-centroid[0], -centroid[1]);
@@ -731,14 +743,14 @@
     }
 
     function drawCenteredGhost(ctx: CanvasRenderingContext2D, item: CountryCacheItem, zoomK: number) {
-      if (!apparentScaleFor(item.name)) return;
+      if (!item.apparent) return;
       drawApparentFill(ctx, item, zoomK);
       paintCountry(ctx, item, zoomK);
       strokeApparent(ctx, item, zoomK);
     }
 
     function coverOutsideSphere(t: ZoomTransform) {
-      if (!spherePath || baseProjectionName() === "mercator") return;
+      if (!clipToSphere || !spherePath) return;
       const outside = new Path2D();
       outside.rect(0, 0, width, height);
       outside.addPath(spherePath, { a: t.k, b: 0, c: 0, d: t.k, e: t.x, f: t.y });
@@ -754,7 +766,7 @@
     }
 
     function clipOverlayToSphere(t: ZoomTransform) {
-      if (!spherePath || baseProjectionName() === "mercator") return;
+      if (!clipToSphere || !spherePath) return;
       overCtx.save();
       overCtx.globalCompositeOperation = "destination-in";
       overCtx.translate(t.x, t.y);
@@ -775,7 +787,7 @@
       mapCtx.scale(t.k, t.k);
       mapCtx.fillStyle = MAP.ocean;
       if (spherePath) mapCtx.fill(spherePath);
-      if (spherePath && baseProjectionName() !== "mercator") {
+      if (clipToSphere && spherePath) {
         mapCtx.strokeStyle = MAP.sphere;
         mapCtx.lineWidth = 1 / t.k;
         mapCtx.stroke(spherePath);
@@ -785,46 +797,52 @@
         mapCtx.lineWidth = 0.7 / t.k;
         mapCtx.stroke(graticulePath);
       }
-      paintCountries(mapCtx, t.k);
       const ghosts = apparentItemsToBake();
-      if (ghosts.length) {
-        ghosts.sort((a, b) => apparentScaleFor(b.name) - apparentScaleFor(a.name));
-        const always = state.compareMode === "always";
-        if (always) {
-          for (const item of ghosts) drawApparentFill(mapCtx, item, t.k);
-          paintCountries(mapCtx, t.k);
-        } else {
-          for (const item of ghosts) drawCenteredGhost(mapCtx, item, t.k);
-        }
+      const always = state.compareMode === "always" && ghosts.length > 0;
+      if (always) {
+        for (const item of ghosts) drawApparentFill(mapCtx, item, t.k);
+      }
+      paintCountries(mapCtx, t.k);
+      if (!always) {
+        for (const item of ghosts) drawCenteredGhost(mapCtx, item, t.k);
       }
       drawWater(mapCtx, t.k);
-      if (ghosts.length && state.compareMode === "always") {
+      if (always) {
         for (const item of ghosts) strokeApparent(mapCtx, item, t.k);
       }
       mapCtx.restore();
       if (ghosts.length) coverOutsideSphere(t);
     }
 
+    function scheduleOverlay() {
+      if (overlayFrame) return;
+      overlayFrame = requestAnimationFrame(() => {
+        overlayFrame = 0;
+        drawOverlay();
+      });
+    }
+
     function drawOverlay() {
       overCtx.clearRect(0, 0, width, height);
       const t = currentTransform;
       const highlight = hoverName || state.selected;
+      const ghosts = apparentItemsToBake();
       overCtx.save();
       overCtx.translate(t.x, t.y);
       overCtx.scale(t.k, t.k);
       if (state.compareMode === "always" && hoverName) {
-        for (const item of apparentItemsToBake()) {
+        for (const item of ghosts) {
           if (item.name === hoverName) continue;
           drawApparentFill(overCtx, item, t.k, { muted: true });
         }
         paintCountries(overCtx, t.k);
-        for (const item of apparentItemsToBake()) {
+        for (const item of ghosts) {
           if (item.name === hoverName) continue;
           strokeApparent(overCtx, item, t.k, { muted: true });
         }
       }
       if (highlight) {
-        const item = countryCache.find((entry) => entry.name === highlight);
+        const item = countryByName.get(highlight);
         if (item && state.compareMode === "hover" && item.name !== state.selected) {
           drawApparentFill(overCtx, item, t.k);
         }
@@ -930,9 +948,10 @@
       const [x, y] = currentTransform.invert([screenX, screenY]);
       for (let i = countryCache.length - 1; i >= 0; i -= 1) {
         const item = countryCache[i];
-        if (item && mapCtx.isPointInPath(item.path2d, x * dpr, y * dpr, "evenodd")) {
-          return item;
-        }
+        if (!item) continue;
+        const [[x0, y0], [x1, y1]] = item.bounds;
+        if (x < x0 || y < y0 || x > x1 || y > y1) continue;
+        if (mapCtx.isPointInPath(item.path2d, x * dpr, y * dpr, "evenodd")) return item;
       }
       return null;
     }
@@ -1147,7 +1166,7 @@
       if (city) {
         if (hoverName !== null) {
           hoverName = null;
-          drawOverlay();
+          scheduleOverlay();
         }
         showTip(vx, vy, `${city.name}${city.country ? ` · ${city.country}` : ""}`);
         stage.style.cursor = "pointer";
@@ -1157,12 +1176,12 @@
       const next = hit ? hit.name : null;
       if (next !== hoverName) {
         hoverName = next;
-        drawOverlay();
+        scheduleOverlay();
       }
       if (hit) {
         const stats = sizeIndex.get(hit.name);
         const inflation = overlayMode() || state.projections.mercator
-          ? formatInflation(stats && stats.ratio)
+          ? formatInflation(stats?.ratio)
           : null;
         const tip = inflation
           ? `${hit.name} · Mercator ${inflation}`

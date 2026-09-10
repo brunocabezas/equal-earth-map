@@ -115,15 +115,21 @@
         </div>
       </div>
       <div class="bar-end">
-        <div class="bar-seg" role="group" aria-label="Map projections">
-          <button type="button" class="bar-btn is-active" data-proj="equalEarth" aria-pressed="true">
-            <span class="label-full">Equal Earth</span>
-            <span class="label-short">Equal</span>
-          </button>
-          <button type="button" class="bar-btn is-active" data-proj="mercator" aria-pressed="true">
-            <span class="label-full">Mercator</span>
-            <span class="label-short">Merc</span>
-          </button>
+        <div class="bar-menu">
+          <div class="bar-seg">
+            <button type="button" class="bar-btn is-active" id="mercator-toggle" aria-expanded="false" aria-controls="mercator-menu" aria-haspopup="menu">
+              <span class="label-full">Mercator size</span>
+              <span class="label-short">Mercator</span>
+              <svg class="icon chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6.25 8 10.25 12 6.25" /></svg>
+            </button>
+          </div>
+          <div class="sheet sheet-menu" id="mercator-menu" role="menu" aria-label="When to show Mercator size">
+            <div class="panel">
+              <button type="button" class="menu-item is-active" role="menuitemradio" data-compare="always" aria-checked="true">Always</button>
+              <button type="button" class="menu-item" role="menuitemradio" data-compare="hover" aria-checked="false">On hover</button>
+              <p class="panel-note" id="proj-hint">Outlines show how large countries look on Mercator.</p>
+            </div>
+          </div>
         </div>
         <div class="search-panel">
           <label class="search-field" for="search">
@@ -132,50 +138,44 @@
               <path d="M10.2 10.2 13.5 13.5" />
             </svg>
             <span class="sr-only">Search a country or city</span>
-            <input id="search" type="search" placeholder="Ghana, Tokyo…" autocomplete="off" enterkeyhint="search" maxlength="80" />
+            <input id="search" type="search" placeholder="Greenland, Africa…" autocomplete="off" enterkeyhint="search" maxlength="80" />
           </label>
           <ul id="search-results" hidden aria-label="Search results"></ul>
         </div>
-        <button type="button" class="icon-btn" id="atlas-controls-toggle" aria-expanded="false" aria-controls="atlas-controls" aria-haspopup="dialog" title="Layers">
-          <svg class="icon" viewBox="0 0 16 16" aria-hidden="true">
-            <path d="M2.5 4.5h11M4 8h8M5.5 11.5h5" />
-          </svg>
-          <span class="sr-only">Layers</span>
-        </button>
-        <button type="button" class="icon-btn" id="about-open" title="About">
+        <div class="bar-menu bar-menu-end">
+          <button type="button" class="bar-action" id="atlas-controls-toggle" aria-label="Layers" aria-expanded="false" aria-controls="atlas-controls" aria-haspopup="dialog">
+            <svg class="icon" viewBox="0 0 16 16" aria-hidden="true">
+              <path d="M2.5 4.5h11M4 8h8M5.5 11.5h5" />
+            </svg>
+            <span class="action-label">Layers</span>
+          </button>
+          <div class="sheet" id="atlas-controls" role="dialog" aria-modal="true" aria-labelledby="atlas-controls-title">
+            <div class="panel">
+              <div class="sheet-head">
+                <h2 id="atlas-controls-title">Layers</h2>
+                <button type="button" class="sheet-close" aria-label="Close layers">
+                  <svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" /></svg>
+                </button>
+              </div>
+              <fieldset class="layer-set">
+                <legend class="sr-only">Map layers</legend>
+                <label class="check"><input type="checkbox" data-layer="countries" checked /> Countries</label>
+                <label class="check"><input type="checkbox" data-layer="lakes" checked /> Lakes</label>
+                <label class="check"><input type="checkbox" data-layer="rivers" checked /> Rivers</label>
+                <label class="check"><input type="checkbox" data-layer="cities" checked /> Cities</label>
+                <label class="check"><input type="checkbox" data-layer="labels" checked /> Labels</label>
+                <label class="check"><input type="checkbox" data-layer="graticule" checked /> Graticule</label>
+              </fieldset>
+            </div>
+          </div>
+        </div>
+        <button type="button" class="bar-action" id="about-open" aria-label="About">
           <svg class="icon" viewBox="0 0 16 16" aria-hidden="true">
             <circle cx="8" cy="8" r="5.25" />
             <path d="M8 7.15v3.4M8 5.4h.01" />
           </svg>
-          <span class="sr-only">About</span>
+          <span class="action-label">About</span>
         </button>
-        <div class="sheet" id="atlas-controls" role="dialog" aria-modal="true" aria-labelledby="atlas-controls-title">
-          <div class="panel">
-            <div class="sheet-head">
-              <h2 id="atlas-controls-title">Map options</h2>
-              <button type="button" class="sheet-close" aria-label="Close map options">
-                <svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" /></svg>
-              </button>
-            </div>
-            <fieldset id="compare-set">
-              <legend>Show size overlay</legend>
-              <div class="segmented" role="group" aria-label="When to show Mercator size">
-                <button type="button" class="seg-btn" data-compare="hover" aria-pressed="false">On hover</button>
-                <button type="button" class="seg-btn is-active" data-compare="always" aria-pressed="true">Always</button>
-              </div>
-              <p class="panel-note" id="proj-hint">Every measurable country gets a centered overlay. Zoom in to see even tiny size differences.</p>
-            </fieldset>
-            <fieldset class="layer-set">
-              <legend>Layers</legend>
-              <label class="check"><input type="checkbox" data-layer="countries" checked /> Countries</label>
-              <label class="check"><input type="checkbox" data-layer="lakes" checked /> Lakes</label>
-              <label class="check"><input type="checkbox" data-layer="rivers" checked /> Rivers</label>
-              <label class="check"><input type="checkbox" data-layer="cities" checked /> Cities</label>
-              <label class="check"><input type="checkbox" data-layer="labels" checked /> Labels</label>
-              <label class="check"><input type="checkbox" data-layer="graticule" checked /> Graticule</label>
-            </fieldset>
-          </div>
-        </div>
       </div>
     </header>
 
@@ -217,10 +217,10 @@
           </div>
         </div>
         <div class="map-chrome bottom-right">
-          <div class="center-stack" role="group" aria-label="Map centering">
-            <button type="button" class="is-active" data-center="0">0°</button>
-            <button type="button" data-center="-90">90°W</button>
-            <button type="button" data-center="150">150°E</button>
+          <div class="center-stack" role="group" aria-label="Map center">
+            <button type="button" class="is-active" data-center="0" title="Center on Africa">Africa</button>
+            <button type="button" data-center="-90" title="Center on the Americas">Americas</button>
+            <button type="button" data-center="150" title="Center on the Pacific">Pacific</button>
           </div>
         </div>
         <div id="tooltip" class="tooltip" hidden></div>
@@ -228,8 +228,11 @@
     </main>
 
     <footer class="attrib">
-      Equal Earth projection by Šavrič, Patterson &amp; Jenny · Wall maps by Tom Patterson / BMZ ·
-      Vectors from Natural Earth
+      <span class="attrib-full">
+        Equal Earth projection by Šavrič, Patterson &amp; Jenny · Wall maps by Tom Patterson / BMZ ·
+        Vectors from Natural Earth
+      </span>
+      <span class="attrib-short">Equal Earth · Natural Earth</span>
     </footer>
 
     <div id="sheet-backdrop" class="sheet-backdrop"></div>

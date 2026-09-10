@@ -9,10 +9,6 @@
     return value === "political" || value === "physical";
   }
 
-  function isProjectionName(value: string | undefined): value is ProjectionName {
-    return value === "equalEarth" || value === "mercator";
-  }
-
   function isLayerName(value: string | undefined): value is LayerName {
     return value === "countries" || value === "lakes" || value === "rivers"
       || value === "cities" || value === "labels" || value === "graticule";
@@ -52,8 +48,8 @@
     selected: "#032f34",
     mercFill: "rgba(194,97,72,0.4)",
     mercStroke: "#c26148",
-    mercMuteFill: "rgba(77,115,120,0.2)",
-    mercMuteStroke: "rgba(77,115,120,0.55)",
+    mercMuteFill: "rgba(77,115,120,0.34)",
+    mercMuteStroke: "rgba(5,74,82,0.72)",
     capital: "#e29578",
     city: "#032f34",
     label: "#054a52",
@@ -80,11 +76,11 @@
   };
 
   function overlayMode() {
-    return state.projections.equalEarth && state.projections.mercator;
+    return state.projections.mercator;
   }
 
   function baseProjectionName(): ProjectionName {
-    return state.projections.equalEarth ? "equalEarth" : "mercator";
+    return "equalEarth";
   }
 
   let atlasReady = false;
@@ -259,7 +255,14 @@
       ]);
       return projection;
     }
-    return d3.geoEqualEarth().rotate(rotate).fitExtent(extent, { type: "Sphere" });
+    const projection = d3.geoEqualEarth().rotate(rotate).fitExtent(extent, { type: "Sphere" });
+    const fitW = extent[1][0] - extent[0][0];
+    const fitH = extent[1][1] - extent[0][1];
+    const fittedH = fitW / 2.05;
+    if (fitH > fittedH * 1.2) {
+      projection.scale(projection.scale() * Math.min(1.38, (fitH * 0.9) / fittedH));
+    }
+    return projection;
   }
 
   async function initAtlas() {
@@ -692,7 +695,7 @@
     ) {
       return withApparentTransform(ctx, item, (apparent) => {
         ctx.strokeStyle = muted ? MAP.mercMuteStroke : MAP.mercStroke;
-        ctx.lineWidth = 2.4 / (zoomK * apparent);
+        ctx.lineWidth = (muted ? 1.6 : 2.4) / (zoomK * apparent);
         ctx.stroke(item.path2d);
       }) > 0;
     }
@@ -1056,15 +1059,13 @@
       info.hidden = false;
       requireElement("info-title").textContent = feature.properties.name;
       const comparing = overlayMode();
-      const mercOn = state.projections.mercator;
-      if (comparing) {
-        requireElement("info-meta").textContent = apparentScaleFor(feature.properties.name) > 0
-          ? "Country · Natural Earth 1:50 million. Red outline is Mercator’s apparent size."
-          : "Country · Natural Earth 1:50 million. Mercator barely changes this country’s size.";
-      } else if (mercOn) {
-        requireElement("info-meta").textContent = "Country · Natural Earth 1:50 million. Mercator inflates land toward the poles.";
+      const hasOutline = apparentScaleFor(feature.properties.name) > 0;
+      if (comparing && hasOutline) {
+        requireElement("info-meta").textContent = "The outline is Mercator’s apparent size — muted teal at rest, coral when you point at it.";
+      } else if (comparing) {
+        requireElement("info-meta").textContent = "Mercator barely changes this country’s size.";
       } else {
-        requireElement("info-meta").textContent = "Country · Natural Earth 1:50 million. Equal Earth keeps relative area true.";
+        requireElement("info-meta").textContent = "Equal Earth keeps relative area true.";
       }
 
       const rows = [{ label: "True area", value: formatAreaKm2(stats.trueKm2) }];
@@ -1076,14 +1077,12 @@
       renderMeasures(rows);
 
       const area = requireElement("info-area");
-      if (comparing && apparentScaleFor(feature.properties.name) > 0) {
-        area.textContent = "The red outline is the same country scaled to Mercator's apparent size.";
+      if (comparing && hasOutline) {
+        area.textContent = "The outline is this country scaled to how large it looks on Mercator.";
       } else if (comparing) {
         area.textContent = "Near the equator the two projections agree closely on size, so there is no extra outline.";
-      } else if (mercOn && inflation) {
-        area.textContent = `This land appears ${inflation} than its true size on Mercator.`;
-      } else if (!mercOn) {
-        area.textContent = "On Equal Earth this area stays true to scale relative to other countries.";
+      } else if (inflation) {
+        area.textContent = `On Mercator this land would appear ${inflation} than its true size.`;
       } else {
         area.textContent = "Near the equator Mercator and Equal Earth agree on size.";
       }
@@ -1273,28 +1272,18 @@
 
     function syncProjectionUI() {
       const overlay = overlayMode();
-      document.querySelectorAll<HTMLElement>("[data-proj]").forEach((node) => {
-        const name = node.dataset.proj;
-        const on = isProjectionName(name) ? Boolean(state.projections[name]) : false;
-        node.classList.toggle("is-active", on);
-        node.setAttribute("aria-pressed", String(on));
-      });
       const hint = document.getElementById("proj-hint");
       if (hint) {
-        hint.textContent = overlay
-          ? (state.compareMode === "always"
-            ? "Every measurable country gets a centered overlay. Zoom in to see even tiny size differences."
-            : "Hover a country to see Mercator’s apparent size. Dots under the overlay are hidden.")
-          : "Turn both on, then hover a country to compare true and apparent size.";
+        hint.textContent = state.compareMode === "always"
+          ? "Outlines show how large countries look on Mercator."
+          : "Point at a country to see Mercator’s apparent size.";
       }
       const legend = document.getElementById("overlay-legend");
       if (legend) legend.hidden = !overlay;
-      const compareSet = document.getElementById("compare-set");
-      if (compareSet) compareSet.hidden = !overlay;
       document.querySelectorAll<HTMLElement>("[data-compare]").forEach((node) => {
         const on = node.dataset.compare === state.compareMode;
         node.classList.toggle("is-active", on);
-        node.setAttribute("aria-pressed", String(on));
+        node.setAttribute("aria-checked", String(on));
       });
       stage.setAttribute(
         "aria-label",
@@ -1306,35 +1295,19 @@
       );
     }
 
-    document.querySelectorAll<HTMLElement>("[data-proj]").forEach((button) => {
-      button.addEventListener("click", () => {
-        const name = button.dataset.proj;
-        if (!isProjectionName(name)) return;
-        const other: ProjectionName = name === "equalEarth" ? "mercator" : "equalEarth";
-        if (state.projections[name] && !state.projections[other]) return;
-        state.projections[name] = !state.projections[name];
-        hideGhostsKey = "";
-        syncProjectionUI();
-        layout();
-        const selected = selectedFeature();
-        if (selected) updateCountryInfo(selected);
-        track("projection", {
-          equalEarth: state.projections.equalEarth,
-          mercator: state.projections.mercator
-        });
-      });
-    });
-
     document.querySelectorAll<HTMLElement>("[data-compare]").forEach((button) => {
       button.addEventListener("click", () => {
         const mode = button.dataset.compare;
-        if (!isCompareMode(mode) || mode === state.compareMode) return;
-        state.compareMode = mode;
-        hideGhostsKey = "";
-        syncProjectionUI();
-        bake(currentTransform);
-        drawOverlay();
-        track("compare_mode", { mode });
+        if (!isCompareMode(mode)) return;
+        if (mode !== state.compareMode) {
+          state.compareMode = mode;
+          hideGhostsKey = "";
+          syncProjectionUI();
+          bake(currentTransform);
+          drawOverlay();
+          track("compare_mode", { mode });
+        }
+        closeSheets(true);
       });
     });
 
@@ -1405,8 +1378,9 @@
   function closeSheets(restoreFocus = false) {
     const wasOpen = Boolean(document.querySelector(".sheet.is-open"));
     document.querySelectorAll(".sheet.is-open").forEach((sheet) => sheet.classList.remove("is-open"));
-    const toggle = document.getElementById("atlas-controls-toggle");
-    if (toggle) toggle.setAttribute("aria-expanded", "false");
+    document.querySelectorAll("[aria-expanded='true'][aria-controls]").forEach((toggle) => {
+      toggle.setAttribute("aria-expanded", "false");
+    });
     document.body.classList.remove("sheet-open");
     if (restoreFocus && wasOpen && sheetFocusReturn) {
       sheetFocusReturn.focus();
@@ -1414,7 +1388,7 @@
     }
   }
 
-  function toggleSheet(id: string) {
+  function toggleSheet(id: string, { modal = true } = {}) {
     const sheet = requireElement(id);
     const button = document.querySelector(`[aria-controls="${id}"]`);
     const open = !sheet.classList.contains("is-open");
@@ -1427,11 +1401,15 @@
         button.setAttribute("aria-expanded", "true");
         sheetFocusReturn = button;
       }
-      document.body.classList.add("sheet-open");
-      sheet.querySelector<HTMLElement>(".sheet-close")?.focus();
+      if (modal) document.body.classList.add("sheet-open");
+      sheet.querySelector<HTMLElement>(".sheet-close, [data-compare]")?.focus();
     }
   }
 
+  requireElement("mercator-toggle").addEventListener("click", (event) => {
+    event.stopPropagation();
+    toggleSheet("mercator-menu", { modal: false });
+  });
   requireElement("atlas-controls-toggle").addEventListener("click", (event) => {
     event.stopPropagation();
     toggleSheet("atlas-controls");
@@ -1447,10 +1425,10 @@
     const searchPanel = document.querySelector(".search-panel");
     const results = document.getElementById("search-results");
     if (results && searchPanel && !searchPanel.contains(target)) results.hidden = true;
-    const sheet = document.getElementById("atlas-controls");
-    const toggle = document.getElementById("atlas-controls-toggle");
-    if (!sheet?.classList.contains("is-open") || !toggle) return;
-    if (sheet.contains(target) || toggle.contains(target)) return;
+    const sheet = document.querySelector(".sheet.is-open");
+    if (!sheet) return;
+    const toggle = document.querySelector(`[aria-controls="${sheet.id}"]`);
+    if (sheet.contains(target) || (toggle instanceof Node && toggle.contains(target))) return;
     closeSheets();
   });
 

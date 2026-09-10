@@ -212,6 +212,7 @@ html, body {
 .label-short { display: none; }
 
 .bar-btn,
+.bar-action,
 .icon-btn,
 .seg-btn,
 .zoom-stack button,
@@ -238,6 +239,11 @@ html, body {
   justify-content: flex-end;
 }
 
+.bar-menu {
+  position: relative;
+  flex-shrink: 0;
+}
+
 .search-panel {
   position: relative;
   flex: 0 1 240px;
@@ -255,10 +261,13 @@ html, body {
 }
 
 .bar-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   border: 0;
   border-radius: 999px;
   min-height: var(--control);
-  padding: 0 12px;
+  padding: 0 10px 0 12px;
   background: transparent;
   color: var(--cream-soft);
   font-size: var(--type-ui);
@@ -267,17 +276,19 @@ html, body {
   transition: background 160ms ease, color 160ms ease;
 }
 
+.bar-btn .chevron {
+  width: 12px;
+  height: 12px;
+}
+
 .bar-btn:hover {
   color: var(--cream);
   background: rgba(237, 246, 249, 0.08);
 }
 
-.bar-btn.is-active {
-  background: var(--cream);
-  color: var(--ink);
-}
-
-.bar-btn.is-active:hover {
+.bar-btn.is-active,
+.bar-btn.is-active:hover,
+.bar-btn[aria-expanded="true"] {
   background: var(--cream);
   color: var(--ink);
 }
@@ -306,6 +317,33 @@ html, body {
   color: var(--ink);
 }
 
+.bar-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid rgba(237, 246, 249, 0.22);
+  border-radius: 999px;
+  min-height: var(--control);
+  padding: 0 12px 0 10px;
+  background: transparent;
+  color: var(--cream);
+  font-size: var(--type-ui);
+  font-weight: 550;
+  transition: background 160ms ease, border-color 160ms ease, color 160ms ease;
+}
+
+.bar-action:hover {
+  background: rgba(237, 246, 249, 0.1);
+  border-color: rgba(237, 246, 249, 0.4);
+}
+
+.bar-action[aria-expanded="true"] {
+  background: var(--cream);
+  border-color: var(--cream);
+  color: var(--ink);
+}
+
 main {
   position: relative;
   flex: 1;
@@ -327,7 +365,6 @@ main {
   width: 100%;
   height: 100%;
   background: var(--stage);
-}
 }
 
 #atlas-stage:active {
@@ -493,8 +530,8 @@ legend {
 }
 
 .swatch-merc {
-  background: rgba(77, 115, 120, 0.2);
-  border: 1.5px solid rgba(77, 115, 120, 0.55);
+  background: rgba(77, 115, 120, 0.34);
+  border: 1.5px solid rgba(5, 74, 82, 0.72);
 }
 
 .overlay-legend {
@@ -509,12 +546,11 @@ legend {
 }
 
 .overlay-legend[hidden],
-#info-measures[hidden],
-#compare-set[hidden] {
+#info-measures[hidden] {
   display: none;
 }
 
-#atlas-view:has(.sheet.is-open) .overlay-legend {
+#atlas-view:has(#atlas-controls.is-open) .overlay-legend {
   display: none;
 }
 
@@ -588,6 +624,43 @@ legend {
   color: var(--cream);
 }
 
+.sheet-menu .panel {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 8px;
+  max-height: none;
+  overflow: visible;
+}
+
+.menu-item {
+  border: 0;
+  border-radius: 999px;
+  min-height: var(--control);
+  padding: 0 12px;
+  background: transparent;
+  color: var(--ink);
+  font-size: var(--type-ui);
+  font-weight: 550;
+  text-align: left;
+  transition: background 160ms ease, color 160ms ease;
+}
+
+.menu-item:hover {
+  background: var(--field-hover);
+}
+
+.menu-item.is-active,
+.menu-item.is-active:hover {
+  background: var(--ink);
+  color: var(--cream);
+}
+
+.sheet-menu .panel-note {
+  margin: 4px 4px 2px;
+  padding: 0 8px;
+}
+
 .check {
   display: flex;
   align-items: center;
@@ -628,6 +701,18 @@ legend {
 
 .sheet.is-open {
   display: block;
+}
+
+.sheet-menu {
+  left: 0;
+  right: auto;
+  width: max-content;
+  min-width: 196px;
+}
+
+.bar-menu-end .sheet {
+  left: auto;
+  right: 0;
 }
 
 .sheet .panel {
@@ -848,6 +933,8 @@ legend {
 
 .center-stack {
   display: flex;
+  gap: 3px;
+  padding: 3px;
   overflow: hidden;
   border: 1px solid var(--line);
   border-radius: 999px;
@@ -856,19 +943,17 @@ legend {
 }
 
 .center-stack button {
-  min-height: 42px;
-  padding: 0 14px;
+  min-height: 36px;
+  padding: 0 12px;
   border: 0;
-  border-right: 1px solid var(--line);
-  background: var(--panel);
+  border-radius: 999px;
+  background: transparent;
   color: var(--ink);
   font-size: var(--type-ui);
   font-weight: 550;
   white-space: nowrap;
   transition: background 160ms ease, color 160ms ease;
 }
-
-.center-stack button:last-child { border-right: 0; }
 
 .center-stack button:hover {
   background: var(--field-hover);
@@ -878,7 +963,6 @@ legend {
 .center-stack button.is-active:hover {
   background: var(--ink);
   color: var(--cream);
-  border-right-color: var(--ink);
 }
 
 .tooltip {
@@ -905,6 +989,8 @@ legend {
   font-size: var(--type-meta);
   line-height: 1.35;
 }
+
+.attrib-short { display: none; }
 
 .country {
   stroke: rgba(5, 74, 82, 0.28);
@@ -1092,7 +1178,7 @@ dialog::backdrop { background: rgba(3, 47, 52, 0.55); }
   }
 
   .brand h1,
-  .brand-name { font-size: 1.25rem; }
+  .brand-name { font-size: 1.125rem; }
   .brand p { display: none; }
   .brand-mark {
     width: 28px;
@@ -1103,10 +1189,18 @@ dialog::backdrop { background: rgba(3, 47, 52, 0.55); }
     flex: 1 1 auto;
     width: auto;
     max-width: none;
-    min-width: 88px;
+    min-width: 0;
   }
 
-  .brand-copy { display: none; }
+  .action-label { display: none; }
+  .bar-action {
+    width: var(--control);
+    min-width: var(--control);
+    padding: 0;
+  }
+
+  .brand { min-width: max-content; }
+  .brand h1 { white-space: nowrap; }
 
   .map-chrome {
     max-width: none;
@@ -1158,8 +1252,23 @@ dialog::backdrop { background: rgba(3, 47, 52, 0.55); }
     max-height: calc(100dvh - 7.5rem);
   }
 
+  .sheet-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    right: auto;
+    bottom: auto;
+    width: max-content;
+    max-height: none;
+    z-index: 10;
+  }
+
   .sheet.is-open {
     max-height: calc(100dvh - 7.5rem);
+  }
+
+  .sheet-menu.is-open {
+    max-height: none;
   }
 
   .sheet .panel {
@@ -1167,6 +1276,12 @@ dialog::backdrop { background: rgba(3, 47, 52, 0.55); }
     -webkit-overflow-scrolling: touch;
     touch-action: pan-y;
     padding: 12px 12px 16px;
+  }
+
+  .sheet-menu .panel {
+    max-height: none;
+    padding: 8px;
+    overflow: visible;
   }
 
   .layer-set {
@@ -1243,11 +1358,14 @@ dialog::backdrop { background: rgba(3, 47, 52, 0.55); }
     align-items: flex-start;
     gap: 6px;
     padding: 8px 10px;
-    max-width: min(200px, calc(100% - 64px));
+    max-width: min(220px, calc(100% - 64px));
   }
 
-  #atlas-view:has(#place-info:not([hidden])) .overlay-legend {
-    display: none;
+  .overlay-legend span { white-space: nowrap; }
+
+  #atlas-view:has(#place-info:not([hidden])) .map-chrome.bottom-left {
+    top: 8px;
+    bottom: auto;
   }
 
   .zoom-stack button {
@@ -1265,6 +1383,9 @@ dialog::backdrop { background: rgba(3, 47, 52, 0.55); }
     min-height: 28px;
     padding: 4px 8px max(4px, env(safe-area-inset-bottom));
   }
+
+  .attrib-full { display: none; }
+  .attrib-short { display: inline; }
 
   .tooltip { display: none; }
 }
@@ -1285,10 +1406,27 @@ dialog::backdrop { background: rgba(3, 47, 52, 0.55); }
   }
 }
 
+@media (pointer: coarse) {
+  .bar-action,
+  .icon-btn,
+  .zoom-stack button {
+    min-width: 44px;
+    min-height: 44px;
+    width: 44px;
+    height: 44px;
+  }
+
+  .center-stack button {
+    min-height: 44px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .bar-btn,
+  .bar-action,
   .icon-btn,
   .seg-btn,
+  .menu-item,
   .zoom-stack button,
   .center-stack button,
   #about-close,

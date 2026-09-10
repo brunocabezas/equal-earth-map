@@ -24,7 +24,7 @@ Used in a browser on phone or desktop, often after looking at a conventional web
 
 ## Capabilities and Constraints
 
-- Interactive atlas: pan, zoom, search countries and cities, toggle layers, switch Equal Earth / Mercator, recentre at 0°, 90°W, or 150°E.
+- Interactive atlas: pan, zoom, search countries and cities, toggle layers, overlay Mercator size (always or on hover) on the Equal Earth globe, recentre on Africa, the Americas, or the Pacific.
 - Wall maps: Patterson political and BMZ physical sheets as downloads.
 - Public name is Equal Earth / Equal Earth Map. trueearthmap.com is the URL, not the product name.
 - Free: no account, no paywall.

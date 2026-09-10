@@ -148,7 +148,7 @@
       </section>
 
       <section id="atlas-view" class="view is-visible" aria-label="Interactive Equal Earth atlas">
-        <div id="atlas-stage" aria-label="Interactive Equal Earth map. Search for a country, or use plus and minus to zoom.">
+        <div id="atlas-stage" tabindex="0" aria-label="Interactive Equal Earth map. Search for a country, or focus the map: arrow keys pan, Enter selects the country in the center, plus and minus zoom.">
           <canvas id="atlas-map" aria-hidden="true"></canvas>
           <canvas id="atlas-overlay" aria-hidden="true"></canvas>
         </div>
@@ -162,7 +162,7 @@
                   <path d="M10.2 10.2 13.5 13.5" />
                 </svg>
                 <span class="sr-only">Search a country or city</span>
-                <input id="search" type="search" placeholder="Greenland…" autocomplete="off" enterkeyhint="search" />
+                <input id="search" type="search" placeholder="Greenland…" autocomplete="off" enterkeyhint="search" maxlength="80" />
               </label>
               <ul id="search-results" hidden aria-label="Search results"></ul>
             </div>
@@ -177,7 +177,7 @@
               Layers
             </button>
           </div>
-          <div class="sheet" id="atlas-controls" role="dialog" aria-labelledby="atlas-controls-title">
+          <div class="sheet" id="atlas-controls" role="dialog" aria-modal="true" aria-labelledby="atlas-controls-title">
             <div class="panel">
               <div class="sheet-head">
                 <h2 id="atlas-controls-title">Map options</h2>

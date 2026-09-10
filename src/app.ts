@@ -94,6 +94,7 @@
 
   let viewer: OsdViewer | null = null;
   let atlasReady = false;
+  let atlasLoading = false;
   let atlas: { resize: () => void } | null = null;
 
   const wallView = requireElement("wall-view");
@@ -330,18 +331,26 @@
       atlas?.resize();
       return;
     }
+    if (atlasLoading) return;
+    atlasLoading = true;
 
     const stage = requireElement("atlas-stage");
     const mapCanvas = requireElement<HTMLCanvasElement>("atlas-map");
     const overlayCanvas = requireElement<HTMLCanvasElement>("atlas-overlay");
     const mapCtxMaybe = mapCanvas.getContext("2d", { alpha: false });
     const overCtxMaybe = overlayCanvas.getContext("2d");
-    if (!mapCtxMaybe || !overCtxMaybe) return;
+    if (!mapCtxMaybe || !overCtxMaybe) {
+      atlasLoading = false;
+      return;
+    }
     const mapCtx = mapCtxMaybe;
     const overCtx = overCtxMaybe;
     const hideCanvas = document.createElement("canvas");
     const hideCtxMaybe = hideCanvas.getContext("2d", { willReadFrequently: true });
-    if (!hideCtxMaybe) return;
+    if (!hideCtxMaybe) {
+      atlasLoading = false;
+      return;
+    }
     const hideCtx = hideCtxMaybe;
     const tooltip = requireElement("tooltip");
     const info = requireElement("place-info");
@@ -366,11 +375,14 @@
       const retry = document.createElement("button");
       retry.type = "button";
       retry.className = "status-refresh";
-      retry.textContent = "Refresh";
-      retry.addEventListener("click", () => window.location.reload());
+      retry.textContent = "Try again";
+      retry.addEventListener("click", () => {
+        void initAtlas();
+      });
       status.append(" ", retry);
     };
 
+    setStatus("Loading Natural Earth data…");
     let countriesTopo: CountriesTopology | undefined;
     let lakesGeo: LakeCollection | undefined;
     let riversGeo: RiverCollection | undefined;
@@ -383,11 +395,13 @@
         d3.json<Place[]>("data/places.json")
       ]);
     } catch {
-      setStatus("Could not load map data. Refresh the page to try again.", true);
+      atlasLoading = false;
+      setStatus("Could not load map data. Try again.", true);
       return;
     }
     if (!countriesTopo || !lakesGeo || !riversGeo || !isPlaceList(places) || !countriesTopo.objects.countries) {
-      setStatus("Could not load map data. Refresh the page to try again.", true);
+      atlasLoading = false;
+      setStatus("Could not load map data. Try again.", true);
       return;
     }
     atlasReady = true;
@@ -467,6 +481,29 @@
       });
 
     d3.select(stage).call(zoom);
+
+    stage.addEventListener("keydown", (event) => {
+      if (!width || !height) return;
+      const pan = 64;
+      const k = currentTransform.k || 1;
+      if (event.key === "ArrowLeft") {
+        event.preventDefault();
+        d3.select(stage).call(zoom.translateBy, pan / k, 0);
+      } else if (event.key === "ArrowRight") {
+        event.preventDefault();
+        d3.select(stage).call(zoom.translateBy, -pan / k, 0);
+      } else if (event.key === "ArrowUp") {
+        event.preventDefault();
+        d3.select(stage).call(zoom.translateBy, 0, pan / k);
+      } else if (event.key === "ArrowDown") {
+        event.preventDefault();
+        d3.select(stage).call(zoom.translateBy, 0, -pan / k);
+      } else if (event.key === "Enter") {
+        event.preventDefault();
+        const hit = countryAt(width / 2, height / 2);
+        if (hit) selectCountry(hit.feature, true);
+      }
+    });
 
     function applyCss(t: ZoomTransform) {
       const s = t.k / baked.k;
@@ -1277,12 +1314,34 @@
 
     searchInput.addEventListener("input", () => search(searchInput.value));
     searchInput.addEventListener("keydown", (event) => {
+      if (event.key === "ArrowDown" && !results.hidden) {
+        const first = results.querySelector<HTMLButtonElement>("button");
+        if (first) {
+          first.focus();
+          event.preventDefault();
+        }
+        return;
+      }
       if (event.key !== "Escape") return;
       results.hidden = true;
       results.replaceChildren();
       if (searchInput.value) searchInput.value = "";
       else searchInput.blur();
       event.stopPropagation();
+    });
+    results.addEventListener("keydown", (event) => {
+      if (!(event.target instanceof HTMLButtonElement)) return;
+      const buttons = [...results.querySelectorAll<HTMLButtonElement>("button")];
+      const index = buttons.indexOf(event.target);
+      if (index < 0) return;
+      if (event.key === "ArrowDown") {
+        buttons[Math.min(index + 1, buttons.length - 1)]?.focus();
+        event.preventDefault();
+      } else if (event.key === "ArrowUp") {
+        if (index === 0) searchInput.focus();
+        else buttons[index - 1]?.focus();
+        event.preventDefault();
+      }
     });
 
     function syncProjectionUI() {
@@ -1297,8 +1356,8 @@
       stage.setAttribute(
         "aria-label",
         overlay
-          ? "Equal Earth map with Mercator size outlines. Click a country for the numbers."
-          : "Equal Earth world map with countries, lakes, rivers, and cities"
+          ? "Equal Earth map with Mercator size outlines. Arrow keys pan, Enter selects the country in the center, plus and minus zoom."
+          : "Equal Earth world map. Arrow keys pan, Enter selects the country in the center, plus and minus zoom."
       );
     }
 
@@ -1374,6 +1433,7 @@
     if (document.fonts && document.fonts.ready) {
       document.fonts.ready.then(() => drawOverlay());
     }
+    atlasLoading = false;
   }
 
   function setMode(mode: ViewMode) {
@@ -1482,6 +1542,31 @@
   });
 
   window.addEventListener("keydown", (event) => {
+    const sheet = document.querySelector<HTMLElement>(".sheet.is-open");
+    if (sheet && event.key === "Tab") {
+      const items = [...sheet.querySelectorAll<HTMLElement>("button, input, select, textarea, a[href], [tabindex]:not([tabindex='-1'])")]
+        .filter((node) => !node.hasAttribute("disabled") && node.getClientRects().length > 0);
+      if (items.length) {
+        const first = items[0];
+        const last = items[items.length - 1];
+        const inside = sheet.contains(document.activeElement);
+        if (!inside) {
+          (event.shiftKey ? last : first).focus();
+          event.preventDefault();
+          return;
+        }
+        if (event.shiftKey && document.activeElement === first) {
+          last.focus();
+          event.preventDefault();
+          return;
+        }
+        if (!event.shiftKey && document.activeElement === last) {
+          first.focus();
+          event.preventDefault();
+          return;
+        }
+      }
+    }
     if (event.target instanceof HTMLElement && event.target.matches("input, textarea")) return;
     const zoomRoot = state.mode === "wall" ? document.getElementById("wall-zoom") : document.getElementById("atlas-zoom");
     if (!zoomRoot) return;

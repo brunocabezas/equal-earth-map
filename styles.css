@@ -461,6 +461,7 @@ legend {
   color: var(--ink-soft);
   font-size: var(--type-meta);
   font-weight: 550;
+  overflow-wrap: anywhere;
 }
 
 .proj-key[hidden],
@@ -493,15 +494,18 @@ legend {
   color: var(--ink-soft);
   font-size: var(--type-meta);
   font-weight: 650;
+  min-width: 0;
 }
 
 #info-measures dd {
   margin: 0;
+  min-width: 0;
   color: var(--ink);
   font-size: var(--type-ui);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   text-align: right;
+  overflow-wrap: anywhere;
 }
 
 .segmented {
@@ -750,6 +754,7 @@ legend {
   text-align: left;
   cursor: pointer;
   font: inherit;
+  overflow-wrap: anywhere;
 }
 
 #search-results button:hover,
@@ -772,6 +777,9 @@ legend {
 
 .info-panel h2 {
   margin: 0;
+  padding-right: 8px;
+  min-width: 0;
+  overflow-wrap: anywhere;
   font-family: var(--serif);
   font-size: var(--type-title);
   font-weight: 600;

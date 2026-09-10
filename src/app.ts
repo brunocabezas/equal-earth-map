@@ -44,18 +44,20 @@
     "#e8d0c4", "#dcc8bc", "#c9d8d2", "#e4ddd4",
     "#ffd8cc", "#d0ddd8", "#ecd4c8"
   ] as const;
+  const OVERLAY_HOVER_MIN_FACTOR = 1.5;
   const MAP = {
     ocean: "#b9d2df",
     lake: "#8fb8cc",
     river: "#6a9bb0",
     sphere: "#7f9aa8",
     countryStroke: "rgba(5,74,82,0.28)",
-    hover: "#c26148",
+    hover: "#054a52",
+    hoverFill: "rgba(5,74,82,0.07)",
     selected: "#032f34",
-    mercFill: "rgba(194,97,72,0.18)",
+    mercFill: "rgba(194,97,72,0.4)",
     mercStroke: "#c26148",
-    mercMuteFill: "rgba(152, 162, 168, 0.78)",
-    mercMuteStroke: "rgba(120, 130, 136, 0.9)",
+    mercMuteFill: "rgba(77,115,120,0.2)",
+    mercMuteStroke: "rgba(77,115,120,0.55)",
     capital: "#e29578",
     city: "#032f34",
     label: "#054a52",
@@ -406,6 +408,12 @@
     let currentTransform: ZoomTransform = d3.zoomIdentity;
     let hoverName: string | null = null;
     let countryCache: CountryCacheItem[] = [];
+    const countryByName = new Map<string, CountryCacheItem>();
+    let overlayGhosts: CountryCacheItem[] = [];
+    let overlayHoverGhosts: OverlayGhost[] = [];
+    let clipToSphere = false;
+    let overlayFrame = 0;
+    let pendingPointer: { vx: number; vy: number; sx: number; sy: number } | null = null;
     let hideGhosts: OverlayGhost[] = [];
     let hideGhostsKey = "";
     let hideMask: Uint8ClampedArray | null = null;
@@ -495,8 +503,10 @@
     function rebuildPaths() {
       path = d3.geoPath(projection);
       const baseName = baseProjectionName();
+      clipToSphere = baseName !== "mercator";
       spherePath = asPath2D(path, baseName === "mercator" ? mercatorWorld() : { type: "Sphere" });
       graticulePath = asPath2D(path, graticule);
+      const overlayOn = overlayMode();
       countryCache = countries.features.flatMap((feature) => {
         const path2d = asPath2D(path, feature);
         if (!path2d) return [];
@@ -505,14 +515,25 @@
         const center: [number, number] = validPoint(centroid)
           ? centroid
           : [(bounds[0][0] + bounds[1][0]) / 2, (bounds[0][1] + bounds[1][1]) / 2];
+        const name = feature.properties.name;
         return [{
           feature,
-          name: feature.properties.name,
-          color: colorFor(feature.properties.name),
+          name,
+          color: colorFor(name),
           path2d,
           bounds,
-          centroid: center
+          centroid: center,
+          apparent: overlayOn ? scaleForName(name) : 0
         }];
+      });
+      countryByName.clear();
+      for (const item of countryCache) countryByName.set(item.name, item);
+      overlayGhosts = countryCache.filter((item) => item.apparent > 0);
+      overlayGhosts.sort((a, b) => b.apparent - a.apparent);
+      overlayHoverGhosts = overlayGhosts.flatMap((item) => {
+        if (mercatorFactor(item.name) < OVERLAY_HOVER_MIN_FACTOR) return [];
+        const ghost = ghostHideData(item);
+        return ghost ? [ghost] : [];
       });
       hideGhostsKey = "";
       lakePath = asPath2D(path, { type: "FeatureCollection", features: lakes });
@@ -522,12 +543,21 @@
       })).filter(hasPath);
     }
 
-    function apparentScaleFor(name: string) {
-      if (!overlayMode()) return 0;
+    function scaleForName(name: string) {
       const stats = sizeIndex.get(name);
-      if (!stats || stats.ratio == null || stats.ratio <= 0) return 0;
+      if (stats?.ratio == null || stats.ratio <= 0) return 0;
       const scale = Math.sqrt(stats.ratio);
       return name === "Antarctica" ? Math.min(scale, 4) : scale;
+    }
+
+    function mercatorFactor(name: string) {
+      const ratio = sizeIndex.get(name)?.ratio;
+      if (ratio == null || ratio <= 0) return 1;
+      return ratio >= 1 ? ratio : 1 / ratio;
+    }
+
+    function apparentScaleFor(name: string) {
+      return countryByName.get(name)?.apparent ?? 0;
     }
 
     function itemCentroid(item: CountryCacheItem) {
@@ -542,7 +572,7 @@
     }
 
     function ghostHideData(item: CountryCacheItem): OverlayGhost | null {
-      const scale = apparentScaleFor(item.name);
+      const scale = item.apparent;
       const centroid = itemCentroid(item);
       if (!scale || !validPoint(centroid)) return null;
       const [[x0, y0], [x1, y1]] = item.bounds;
@@ -566,8 +596,8 @@
       if (state.compareMode === "always") return apparentItemsToBake();
       const name = hoverName || state.selected;
       if (!name) return [];
-      const item = countryCache.find((entry) => entry.name === name);
-      return item && apparentScaleFor(item.name) > 0 ? [item] : [];
+      const item = countryByName.get(name);
+      return item && item.apparent > 0 ? [item] : [];
     }
 
     function rebuildHideMask(ghosts: OverlayGhost[]) {
@@ -656,24 +686,22 @@
 
     function apparentItemsToBake() {
       if (!overlayMode() || !state.layers.countries) return [];
-      if (state.compareMode === "always") {
-        return countryCache.filter((item) => apparentScaleFor(item.name) > 0);
-      }
-      if (!state.selected) return [];
-      const selectedItem = countryCache.find((entry) => entry.name === state.selected);
-      return selectedItem && apparentScaleFor(selectedItem.name) > 0 ? [selectedItem] : [];
+      if (state.compareMode === "always") return overlayGhosts;
+      const selectedItem = state.selected ? countryByName.get(state.selected) : undefined;
+      return selectedItem && selectedItem.apparent > 0 ? [selectedItem] : [];
     }
 
     function withApparentTransform(
       ctx: CanvasRenderingContext2D,
       item: CountryCacheItem,
-      fn: (apparent: number) => void
+      fn: (apparent: number) => void,
+      { clip = false }: { clip?: boolean } = {}
     ) {
-      const apparent = apparentScaleFor(item.name);
+      const apparent = item.apparent;
       const centroid = itemCentroid(item);
       if (!apparent || !validPoint(centroid)) return 0;
       ctx.save();
-      if (spherePath && baseProjectionName() !== "mercator") ctx.clip(spherePath);
+      if (clip && clipToSphere && spherePath) ctx.clip(spherePath);
       ctx.translate(centroid[0], centroid[1]);
       ctx.scale(apparent, apparent);
       ctx.translate(-centroid[0], -centroid[1]);
@@ -682,15 +710,20 @@
       return apparent;
     }
 
-    function strokeApparent(ctx: CanvasRenderingContext2D, item: CountryCacheItem, zoomK: number) {
+    function strokeApparent(
+      ctx: CanvasRenderingContext2D,
+      item: CountryCacheItem,
+      zoomK: number,
+      { muted = false }: { muted?: boolean } = {}
+    ) {
       return withApparentTransform(ctx, item, (apparent) => {
-        ctx.strokeStyle = MAP.mercStroke;
+        ctx.strokeStyle = muted ? MAP.mercMuteStroke : MAP.mercStroke;
         ctx.lineWidth = 2.4 / (zoomK * apparent);
         ctx.stroke(item.path2d);
       }) > 0;
     }
 
-    function drawApparentSize(
+    function drawApparentFill(
       ctx: CanvasRenderingContext2D,
       item: CountryCacheItem,
       zoomK: number,
@@ -701,22 +734,61 @@
           ctx.fillStyle = muted ? MAP.mercMuteFill : MAP.mercFill;
           ctx.fill(item.path2d);
         }
-        ctx.strokeStyle = muted ? MAP.mercMuteStroke : MAP.mercStroke;
-        ctx.lineWidth = 2.4 / (zoomK * apparent);
-        ctx.stroke(item.path2d);
-      }) > 0;
+      }, { clip: true }) > 0;
     }
 
-    function drawCenteredGhost(ctx: CanvasRenderingContext2D, item: CountryCacheItem, zoomK: number) {
-      const apparent = apparentScaleFor(item.name);
-      if (!apparent) return;
-      if (apparent > 1) drawApparentSize(ctx, item, zoomK);
+    function paintCountries(ctx: CanvasRenderingContext2D, zoomK: number) {
+      if (!state.layers.countries) return;
+      ctx.strokeStyle = MAP.countryStroke;
+      ctx.lineWidth = 0.6 / zoomK;
+      for (const item of countryCache) {
+        ctx.fillStyle = item.color;
+        ctx.fill(item.path2d);
+        ctx.stroke(item.path2d);
+      }
+    }
+
+    function paintCountry(ctx: CanvasRenderingContext2D, item: CountryCacheItem, zoomK: number) {
       ctx.fillStyle = item.color;
       ctx.fill(item.path2d);
       ctx.strokeStyle = MAP.countryStroke;
       ctx.lineWidth = 0.6 / zoomK;
       ctx.stroke(item.path2d);
+    }
+
+    function drawCenteredGhost(ctx: CanvasRenderingContext2D, item: CountryCacheItem, zoomK: number) {
+      if (!item.apparent) return;
+      drawApparentFill(ctx, item, zoomK);
+      paintCountry(ctx, item, zoomK);
       strokeApparent(ctx, item, zoomK);
+    }
+
+    function coverOutsideSphere(t: ZoomTransform) {
+      if (!clipToSphere || !spherePath) return;
+      const outside = new Path2D();
+      outside.rect(0, 0, width, height);
+      outside.addPath(spherePath, { a: t.k, b: 0, c: 0, d: t.k, e: t.x, f: t.y });
+      mapCtx.fillStyle = MAP.ocean;
+      mapCtx.fill(outside, "evenodd");
+      mapCtx.save();
+      mapCtx.translate(t.x, t.y);
+      mapCtx.scale(t.k, t.k);
+      mapCtx.strokeStyle = MAP.sphere;
+      mapCtx.lineWidth = 1 / t.k;
+      mapCtx.stroke(spherePath);
+      mapCtx.restore();
+    }
+
+    function clipOverlayToSphere(t: ZoomTransform) {
+      if (!clipToSphere || !spherePath) return;
+      overCtx.save();
+      overCtx.globalCompositeOperation = "destination-in";
+      overCtx.translate(t.x, t.y);
+      overCtx.scale(t.k, t.k);
+      overCtx.fillStyle = "#fff";
+      overCtx.fill(spherePath);
+      overCtx.restore();
+      overCtx.globalCompositeOperation = "source-over";
     }
 
     function bake(t: ZoomTransform) {
@@ -729,7 +801,7 @@
       mapCtx.scale(t.k, t.k);
       mapCtx.fillStyle = MAP.ocean;
       if (spherePath) mapCtx.fill(spherePath);
-      if (spherePath && baseProjectionName() !== "mercator") {
+      if (clipToSphere && spherePath) {
         mapCtx.strokeStyle = MAP.sphere;
         mapCtx.lineWidth = 1 / t.k;
         mapCtx.stroke(spherePath);
@@ -739,22 +811,65 @@
         mapCtx.lineWidth = 0.7 / t.k;
         mapCtx.stroke(graticulePath);
       }
-      if (state.layers.countries) {
-        mapCtx.strokeStyle = MAP.countryStroke;
-        mapCtx.lineWidth = 0.6 / t.k;
-        for (const item of countryCache) {
-          mapCtx.fillStyle = item.color;
-          mapCtx.fill(item.path2d);
-          mapCtx.stroke(item.path2d);
-        }
-      }
       const ghosts = apparentItemsToBake();
-      if (ghosts.length) {
-        ghosts.sort((a, b) => apparentScaleFor(b.name) - apparentScaleFor(a.name));
+      const always = state.compareMode === "always" && ghosts.length > 0;
+      if (always) {
+        for (const item of ghosts) drawApparentFill(mapCtx, item, t.k, { muted: true });
+      }
+      paintCountries(mapCtx, t.k);
+      if (!always) {
         for (const item of ghosts) drawCenteredGhost(mapCtx, item, t.k);
       }
       drawWater(mapCtx, t.k);
+      if (always) {
+        for (const item of ghosts) strokeApparent(mapCtx, item, t.k, { muted: true });
+      }
       mapCtx.restore();
+      if (ghosts.length) coverOutsideSphere(t);
+    }
+
+    function scheduleOverlay() {
+      if (overlayFrame) return;
+      overlayFrame = requestAnimationFrame(() => {
+        overlayFrame = 0;
+        const pending = pendingPointer;
+        pendingPointer = null;
+        if (pending) applyPointer(pending.vx, pending.vy, pending.sx, pending.sy);
+        else drawOverlay();
+      });
+    }
+
+    function applyPointer(vx: number, vy: number, sx: number, sy: number) {
+      const city = cityAt(sx, sy);
+      if (city) {
+        if (hoverName !== null) {
+          hoverName = null;
+          drawOverlay();
+        }
+        showTip(vx, vy, `${city.name}${city.country ? ` · ${city.country}` : ""}`);
+        stage.style.cursor = "pointer";
+        return;
+      }
+      const hit = countryHitAt(sx, sy);
+      const next = hit ? hit.name : null;
+      if (next !== hoverName) {
+        hoverName = next;
+        drawOverlay();
+      }
+      if (hit) {
+        const stats = sizeIndex.get(hit.name);
+        const inflation = overlayMode() || state.projections.mercator
+          ? formatInflation(stats?.ratio)
+          : null;
+        const tip = inflation
+          ? `${hit.name} · Mercator ${inflation}`
+          : hit.name;
+        showTip(vx, vy, tip);
+        stage.style.cursor = "pointer";
+      } else {
+        hideTip();
+        stage.style.cursor = "grab";
+      }
     }
 
     function drawOverlay() {
@@ -764,33 +879,31 @@
       overCtx.save();
       overCtx.translate(t.x, t.y);
       overCtx.scale(t.k, t.k);
-      if (state.compareMode === "always" && hoverName) {
-        for (const item of apparentItemsToBake()) {
-          if (item.name === hoverName) continue;
-          drawApparentSize(overCtx, item, t.k, { muted: true });
-        }
-      }
       if (highlight) {
-        const item = countryCache.find((entry) => entry.name === highlight);
+        const item = countryByName.get(highlight);
         if (item && state.compareMode === "hover" && item.name !== state.selected) {
-          drawApparentSize(overCtx, item, t.k);
+          drawApparentFill(overCtx, item, t.k);
         }
         if (item && state.compareMode === "always" && hoverName === item.name) {
-          drawApparentSize(overCtx, item, t.k);
+          drawApparentFill(overCtx, item, t.k);
         }
         if (item) {
-          overCtx.filter = hoverName === item.name ? "brightness(1.14) saturate(1.2)" : "none";
+          const hovering = hoverName === item.name;
           overCtx.fillStyle = item.color;
           overCtx.fill(item.path2d);
-          overCtx.filter = "none";
-          overCtx.strokeStyle = hoverName === item.name ? MAP.hover : MAP.selected;
-          overCtx.lineWidth = (hoverName === item.name ? 2 : 1.6) / t.k;
+          if (hovering) {
+            overCtx.fillStyle = MAP.hoverFill;
+            overCtx.fill(item.path2d);
+          }
+          overCtx.strokeStyle = hovering ? MAP.hover : MAP.selected;
+          overCtx.lineWidth = (hovering ? 1.85 : 1.7) / t.k;
           overCtx.stroke(item.path2d);
           drawWater(overCtx, t.k, item.path2d);
           if (overlayMode()) strokeApparent(overCtx, item, t.k);
         }
       }
       overCtx.restore();
+      clipOverlayToSphere(t);
       if (!state.layers.cities && !state.layers.labels) return;
       const compact = isCompactView();
       const hideGhostsNow = currentHideGhosts();
@@ -873,11 +986,33 @@
       const [x, y] = currentTransform.invert([screenX, screenY]);
       for (let i = countryCache.length - 1; i >= 0; i -= 1) {
         const item = countryCache[i];
-        if (item && mapCtx.isPointInPath(item.path2d, x * dpr, y * dpr, "evenodd")) {
-          return item;
-        }
+        if (!item) continue;
+        const [[x0, y0], [x1, y1]] = item.bounds;
+        if (x < x0 || y < y0 || x > x1 || y > y1) continue;
+        if (mapCtx.isPointInPath(item.path2d, x * dpr, y * dpr, "evenodd")) return item;
       }
       return null;
+    }
+
+    function overlayAt(screenX: number, screenY: number) {
+      if (state.compareMode !== "always" || !overlayHoverGhosts.length) return null;
+      const xy = currentTransform.invert([screenX, screenY]);
+      if (!validPoint(xy)) return null;
+      const [x, y] = xy;
+      for (let i = overlayHoverGhosts.length - 1; i >= 0; i -= 1) {
+        const ghost = overlayHoverGhosts[i];
+        if (x < ghost.x0 || x > ghost.x1 || y < ghost.y0 || y > ghost.y1) continue;
+        const local: [number, number] = [
+          ghost.centroid[0] + (x - ghost.centroid[0]) / ghost.scale,
+          ghost.centroid[1] + (y - ghost.centroid[1]) / ghost.scale
+        ];
+        if (pointInPath2d(ghost.item.path2d, local)) return ghost.item;
+      }
+      return null;
+    }
+
+    function countryHitAt(screenX: number, screenY: number) {
+      return countryAt(screenX, screenY) ?? overlayAt(screenX, screenY);
     }
 
     function cityAt(screenX: number, screenY: number) {
@@ -1086,39 +1221,12 @@
       if (interacting) return;
       const [vx, vy] = d3.pointer(event, atlasView);
       const [sx, sy] = d3.pointer(event, stage);
-      const city = cityAt(sx, sy);
-      if (city) {
-        if (hoverName !== null) {
-          hoverName = null;
-          drawOverlay();
-        }
-        showTip(vx, vy, `${city.name}${city.country ? ` · ${city.country}` : ""}`);
-        stage.style.cursor = "pointer";
-        return;
-      }
-      const hit = countryAt(sx, sy);
-      const next = hit ? hit.name : null;
-      if (next !== hoverName) {
-        hoverName = next;
-        drawOverlay();
-      }
-      if (hit) {
-        const stats = sizeIndex.get(hit.name);
-        const inflation = overlayMode() || state.projections.mercator
-          ? formatInflation(stats && stats.ratio)
-          : null;
-        const tip = inflation
-          ? `${hit.name} · Mercator ${inflation}`
-          : hit.name;
-        showTip(vx, vy, tip);
-        stage.style.cursor = "pointer";
-      } else {
-        hideTip();
-        stage.style.cursor = "grab";
-      }
+      pendingPointer = { vx, vy, sx, sy };
+      scheduleOverlay();
     });
 
     stage.addEventListener("pointerleave", () => {
+      pendingPointer = null;
       hoverName = null;
       hideTip();
       drawOverlay();
@@ -1134,7 +1242,7 @@
         if (xy) zoomToPoint(xy[0], xy[1], 8);
         return;
       }
-      const hit = countryAt(sx, sy);
+      const hit = countryHitAt(sx, sy);
       if (hit) {
         closeSheets();
         selectCountry(hit.feature);

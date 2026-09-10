@@ -98,6 +98,7 @@ interface CountryCacheItem {
   path2d: Path2D;
   centroid: [number, number];
   bounds: [[number, number], [number, number]];
+  apparent: number;
 }
 
 interface OverlayGhost {

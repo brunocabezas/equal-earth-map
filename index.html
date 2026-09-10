@@ -38,6 +38,8 @@
     />
     <meta name="twitter:image" content="https://trueearthmap.com/og-image.jpg" />
     <link rel="stylesheet" href="styles.css" />
+    <link rel="preload" href="vendor/d3.min.js" as="script" />
+    <link rel="preload" href="data/countries-50m.json" as="fetch" crossorigin />
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
@@ -99,10 +101,18 @@
     </script>
   </head>
   <body>
+    <a class="skip-link" href="#search">Skip to search</a>
     <header class="topbar">
       <div class="brand">
-        <h1>Equal Earth</h1>
-        <p>Countries at their true relative sizes</p>
+        <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true">
+          <circle cx="16" cy="16" r="13" />
+          <ellipse cx="16" cy="16" rx="6.5" ry="13" />
+          <path d="M3 16h26" />
+        </svg>
+        <div class="brand-copy">
+          <h1>Equal Earth</h1>
+          <p>Countries at their true relative sizes</p>
+        </div>
       </div>
       <nav class="mode-switch" role="group" aria-label="Map mode">
         <button type="button" class="mode-btn is-active" data-mode="atlas" aria-pressed="true">
@@ -127,7 +137,7 @@
               <button type="button" class="seg-btn" data-wall="physical">Physical</button>
             </div>
             <p class="panel-note" id="wall-caption">
-              Patterson political wall map, Oceania centering (150°E). Drag, scroll, or pinch to explore.
+              Patterson political wall map, Oceania centering (150°E). Drag, scroll, pinch, or double-click to explore.
             </p>
           </div>
         </div>
@@ -147,9 +157,9 @@
       </section>
 
       <section id="atlas-view" class="view is-visible" aria-label="Interactive Equal Earth atlas">
-        <div id="atlas-stage" role="img" aria-label="Equal Earth world map with countries, lakes, rivers, and cities">
-          <canvas id="atlas-map"></canvas>
-          <canvas id="atlas-overlay"></canvas>
+        <div id="atlas-stage" tabindex="0" aria-label="Interactive Equal Earth map. Search for a country, or focus the map: arrow keys pan, Enter selects the country in the center, plus and minus zoom.">
+          <canvas id="atlas-map" aria-hidden="true"></canvas>
+          <canvas id="atlas-overlay" aria-hidden="true"></canvas>
         </div>
         <p id="atlas-status" class="atlas-status" role="status">Loading Natural Earth data…</p>
         <div class="map-chrome left">
@@ -161,48 +171,40 @@
                   <path d="M10.2 10.2 13.5 13.5" />
                 </svg>
                 <span class="sr-only">Search a country or city</span>
-                <input id="search" type="search" placeholder="Ghana, Tokyo…" autocomplete="off" enterkeyhint="search" />
+                <input id="search" type="search" placeholder="Greenland…" autocomplete="off" enterkeyhint="search" maxlength="80" />
               </label>
-              <ul id="search-results" hidden></ul>
+              <ul id="search-results" hidden aria-label="Search results"></ul>
             </div>
-            <button type="button" class="sheet-toggle" id="atlas-controls-toggle" aria-expanded="false" aria-controls="atlas-controls">
+            <button type="button" class="compare-btn is-active" id="mercator-size" aria-pressed="true" aria-label="Mercator size">
+              <span class="label-full">Mercator size</span>
+              <span class="label-short">Size</span>
+            </button>
+            <button type="button" class="sheet-toggle" id="atlas-controls-toggle" aria-expanded="false" aria-controls="atlas-controls" aria-haspopup="dialog">
               <svg class="icon" viewBox="0 0 16 16" aria-hidden="true">
                 <path d="M2.5 4.5h11M4 8h8M5.5 11.5h5" />
               </svg>
               Layers
             </button>
           </div>
-          <div class="sheet" id="atlas-controls">
+          <div class="sheet" id="atlas-controls" role="dialog" aria-modal="true" aria-labelledby="atlas-controls-title">
             <div class="panel">
               <div class="sheet-head">
-                <h2>Map options</h2>
+                <h2 id="atlas-controls-title">Map options</h2>
                 <button type="button" class="sheet-close">Close</button>
               </div>
-              <fieldset>
-                <legend>Projections</legend>
-                <div class="segmented" role="group" aria-label="Map projections">
-                  <button type="button" class="seg-btn is-active" data-proj="equalEarth" aria-pressed="true">Equal Earth</button>
-                  <button type="button" class="seg-btn" data-proj="mercator" aria-pressed="false">Mercator</button>
-                </div>
-                <p class="panel-note" id="proj-hint">Turn both on, then click a country to compare true and apparent size.</p>
-                <ul class="proj-key" id="proj-key" hidden>
-                  <li><span class="swatch swatch-ee" aria-hidden="true"></span> Equal Earth · true area</li>
-                  <li><span class="swatch swatch-merc" aria-hidden="true"></span> Mercator · same shape, apparent size</li>
-                </ul>
-              </fieldset>
-              <fieldset id="compare-set" hidden>
-                <legend>Show size overlay</legend>
-                <div class="segmented" role="group" aria-label="When to show Mercator size">
-                  <button type="button" class="seg-btn is-active" data-compare="hover" aria-pressed="true">On hover</button>
-                  <button type="button" class="seg-btn" data-compare="always" aria-pressed="false">Always</button>
-                </div>
-              </fieldset>
               <fieldset>
                 <legend>Center</legend>
                 <div class="segmented" role="group" aria-label="Map centering">
                   <button type="button" class="seg-btn is-active" data-center="0">0°</button>
                   <button type="button" class="seg-btn" data-center="-90">90°W</button>
                   <button type="button" class="seg-btn" data-center="150">150°E</button>
+                </div>
+              </fieldset>
+              <fieldset id="compare-set">
+                <legend>Show size overlay</legend>
+                <div class="segmented" role="group" aria-label="When to show Mercator size">
+                  <button type="button" class="seg-btn" data-compare="hover" aria-pressed="false">On hover</button>
+                  <button type="button" class="seg-btn is-active" data-compare="always" aria-pressed="true">Always</button>
                 </div>
               </fieldset>
               <fieldset class="layer-set">
@@ -216,15 +218,15 @@
               </fieldset>
             </div>
           </div>
-          <div class="panel overlay-legend" id="overlay-legend" hidden>
-            <span><span class="swatch swatch-ee" aria-hidden="true"></span> True area</span>
-            <span><span class="swatch swatch-merc" aria-hidden="true"></span> Mercator size</span>
+          <div class="panel overlay-legend" id="overlay-legend">
+            <span><span class="swatch swatch-ee" aria-hidden="true"></span> True size</span>
+            <span><span class="swatch swatch-merc" aria-hidden="true"></span> Looks this big on Mercator</span>
           </div>
-          <div class="panel info-panel" id="place-info" hidden>
+          <div class="panel info-panel" id="place-info" hidden role="region" aria-live="polite" aria-labelledby="info-title">
             <button type="button" class="info-close" id="info-close" aria-label="Clear selection">
               <svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" /></svg>
             </button>
-            <h2 id="info-title"></h2>
+            <h2 id="info-title" tabindex="-1"></h2>
             <p id="info-meta"></p>
             <dl id="info-measures" hidden></dl>
             <p id="info-area"></p>
@@ -254,15 +256,15 @@
 
     <div id="sheet-backdrop" class="sheet-backdrop"></div>
 
-    <dialog id="about">
+    <dialog id="about" aria-labelledby="about-title">
       <div class="about-card">
-        <h2>Why this map looks different</h2>
+        <h2 id="about-title">Why this map looks different</h2>
         <p>
           Most web maps use Mercator, which inflates countries near the poles. Greenland looks
           similar in size to Africa there, though Africa is about 14 times larger. Equal Earth is
           an equal-area projection: landmasses keep their true relative sizes, with more familiar
-          continent shapes than Gall–Peters. Turn both projections on, then click a country: a red
-          outline shows Mercator’s apparent size as the same shape, scaled up.
+          continent shapes than Gall–Peters. Muted outlines show how large those countries look on
+          Mercator; they turn coral when you point at one. Click one for the numbers.
         </p>
         <p>
           The atlas redraws Natural Earth 1:50 million vectors in Equal Earth so countries, rivers,
@@ -281,7 +283,6 @@
     <script src="dist/site-config.js"></script>
     <script src="version.js"></script>
     <script src="dist/analytics.js"></script>
-    <script src="vendor/openseadragon.min.js"></script>
     <script src="vendor/d3.min.js"></script>
     <script src="vendor/topojson.min.js"></script>
     <script src="dist/app.js"></script>

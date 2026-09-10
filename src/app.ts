@@ -167,16 +167,18 @@
     return approx ? `~${text}` : text;
   }
 
+  function formatFactor(n: number) {
+    if (n >= 40) return String(Math.round(n));
+    if (n >= 10) return n.toFixed(0);
+    if (n >= 2) return n.toFixed(1);
+    return n.toFixed(2);
+  }
+
   function formatInflation(ratio: number | null | undefined) {
     if (ratio == null || !Number.isFinite(ratio) || ratio <= 0) return null;
-    if (ratio >= 0.85 && ratio <= 1.18) return "about the same";
-    if (ratio > 1) {
-      const n = ratio >= 40 ? Math.round(ratio) : ratio >= 10 ? ratio.toFixed(0) : ratio.toFixed(1);
-      return `${n}× larger`;
-    }
-    const inv = 1 / ratio;
-    const n = inv >= 10 ? inv.toFixed(0) : inv.toFixed(1);
-    return `${n}× smaller`;
+    if (ratio > 1) return `${formatFactor(ratio)}× larger`;
+    if (ratio < 1) return `${formatFactor(1 / ratio)}× smaller`;
+    return "1.00×";
   }
 
   function equatorAnchor(projection: GeoProjection, lon0: number) {
@@ -959,12 +961,8 @@
       const rows = [{ label: "True area", value: formatAreaKm2(stats.trueKm2) }];
       const inflation = formatInflation(stats.ratio);
       if (inflation && stats.ratio) {
-        if (inflation === "about the same") {
-          rows.push({ label: "Mercator appearance", value: "about the same" });
-        } else {
-          rows.push({ label: "Looks like on Mercator", value: formatAreaKm2(stats.trueKm2 * stats.ratio, { approx: true }) });
-          rows.push({ label: "Difference", value: inflation });
-        }
+        rows.push({ label: "Looks like on Mercator", value: formatAreaKm2(stats.trueKm2 * stats.ratio, { approx: true }) });
+        rows.push({ label: "Difference", value: inflation });
       }
       renderMeasures(rows);
 
@@ -973,7 +971,7 @@
         area.textContent = "The red outline is the same country scaled to Mercator's apparent size.";
       } else if (comparing) {
         area.textContent = "Near the equator the two projections agree closely on size, so there is no extra outline.";
-      } else if (mercOn && inflation && inflation !== "about the same") {
+      } else if (mercOn && inflation) {
         area.textContent = `This land appears ${inflation} than its true size on Mercator.`;
       } else if (!mercOn) {
         area.textContent = "On Equal Earth this area stays true to scale relative to other countries.";
@@ -1109,7 +1107,7 @@
         const inflation = overlayMode() || state.projections.mercator
           ? formatInflation(stats && stats.ratio)
           : null;
-        const tip = inflation && inflation !== "about the same"
+        const tip = inflation
           ? `${hit.name} · Mercator ${inflation}`
           : hit.name;
         showTip(vx, vy, tip);

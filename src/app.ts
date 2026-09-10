@@ -5,12 +5,12 @@
     return el as T;
   }
 
-  function isViewMode(value: string | undefined): value is ViewMode {
-    return value === "atlas" || value === "wall";
-  }
-
   function isWallLayer(value: string | undefined): value is WallLayer {
     return value === "political" || value === "physical";
+  }
+
+  function isProjectionName(value: string | undefined): value is ProjectionName {
+    return value === "equalEarth" || value === "mercator";
   }
 
   function isLayerName(value: string | undefined): value is LayerName {
@@ -61,16 +61,7 @@
     graticule: "rgba(237,246,249,0.35)"
   } as const satisfies DeepReadonly<Record<string, string>>;
 
-  const WALL_CAPTIONS: Record<WallLayer, string> = {
-    political:
-      "Patterson political wall map, Oceania centering (150°E). Drag, scroll, pinch, or double-click to explore.",
-    physical:
-      "BMZ physical Equal Earth map with terrain, vegetation, and ocean floor. Drag, scroll, pinch, or double-click to explore."
-  };
-
   const state: AtlasState = {
-    mode: "atlas",
-    wallLayer: "political",
     projections: {
       equalEarth: true,
       mercator: true
@@ -96,13 +87,10 @@
     return state.projections.equalEarth ? "equalEarth" : "mercator";
   }
 
-  let viewer: OsdViewer | null = null;
-  let wallReady: Promise<void> | null = null;
   let atlasReady = false;
   let atlasLoading = false;
   let atlas: { resize: () => void } | null = null;
 
-  const wallView = requireElement("wall-view");
   const atlasView = requireElement("atlas-view");
   const about = requireElement<HTMLDialogElement>("about");
 
@@ -226,103 +214,6 @@
     if (window.posthog && typeof window.posthog.capture === "function") {
       window.posthog.capture(event, props);
     }
-  }
-
-  function loadOpenSeadragon() {
-    if (typeof OpenSeadragon === "function") return Promise.resolve();
-    return new Promise<void>((resolve, reject) => {
-      const script = document.createElement("script");
-      script.src = "vendor/openseadragon.min.js";
-      script.async = true;
-      script.onload = () => resolve();
-      script.onerror = () => reject(new Error("Could not load wall map viewer"));
-      document.head.appendChild(script);
-    });
-  }
-
-  function ensureWall() {
-    if (viewer) {
-      viewer.viewport.resize();
-      return Promise.resolve();
-    }
-    if (!wallReady) {
-      wallView.setAttribute("aria-busy", "true");
-      wallReady = loadOpenSeadragon()
-        .then(() => {
-          if (!viewer) initWall();
-        })
-        .catch((error: unknown) => {
-          wallReady = null;
-          const caption = document.getElementById("wall-caption");
-          if (caption) {
-            caption.textContent = error instanceof Error
-              ? error.message
-              : "Could not load wall map viewer";
-          }
-          throw error;
-        })
-        .finally(() => {
-          wallView.removeAttribute("aria-busy");
-        });
-    }
-    return wallReady;
-  }
-
-  function initWall() {
-    viewer = OpenSeadragon({
-      id: "osd",
-      prefixUrl: "",
-      showNavigator: true,
-      navigatorPosition: "BOTTOM_LEFT",
-      showNavigationControl: false,
-      visibilityRatio: 0.85,
-      minZoomImageRatio: 0.6,
-      maxZoomPixelRatio: 2.4,
-      homeFillsViewer: true,
-      animationTime: 0.08,
-      springStiffness: 24,
-      zoomPerScroll: 1.6,
-      zoomPerClick: 2,
-      gestureSettingsMouse: {
-        clickToZoom: false,
-        dblClickToZoom: true,
-        flickEnabled: true,
-        zoomToRefPoint: true
-      },
-      tileSources: {
-        type: "image",
-        url: `maps/${state.wallLayer}.jpg`
-      }
-    });
-
-    requireElement("wall-zoom").addEventListener("click", (event) => {
-      const target = event.target;
-      if (!(target instanceof Element)) return;
-      const action = target.closest("[data-zoom]")?.getAttribute("data-zoom") ?? undefined;
-      if (!isZoomAction(action) || !viewer) return;
-      if (action === "in") viewer.viewport.zoomBy(2, undefined, true);
-      if (action === "out") viewer.viewport.zoomBy(0.5, undefined, true);
-      if (action === "home") viewer.viewport.goHome(true);
-      viewer.viewport.applyConstraints();
-    });
-
-    document.querySelectorAll<HTMLElement>("[data-wall]").forEach((button) => {
-      button.addEventListener("click", () => {
-        const layer = button.dataset.wall;
-        if (!isWallLayer(layer) || layer === state.wallLayer || !viewer) return;
-        const bounds = viewer.viewport.getBounds();
-        state.wallLayer = layer;
-        document.querySelectorAll<HTMLElement>("[data-wall]").forEach((node) => {
-          node.classList.toggle("is-active", node === button);
-        });
-        requireElement("wall-caption").textContent = WALL_CAPTIONS[layer];
-        viewer.addOnceHandler("open", () => {
-          viewer.viewport.fitBounds(bounds, true);
-        });
-        viewer.open({ type: "image", url: `maps/${layer}.jpg` });
-        track("wall_layer", { layer });
-      });
-    });
   }
 
   const MERCATOR_MAX_LAT = 87;
@@ -1345,7 +1236,10 @@
       }
     });
 
-    searchInput.addEventListener("input", () => search(searchInput.value));
+    searchInput.addEventListener("input", () => {
+      closeSheets();
+      search(searchInput.value);
+    });
     searchInput.addEventListener("keydown", (event) => {
       if (event.key === "ArrowDown" && !results.hidden) {
         const first = results.querySelector<HTMLButtonElement>("button");
@@ -1379,10 +1273,19 @@
 
     function syncProjectionUI() {
       const overlay = overlayMode();
-      const compareBtn = document.getElementById("mercator-size");
-      if (compareBtn) {
-        compareBtn.classList.toggle("is-active", overlay);
-        compareBtn.setAttribute("aria-pressed", String(overlay));
+      document.querySelectorAll<HTMLElement>("[data-proj]").forEach((node) => {
+        const name = node.dataset.proj;
+        const on = isProjectionName(name) ? Boolean(state.projections[name]) : false;
+        node.classList.toggle("is-active", on);
+        node.setAttribute("aria-pressed", String(on));
+      });
+      const hint = document.getElementById("proj-hint");
+      if (hint) {
+        hint.textContent = overlay
+          ? (state.compareMode === "always"
+            ? "Every measurable country gets a centered overlay. Zoom in to see even tiny size differences."
+            : "Hover a country to see Mercator’s apparent size. Dots under the overlay are hidden.")
+          : "Turn both on, then hover a country to compare true and apparent size.";
       }
       const legend = document.getElementById("overlay-legend");
       if (legend) legend.hidden = !overlay;
@@ -1403,17 +1306,22 @@
       );
     }
 
-    requireElement("mercator-size").addEventListener("click", () => {
-      state.projections.equalEarth = true;
-      state.projections.mercator = !state.projections.mercator;
-      hideGhostsKey = "";
-      syncProjectionUI();
-      layout();
-      const selected = selectedFeature();
-      if (selected) updateCountryInfo(selected);
-      track("projection", {
-        equalEarth: state.projections.equalEarth,
-        mercator: state.projections.mercator
+    document.querySelectorAll<HTMLElement>("[data-proj]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const name = button.dataset.proj;
+        if (!isProjectionName(name)) return;
+        const other: ProjectionName = name === "equalEarth" ? "mercator" : "equalEarth";
+        if (state.projections[name] && !state.projections[other]) return;
+        state.projections[name] = !state.projections[name];
+        hideGhostsKey = "";
+        syncProjectionUI();
+        layout();
+        const selected = selectedFeature();
+        if (selected) updateCountryInfo(selected);
+        track("projection", {
+          equalEarth: state.projections.equalEarth,
+          mercator: state.projections.mercator
+        });
       });
     });
 
@@ -1433,7 +1341,9 @@
     document.querySelectorAll<HTMLElement>("[data-center]").forEach((button) => {
       button.addEventListener("click", () => {
         state.center = Number(button.dataset.center);
-        document.querySelectorAll<HTMLElement>("[data-center]").forEach((node) => node.classList.toggle("is-active", node === button));
+        document.querySelectorAll<HTMLElement>("[data-center]").forEach((node) => {
+          node.classList.toggle("is-active", Number(node.dataset.center) === state.center);
+        });
         layout();
       });
     });
@@ -1478,7 +1388,7 @@
     }
 
     function onViewportChange() {
-      if (state.mode === "atlas") layout();
+      layout();
     }
 
     atlas = { resize: () => layout() };
@@ -1490,29 +1400,13 @@
     atlasLoading = false;
   }
 
-  function setMode(mode: ViewMode) {
-    state.mode = mode;
-    document.querySelectorAll<HTMLElement>(".mode-btn").forEach((button) => {
-      const active = button.dataset.mode === mode;
-      button.classList.toggle("is-active", active);
-      button.setAttribute("aria-pressed", String(active));
-    });
-    wallView.classList.toggle("is-visible", mode === "wall");
-    atlasView.classList.toggle("is-visible", mode === "atlas");
-    wallView.hidden = mode !== "wall";
-    atlasView.hidden = mode !== "atlas";
-    closeSheets();
-    if (mode === "atlas") initAtlas();
-    if (mode === "wall") void ensureWall();
-    track("mode", { mode });
-  }
-
   let sheetFocusReturn: HTMLElement | null = null;
 
   function closeSheets(restoreFocus = false) {
     const wasOpen = Boolean(document.querySelector(".sheet.is-open"));
     document.querySelectorAll(".sheet.is-open").forEach((sheet) => sheet.classList.remove("is-open"));
-    document.querySelectorAll(".sheet-toggle").forEach((button) => button.setAttribute("aria-expanded", "false"));
+    const toggle = document.getElementById("atlas-controls-toggle");
+    if (toggle) toggle.setAttribute("aria-expanded", "false");
     document.body.classList.remove("sheet-open");
     if (restoreFocus && wasOpen && sheetFocusReturn) {
       sheetFocusReturn.focus();
@@ -1547,9 +1441,23 @@
   });
   requireElement("sheet-backdrop").addEventListener("click", () => closeSheets(true));
 
-  document.querySelectorAll<HTMLElement>(".mode-btn").forEach((button) => {
-    button.addEventListener("click", () => {
-      if (isViewMode(button.dataset.mode)) setMode(button.dataset.mode);
+  document.addEventListener("pointerdown", (event) => {
+    const target = event.target;
+    if (!(target instanceof Node)) return;
+    const searchPanel = document.querySelector(".search-panel");
+    const results = document.getElementById("search-results");
+    if (results && searchPanel && !searchPanel.contains(target)) results.hidden = true;
+    const sheet = document.getElementById("atlas-controls");
+    const toggle = document.getElementById("atlas-controls-toggle");
+    if (!sheet?.classList.contains("is-open") || !toggle) return;
+    if (sheet.contains(target) || toggle.contains(target)) return;
+    closeSheets();
+  });
+
+  document.querySelectorAll<HTMLElement>("[data-download-map]").forEach((link) => {
+    link.addEventListener("click", () => {
+      const layer = link.dataset.downloadMap;
+      if (isWallLayer(layer)) track("download_map", { layer });
     });
   });
 
@@ -1588,10 +1496,6 @@
   });
   renderAboutVersion();
 
-  window.addEventListener("resize", () => {
-    if (state.mode === "wall" && viewer) viewer.viewport.resize();
-  });
-
   window.addEventListener("keydown", (event) => {
     const sheet = document.querySelector<HTMLElement>(".sheet.is-open");
     if (sheet && event.key === "Tab") {
@@ -1619,12 +1523,18 @@
       }
     }
     if (event.target instanceof HTMLElement && event.target.matches("input, textarea")) return;
-    const zoomRoot = state.mode === "wall" ? document.getElementById("wall-zoom") : document.getElementById("atlas-zoom");
+    const zoomRoot = document.getElementById("atlas-zoom");
     if (!zoomRoot) return;
     if (event.key === "+" || event.key === "=") zoomRoot.querySelector<HTMLElement>("[data-zoom=in]")?.click();
     if (event.key === "-" || event.key === "_") zoomRoot.querySelector<HTMLElement>("[data-zoom=out]")?.click();
     if (event.key === "0") zoomRoot.querySelector<HTMLElement>("[data-zoom=home]")?.click();
     if (event.key === "Escape") {
+      const results = document.getElementById("search-results");
+      if (results && !results.hidden) {
+        results.hidden = true;
+        event.preventDefault();
+        return;
+      }
       if (document.querySelector(".sheet.is-open")) {
         closeSheets(true);
         event.preventDefault();
@@ -1634,5 +1544,5 @@
     }
   });
 
-  setMode("atlas");
+  void initAtlas();
 })();

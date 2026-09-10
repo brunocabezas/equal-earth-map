@@ -9,7 +9,6 @@ mkdirSync(dest, { recursive: true });
 
 const files = [
   ["d3/dist/d3.min.js", "d3.min.js"],
-  ["openseadragon/build/openseadragon/openseadragon.min.js", "openseadragon.min.js"],
   ["topojson-client/dist/topojson-client.min.js", "topojson.min.js"],
 ];
 

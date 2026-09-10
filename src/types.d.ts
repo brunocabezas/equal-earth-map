@@ -1,4 +1,3 @@
-type ViewMode = "atlas" | "wall";
 type WallLayer = "political" | "physical";
 type ProjectionName = "equalEarth" | "mercator";
 type CompareMode = "hover" | "always";
@@ -9,8 +8,6 @@ type LayerFlags = { [K in LayerName]: boolean };
 type ProjectionFlags = { [K in ProjectionName]: boolean };
 
 interface AtlasState {
-  mode: ViewMode;
-  wallLayer: WallLayer;
   projections: ProjectionFlags;
   center: number;
   layers: LayerFlags;
@@ -117,11 +114,10 @@ interface RiverPath {
 }
 
 type AnalyticsEvents = {
-  wall_layer: { layer: WallLayer };
+  download_map: { layer: WallLayer };
   select_country: { name: string };
   projection: { equalEarth: boolean; mercator: boolean };
   compare_mode: { mode: CompareMode };
-  mode: { mode: ViewMode };
 };
 
 type DeepReadonly<T> = {

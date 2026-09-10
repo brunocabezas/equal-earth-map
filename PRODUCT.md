@@ -20,12 +20,12 @@ The default view is the Equal Earth projection, an equal-area map with more fami
 
 ## Operating Context
 
-Used in a browser on phone or desktop, often after looking at a conventional web map. Two modes: an interactive Natural Earth atlas, and zoomable original wall maps (Patterson political, BMZ physical).
+Used in a browser on phone or desktop, often after looking at a conventional web map. One surface: an interactive Natural Earth atlas. Original wall maps (Patterson political, BMZ physical) are downloads.
 
 ## Capabilities and Constraints
 
 - Interactive atlas: pan, zoom, search countries and cities, toggle layers, switch Equal Earth / Mercator, recentre at 0°, 90°W, or 150°E.
-- Wall maps: Patterson political and BMZ physical sheets, zoomable as images.
+- Wall maps: Patterson political and BMZ physical sheets as downloads.
 - Public name is Equal Earth / Equal Earth Map. trueearthmap.com is the URL, not the product name.
 - Free: no account, no paywall.
 - Visit counting uses GoatCounter with no cookies. Do not introduce cookie-based analytics for that job.

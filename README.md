@@ -7,7 +7,7 @@ Live site: https://trueearthmap.com/
 ## What you can do
 
 - **Interactive atlas** — Natural Earth 1:50 million vectors in the Equal Earth projection, with pan/zoom, search, layers, and a Mercator comparison.
-- **Wall maps** — original Patterson political map and BMZ physical map, zoomable like a photograph.
+- **Wall maps** — original Patterson political map and BMZ physical map, available as downloads.
 
 ## Run locally
 
@@ -16,7 +16,7 @@ bun install
 bun run serve
 ```
 
-That installs D3, OpenSeadragon, and TopoJSON from npm, copies their minified files into `vendor/` (gitignored), compiles TypeScript from `src/` into `dist/`, then serves the site. Open http://127.0.0.1:8765/
+That installs D3 and TopoJSON from npm, copies their minified files into `vendor/` (gitignored), compiles TypeScript from `src/` into `dist/`, then serves the site. Open http://127.0.0.1:8777/
 
 `bun run check` type-checks without emitting files. npm works the same way if you prefer it.
 

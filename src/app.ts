@@ -22,6 +22,10 @@
     return value === "in" || value === "out" || value === "home";
   }
 
+  function isCompareMode(value: string | undefined): value is CompareMode {
+    return value === "hover" || value === "always";
+  }
+
   function hasPath<T extends { path2d: Path2D | null }>(item: T): item is T & { path2d: Path2D } {
     return item.path2d !== null;
   }
@@ -722,22 +726,9 @@
       ctx.restore();
     }
 
-    function alwaysRatioFloor() {
-      const k = currentTransform.k;
-      if (k < 1.45) return 2.4;
-      if (k < 2.8) return 1.35;
-      return 1.08;
-    }
-
     function apparentItemsToBake() {
       if (!overlayMode() || !state.layers.countries) return [];
-      if (state.compareMode === "always") {
-        const floor = alwaysRatioFloor();
-        return overlayGhosts.filter((item) => {
-          const stats = sizeIndex.get(item.name);
-          return Boolean(stats && stats.ratio != null && stats.ratio >= floor);
-        });
-      }
+      if (state.compareMode === "always") return overlayGhosts;
       const selectedItem = state.selected ? countryByName.get(state.selected) : undefined;
       return selectedItem && selectedItem.apparent > 0 ? [selectedItem] : [];
     }
@@ -1261,6 +1252,7 @@
         button.append(name, meta);
         button.addEventListener("click", () => {
           results.hidden = true;
+          results.replaceChildren();
           searchInput.value = hit.name;
           closeSheets();
           if (hit.kind === "country") selectCountry(hit.feature, true);
@@ -1353,10 +1345,19 @@
       }
       const legend = document.getElementById("overlay-legend");
       if (legend) legend.hidden = !overlay;
+      const compareSet = document.getElementById("compare-set");
+      if (compareSet) compareSet.hidden = !overlay;
+      document.querySelectorAll<HTMLElement>("[data-compare]").forEach((node) => {
+        const on = node.dataset.compare === state.compareMode;
+        node.classList.toggle("is-active", on);
+        node.setAttribute("aria-pressed", String(on));
+      });
       stage.setAttribute(
         "aria-label",
         overlay
-          ? "Equal Earth map with Mercator size outlines. Arrow keys pan, Enter selects the country in the center, plus and minus zoom."
+          ? (state.compareMode === "always"
+            ? "Equal Earth map with Mercator size outlines. Arrow keys pan, Enter selects the country in the center, plus and minus zoom."
+            : "Equal Earth map. Hover a country for Mercator size. Arrow keys pan, Enter selects the country in the center, plus and minus zoom.")
           : "Equal Earth world map. Arrow keys pan, Enter selects the country in the center, plus and minus zoom."
       );
     }
@@ -1364,7 +1365,6 @@
     requireElement("mercator-size").addEventListener("click", () => {
       state.projections.equalEarth = true;
       state.projections.mercator = !state.projections.mercator;
-      if (state.projections.mercator) state.compareMode = "always";
       hideGhostsKey = "";
       syncProjectionUI();
       layout();
@@ -1373,6 +1373,19 @@
       track("projection", {
         equalEarth: state.projections.equalEarth,
         mercator: state.projections.mercator
+      });
+    });
+
+    document.querySelectorAll<HTMLElement>("[data-compare]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const mode = button.dataset.compare;
+        if (!isCompareMode(mode) || mode === state.compareMode) return;
+        state.compareMode = mode;
+        hideGhostsKey = "";
+        syncProjectionUI();
+        bake(currentTransform);
+        drawOverlay();
+        track("compare_mode", { mode });
       });
     });
 

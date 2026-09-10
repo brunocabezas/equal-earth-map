@@ -344,7 +344,7 @@ main {
   margin-left: 8px;
   border: 0;
   border-radius: 999px;
-  min-height: 32px;
+  min-height: var(--control);
   padding: 0 12px;
   background: var(--ink);
   color: var(--cream);
@@ -415,20 +415,6 @@ legend {
   line-height: 1.45;
 }
 
-.proj-key {
-  list-style: none;
-  margin: 8px 0 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  color: var(--ink-soft);
-  font-size: var(--type-meta);
-  font-weight: 550;
-  line-height: 1.3;
-}
-
-.proj-key li,
 .overlay-legend span {
   display: flex;
   align-items: center;
@@ -449,8 +435,8 @@ legend {
 }
 
 .swatch-merc {
-  background: rgba(194, 97, 72, 0.18);
-  border: 1.5px solid var(--accent);
+  background: rgba(77, 115, 120, 0.2);
+  border: 1.5px solid rgba(77, 115, 120, 0.55);
 }
 
 .overlay-legend {
@@ -464,10 +450,13 @@ legend {
   overflow-wrap: anywhere;
 }
 
-.proj-key[hidden],
 .overlay-legend[hidden],
 #info-measures[hidden],
 #compare-set[hidden] {
+  display: none;
+}
+
+#atlas-view:has(.sheet.is-open) .overlay-legend {
   display: none;
 }
 
@@ -647,8 +636,8 @@ legend {
 .sheet-close {
   border: 0;
   border-radius: 999px;
-  min-height: 32px;
-  padding: 0 10px;
+  min-height: var(--control);
+  padding: 0 12px;
   background: rgba(5, 74, 82, 0.08);
   color: var(--ink);
   font-size: var(--type-ui);
@@ -1054,7 +1043,9 @@ dialog::backdrop { background: rgba(3, 47, 52, 0.55); }
   }
 
   .compare-btn,
-  .sheet-toggle {
+  .sheet-toggle,
+  .sheet-close,
+  .status-refresh {
     padding: 0 10px;
     min-height: 44px;
   }

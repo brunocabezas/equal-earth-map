@@ -128,7 +128,7 @@
               <button type="button" class="seg-btn" data-wall="physical">Physical</button>
             </div>
             <p class="panel-note" id="wall-caption">
-              Patterson political wall map, Oceania centering (150°E). Drag, scroll, or pinch to explore.
+              Patterson political wall map, Oceania centering (150°E). Drag, scroll, pinch, or double-click to explore.
             </p>
           </div>
         </div>
@@ -191,6 +191,13 @@
                   <button type="button" class="seg-btn" data-center="150">150°E</button>
                 </div>
               </fieldset>
+              <fieldset id="compare-set">
+                <legend>Show size overlay</legend>
+                <div class="segmented" role="group" aria-label="When to show Mercator size">
+                  <button type="button" class="seg-btn" data-compare="hover" aria-pressed="false">On hover</button>
+                  <button type="button" class="seg-btn is-active" data-compare="always" aria-pressed="true">Always</button>
+                </div>
+              </fieldset>
               <fieldset class="layer-set">
                 <legend>Layers</legend>
                 <label class="check"><input type="checkbox" data-layer="countries" checked /> Countries</label>
@@ -247,8 +254,8 @@
           Most web maps use Mercator, which inflates countries near the poles. Greenland looks
           similar in size to Africa there, though Africa is about 14 times larger. Equal Earth is
           an equal-area projection: landmasses keep their true relative sizes, with more familiar
-          continent shapes than Gall–Peters. Red outlines show how large those countries look on
-          Mercator. Click one for the numbers.
+          continent shapes than Gall–Peters. Muted outlines show how large those countries look on
+          Mercator; they turn coral when you point at one. Click one for the numbers.
         </p>
         <p>
           The atlas redraws Natural Earth 1:50 million vectors in Equal Earth so countries, rivers,

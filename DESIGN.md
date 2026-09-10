@@ -84,13 +84,6 @@ components:
   button-primary-hover:
     backgroundColor: "{colors.night-deep}"
     textColor: "{colors.cream}"
-  button-ghost:
-    backgroundColor: "transparent"
-    textColor: "{colors.cream}"
-    typography: "{typography.label}"
-    rounded: "{rounded.pill}"
-    padding: "0 14px"
-    height: "36px"
   button-seg:
     backgroundColor: "{colors.field}"
     textColor: "{colors.ink}"
@@ -129,6 +122,13 @@ components:
     size: "42px"
     width: "42px"
     height: "42px"
+  button-icon:
+    backgroundColor: "transparent"
+    textColor: "{colors.cream}"
+    rounded: "{rounded.pill}"
+    size: "36px"
+    width: "36px"
+    height: "36px"
 ---
 
 # Design System: Equal Earth Map
@@ -170,6 +170,8 @@ Night and ice do the structure. Coral is the only warm UI accent. Ocean and peac
 
 **The No-Cool-Gray Rule.** Secondary text on night is ice-tinted. Secondary text on paper is ink-tinted teal. Do not use neutral gray.
 
+**The Ice-on-Night Rule.** Ice cards set ink type themselves. Never inherit cream from night chrome.
+
 ## Typography
 
 **Display Font:** Source Serif 4 (Iowan Old Style, Georgia)
@@ -189,7 +191,7 @@ Night and ice do the structure. Coral is the only warm UI accent. Ocean and peac
 
 ## Layout
 
-Full-viewport app shell: night top bar (min-height 64px, 48px on small screens) with a thin-line globe mark beside the serif name, flex-grown map, night footer. Search, Mercator size, and Layers sit in one chrome row at the top-left. Map options (center, hover/always overlay, layers) live in a sheet at every size — a floating ice card on desktop, a bottom sheet on viewports ≤720px. The place card scrolls inside the remaining map height so size numbers stay above the footer. Zoom stack top-right on desktop, bottom-right on viewports ≤720px. Spacing scale is 4 / 8 / 12 / 16 / 24.
+Full-viewport app shell: night top bar (min-height 64px, 48px on small screens) with a thin-line globe mark beside the serif name. A single Mercator size menu sits in the right cluster before search (Equal Earth is always the globe). Always / On hover live in that menu. Layers and About follow as labeled ice pills (icon-only on ≤720px). Flex-grown map, night footer (short credit on compact). Place cards sit top-left on desktop (`16px`). On compact they pin above the zoom cluster (`8px`), and the overlay legend moves to the top-left so both stay readable. Zoom stack top-right on desktop, bottom-right on viewports ≤720px. Map centering (Africa / Americas / Pacific) is an ice pill cluster floating bottom-right, to the left of zoom on compact. Layers open as a compact ice popover under the Layers pill (X to close) and as a bottom sheet on small screens (layer checks only). Mercator size opens a compact ice menu under its pill for Always / On hover. Wall maps download from About, not the toolbar. Ice cards always set ink type so they stay readable when nested in night chrome. The place card scrolls inside the remaining map height so size numbers stay above the footer. Spacing scale is 4 / 8 / 12 / 16 / 24. Breakpoints: ≤1100px hides the tagline and shortens the Mercator label; ≤720px keeps the nameplate, hides Layers/About text, and shortens the footer. Tall viewports scale Equal Earth up so the oval fills more of the stage.
 
 ## Elevation & Depth
 
@@ -202,16 +204,17 @@ Floating chrome uses one offset shadow. Surfaces themselves are opaque paper, no
 
 ## Shapes
 
-Pills (`999px`) for mode, about, and segmented choices. Fields `8px`. Legend cards and zoom cluster `12px`. About dialog `16px`. Hairline borders in `colors.line`. Icons are 16px stroke-1.6 SVG, not emoji or unmatched Unicode. The brand mark is a thin-line globe (circle, equator, one meridian), 36×36 in the night bar (28×28 on compact), cream stroke, no fill.
+Pills (`999px`) for projection, center, and segmented choices. Fields `8px`. Legend cards, layers popover, and zoom cluster `12px`. About dialog `16px`. Hairline borders in `colors.line`. Icons are 16px stroke-1.6 SVG, not emoji or unmatched Unicode. Dismiss controls are an X icon with an accessible name, never the word Close on ice cards. The brand mark is a thin-line globe (circle, equator, one meridian), 36×36 in the night bar (28×28 on compact), cream stroke, no fill.
 
 ## Components
 
 ### Buttons
 - **Shape:** Full pill, min-height 36px, label type.
 - **Primary (dialog Close):** Ink fill, ice type, hover well teal.
-- **Ghost (About, on night):** Transparent, cream type, 1px cream border at 22% then 40% on hover.
-- **Mode pill:** Transparent until active, then cream fill and ink type.
+- **Icon (layers, About):** Cream-stroke pill on night with a visible label; icon-only 36×36 on compact. Active layers invert to cream fill and ink.
+- **Mode pill:** Transparent until active, then cream fill and ink type. Mercator size is a menu in the night bar (Always / On hover), not a second home projection.
 - **Segmented:** Field fill; active is ink fill and cream type; hover field-hover.
+- **Dismiss X:** 36×36 transparent circle on ice, teal-mute stroke, ink on hover. Accessible name only; no visible Close label.
 - **Hover / Focus:** 160ms ease color/background. Focus-visible is a 2px coral ring, 2px offset.
 
 ### Cards / Containers
@@ -227,10 +230,19 @@ Pills (`999px`) for mode, about, and segmented choices. Fields `8px`. Legend car
 - **Placeholder:** Teal mute at full opacity.
 
 ### Navigation
-Night bar, cream brand serif, pill mode switch at the end, About as ghost. On ≤720px the tagline hides and mode labels shorten to Atlas / Wall.
+Night bar, cream brand serif, thin-line globe mark, Mercator size menu before the ice search well, then labeled Layers and About pills. On ≤1100px the tagline hides and Mercator shortens to the word Mercator. On ≤720px the name stays; Layers and About become icon-only. Centering stays on the map. Wall-map downloads live in About as ice pills.
+
+### Layers popover
+Ice card hugging content, two-column layer checks, X to close. Desktop: absolute under the Layers pill. Compact: bottom sheet plus backdrop.
+
+### Mercator size menu
+Ice card under the Mercator size pill with Always / On hover. Not a bottom sheet; it stays a dropdown on compact.
 
 ### Zoom stack
 42×42 (40×40 on small screens) paper buttons in a 12px cluster with hairline dividers.
+
+### Center cluster
+Horizontal ice pill of Africa / Americas / Pacific, inset padding, legend-lift shadow, ink fill on the active cell. Floats bottom-right on the map.
 
 ### Checks
 16px native checkbox, coral accent, 32px row.
@@ -242,6 +254,7 @@ Night bar, cream brand serif, pill mode switch at the end, About as ghost. On �
 - **Do** put place names in Source Serif 4 and everything else in Source Sans 3.
 - **Do** tint muted text from ice or ink, never from gray.
 - **Do** use coral for focus, caret, capitals, and checks only.
+- **Do** set ink on every ice card, including popovers nested in the night bar.
 
 ### Don't:
 - **Don't** introduce Inter, system-display faces, or a second sans.

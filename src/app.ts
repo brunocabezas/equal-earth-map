@@ -5,10 +5,6 @@
     return el as T;
   }
 
-  function isViewMode(value: string | undefined): value is ViewMode {
-    return value === "atlas" || value === "wall";
-  }
-
   function isWallLayer(value: string | undefined): value is WallLayer {
     return value === "political" || value === "physical";
   }
@@ -52,8 +48,8 @@
     selected: "#032f34",
     mercFill: "rgba(194,97,72,0.4)",
     mercStroke: "#c26148",
-    mercMuteFill: "rgba(77,115,120,0.2)",
-    mercMuteStroke: "rgba(77,115,120,0.55)",
+    mercMuteFill: "rgba(77,115,120,0.34)",
+    mercMuteStroke: "rgba(5,74,82,0.72)",
     capital: "#e29578",
     city: "#032f34",
     label: "#054a52",
@@ -61,16 +57,7 @@
     graticule: "rgba(237,246,249,0.35)"
   } as const satisfies DeepReadonly<Record<string, string>>;
 
-  const WALL_CAPTIONS: Record<WallLayer, string> = {
-    political:
-      "Patterson political wall map, Oceania centering (150°E). Drag, scroll, pinch, or double-click to explore.",
-    physical:
-      "BMZ physical Equal Earth map with terrain, vegetation, and ocean floor. Drag, scroll, pinch, or double-click to explore."
-  };
-
   const state: AtlasState = {
-    mode: "atlas",
-    wallLayer: "political",
     projections: {
       equalEarth: true,
       mercator: true
@@ -89,20 +76,17 @@
   };
 
   function overlayMode() {
-    return state.projections.equalEarth && state.projections.mercator;
+    return state.projections.mercator;
   }
 
   function baseProjectionName(): ProjectionName {
-    return state.projections.equalEarth ? "equalEarth" : "mercator";
+    return "equalEarth";
   }
 
-  let viewer: OsdViewer | null = null;
-  let wallReady: Promise<void> | null = null;
   let atlasReady = false;
   let atlasLoading = false;
   let atlas: { resize: () => void } | null = null;
 
-  const wallView = requireElement("wall-view");
   const atlasView = requireElement("atlas-view");
   const about = requireElement<HTMLDialogElement>("about");
 
@@ -228,103 +212,6 @@
     }
   }
 
-  function loadOpenSeadragon() {
-    if (typeof OpenSeadragon === "function") return Promise.resolve();
-    return new Promise<void>((resolve, reject) => {
-      const script = document.createElement("script");
-      script.src = "vendor/openseadragon.min.js";
-      script.async = true;
-      script.onload = () => resolve();
-      script.onerror = () => reject(new Error("Could not load wall map viewer"));
-      document.head.appendChild(script);
-    });
-  }
-
-  function ensureWall() {
-    if (viewer) {
-      viewer.viewport.resize();
-      return Promise.resolve();
-    }
-    if (!wallReady) {
-      wallView.setAttribute("aria-busy", "true");
-      wallReady = loadOpenSeadragon()
-        .then(() => {
-          if (!viewer) initWall();
-        })
-        .catch((error: unknown) => {
-          wallReady = null;
-          const caption = document.getElementById("wall-caption");
-          if (caption) {
-            caption.textContent = error instanceof Error
-              ? error.message
-              : "Could not load wall map viewer";
-          }
-          throw error;
-        })
-        .finally(() => {
-          wallView.removeAttribute("aria-busy");
-        });
-    }
-    return wallReady;
-  }
-
-  function initWall() {
-    viewer = OpenSeadragon({
-      id: "osd",
-      prefixUrl: "",
-      showNavigator: true,
-      navigatorPosition: "BOTTOM_LEFT",
-      showNavigationControl: false,
-      visibilityRatio: 0.85,
-      minZoomImageRatio: 0.6,
-      maxZoomPixelRatio: 2.4,
-      homeFillsViewer: true,
-      animationTime: 0.08,
-      springStiffness: 24,
-      zoomPerScroll: 1.6,
-      zoomPerClick: 2,
-      gestureSettingsMouse: {
-        clickToZoom: false,
-        dblClickToZoom: true,
-        flickEnabled: true,
-        zoomToRefPoint: true
-      },
-      tileSources: {
-        type: "image",
-        url: `maps/${state.wallLayer}.jpg`
-      }
-    });
-
-    requireElement("wall-zoom").addEventListener("click", (event) => {
-      const target = event.target;
-      if (!(target instanceof Element)) return;
-      const action = target.closest("[data-zoom]")?.getAttribute("data-zoom") ?? undefined;
-      if (!isZoomAction(action) || !viewer) return;
-      if (action === "in") viewer.viewport.zoomBy(2, undefined, true);
-      if (action === "out") viewer.viewport.zoomBy(0.5, undefined, true);
-      if (action === "home") viewer.viewport.goHome(true);
-      viewer.viewport.applyConstraints();
-    });
-
-    document.querySelectorAll<HTMLElement>("[data-wall]").forEach((button) => {
-      button.addEventListener("click", () => {
-        const layer = button.dataset.wall;
-        if (!isWallLayer(layer) || layer === state.wallLayer || !viewer) return;
-        const bounds = viewer.viewport.getBounds();
-        state.wallLayer = layer;
-        document.querySelectorAll<HTMLElement>("[data-wall]").forEach((node) => {
-          node.classList.toggle("is-active", node === button);
-        });
-        requireElement("wall-caption").textContent = WALL_CAPTIONS[layer];
-        viewer.addOnceHandler("open", () => {
-          viewer.viewport.fitBounds(bounds, true);
-        });
-        viewer.open({ type: "image", url: `maps/${layer}.jpg` });
-        track("wall_layer", { layer });
-      });
-    });
-  }
-
   const MERCATOR_MAX_LAT = 87;
 
   function mercatorWorld(): GeoJSON.Polygon {
@@ -368,7 +255,14 @@
       ]);
       return projection;
     }
-    return d3.geoEqualEarth().rotate(rotate).fitExtent(extent, { type: "Sphere" });
+    const projection = d3.geoEqualEarth().rotate(rotate).fitExtent(extent, { type: "Sphere" });
+    const fitW = extent[1][0] - extent[0][0];
+    const fitH = extent[1][1] - extent[0][1];
+    const fittedH = fitW / 2.05;
+    if (fitH > fittedH * 1.2) {
+      projection.scale(projection.scale() * Math.min(1.38, (fitH * 0.9) / fittedH));
+    }
+    return projection;
   }
 
   async function initAtlas() {
@@ -801,7 +695,7 @@
     ) {
       return withApparentTransform(ctx, item, (apparent) => {
         ctx.strokeStyle = muted ? MAP.mercMuteStroke : MAP.mercStroke;
-        ctx.lineWidth = 2.4 / (zoomK * apparent);
+        ctx.lineWidth = (muted ? 1.6 : 2.4) / (zoomK * apparent);
         ctx.stroke(item.path2d);
       }) > 0;
     }
@@ -1165,15 +1059,13 @@
       info.hidden = false;
       requireElement("info-title").textContent = feature.properties.name;
       const comparing = overlayMode();
-      const mercOn = state.projections.mercator;
-      if (comparing) {
-        requireElement("info-meta").textContent = apparentScaleFor(feature.properties.name) > 0
-          ? "Country · Natural Earth 1:50 million. Red outline is Mercator’s apparent size."
-          : "Country · Natural Earth 1:50 million. Mercator barely changes this country’s size.";
-      } else if (mercOn) {
-        requireElement("info-meta").textContent = "Country · Natural Earth 1:50 million. Mercator inflates land toward the poles.";
+      const hasOutline = apparentScaleFor(feature.properties.name) > 0;
+      if (comparing && hasOutline) {
+        requireElement("info-meta").textContent = "The outline is Mercator’s apparent size — muted teal at rest, coral when you point at it.";
+      } else if (comparing) {
+        requireElement("info-meta").textContent = "Mercator barely changes this country’s size.";
       } else {
-        requireElement("info-meta").textContent = "Country · Natural Earth 1:50 million. Equal Earth keeps relative area true.";
+        requireElement("info-meta").textContent = "Equal Earth keeps relative area true.";
       }
 
       const rows = [{ label: "True area", value: formatAreaKm2(stats.trueKm2) }];
@@ -1185,14 +1077,12 @@
       renderMeasures(rows);
 
       const area = requireElement("info-area");
-      if (comparing && apparentScaleFor(feature.properties.name) > 0) {
-        area.textContent = "The red outline is the same country scaled to Mercator's apparent size.";
+      if (comparing && hasOutline) {
+        area.textContent = "The outline is this country scaled to how large it looks on Mercator.";
       } else if (comparing) {
         area.textContent = "Near the equator the two projections agree closely on size, so there is no extra outline.";
-      } else if (mercOn && inflation) {
-        area.textContent = `This land appears ${inflation} than its true size on Mercator.`;
-      } else if (!mercOn) {
-        area.textContent = "On Equal Earth this area stays true to scale relative to other countries.";
+      } else if (inflation) {
+        area.textContent = `On Mercator this land would appear ${inflation} than its true size.`;
       } else {
         area.textContent = "Near the equator Mercator and Equal Earth agree on size.";
       }
@@ -1345,7 +1235,10 @@
       }
     });
 
-    searchInput.addEventListener("input", () => search(searchInput.value));
+    searchInput.addEventListener("input", () => {
+      closeSheets();
+      search(searchInput.value);
+    });
     searchInput.addEventListener("keydown", (event) => {
       if (event.key === "ArrowDown" && !results.hidden) {
         const first = results.querySelector<HTMLButtonElement>("button");
@@ -1379,19 +1272,18 @@
 
     function syncProjectionUI() {
       const overlay = overlayMode();
-      const compareBtn = document.getElementById("mercator-size");
-      if (compareBtn) {
-        compareBtn.classList.toggle("is-active", overlay);
-        compareBtn.setAttribute("aria-pressed", String(overlay));
+      const hint = document.getElementById("proj-hint");
+      if (hint) {
+        hint.textContent = state.compareMode === "always"
+          ? "Outlines show how large countries look on Mercator."
+          : "Point at a country to see Mercator’s apparent size.";
       }
       const legend = document.getElementById("overlay-legend");
       if (legend) legend.hidden = !overlay;
-      const compareSet = document.getElementById("compare-set");
-      if (compareSet) compareSet.hidden = !overlay;
       document.querySelectorAll<HTMLElement>("[data-compare]").forEach((node) => {
         const on = node.dataset.compare === state.compareMode;
         node.classList.toggle("is-active", on);
-        node.setAttribute("aria-pressed", String(on));
+        node.setAttribute("aria-checked", String(on));
       });
       stage.setAttribute(
         "aria-label",
@@ -1403,37 +1295,28 @@
       );
     }
 
-    requireElement("mercator-size").addEventListener("click", () => {
-      state.projections.equalEarth = true;
-      state.projections.mercator = !state.projections.mercator;
-      hideGhostsKey = "";
-      syncProjectionUI();
-      layout();
-      const selected = selectedFeature();
-      if (selected) updateCountryInfo(selected);
-      track("projection", {
-        equalEarth: state.projections.equalEarth,
-        mercator: state.projections.mercator
-      });
-    });
-
     document.querySelectorAll<HTMLElement>("[data-compare]").forEach((button) => {
       button.addEventListener("click", () => {
         const mode = button.dataset.compare;
-        if (!isCompareMode(mode) || mode === state.compareMode) return;
-        state.compareMode = mode;
-        hideGhostsKey = "";
-        syncProjectionUI();
-        bake(currentTransform);
-        drawOverlay();
-        track("compare_mode", { mode });
+        if (!isCompareMode(mode)) return;
+        if (mode !== state.compareMode) {
+          state.compareMode = mode;
+          hideGhostsKey = "";
+          syncProjectionUI();
+          bake(currentTransform);
+          drawOverlay();
+          track("compare_mode", { mode });
+        }
+        closeSheets(true);
       });
     });
 
     document.querySelectorAll<HTMLElement>("[data-center]").forEach((button) => {
       button.addEventListener("click", () => {
         state.center = Number(button.dataset.center);
-        document.querySelectorAll<HTMLElement>("[data-center]").forEach((node) => node.classList.toggle("is-active", node === button));
+        document.querySelectorAll<HTMLElement>("[data-center]").forEach((node) => {
+          node.classList.toggle("is-active", Number(node.dataset.center) === state.center);
+        });
         layout();
       });
     });
@@ -1478,7 +1361,7 @@
     }
 
     function onViewportChange() {
-      if (state.mode === "atlas") layout();
+      layout();
     }
 
     atlas = { resize: () => layout() };
@@ -1490,29 +1373,14 @@
     atlasLoading = false;
   }
 
-  function setMode(mode: ViewMode) {
-    state.mode = mode;
-    document.querySelectorAll<HTMLElement>(".mode-btn").forEach((button) => {
-      const active = button.dataset.mode === mode;
-      button.classList.toggle("is-active", active);
-      button.setAttribute("aria-pressed", String(active));
-    });
-    wallView.classList.toggle("is-visible", mode === "wall");
-    atlasView.classList.toggle("is-visible", mode === "atlas");
-    wallView.hidden = mode !== "wall";
-    atlasView.hidden = mode !== "atlas";
-    closeSheets();
-    if (mode === "atlas") initAtlas();
-    if (mode === "wall") void ensureWall();
-    track("mode", { mode });
-  }
-
   let sheetFocusReturn: HTMLElement | null = null;
 
   function closeSheets(restoreFocus = false) {
     const wasOpen = Boolean(document.querySelector(".sheet.is-open"));
     document.querySelectorAll(".sheet.is-open").forEach((sheet) => sheet.classList.remove("is-open"));
-    document.querySelectorAll(".sheet-toggle").forEach((button) => button.setAttribute("aria-expanded", "false"));
+    document.querySelectorAll("[aria-expanded='true'][aria-controls]").forEach((toggle) => {
+      toggle.setAttribute("aria-expanded", "false");
+    });
     document.body.classList.remove("sheet-open");
     if (restoreFocus && wasOpen && sheetFocusReturn) {
       sheetFocusReturn.focus();
@@ -1520,7 +1388,7 @@
     }
   }
 
-  function toggleSheet(id: string) {
+  function toggleSheet(id: string, { modal = true } = {}) {
     const sheet = requireElement(id);
     const button = document.querySelector(`[aria-controls="${id}"]`);
     const open = !sheet.classList.contains("is-open");
@@ -1533,11 +1401,15 @@
         button.setAttribute("aria-expanded", "true");
         sheetFocusReturn = button;
       }
-      document.body.classList.add("sheet-open");
-      sheet.querySelector<HTMLElement>(".sheet-close")?.focus();
+      if (modal) document.body.classList.add("sheet-open");
+      sheet.querySelector<HTMLElement>(".sheet-close, [data-compare]")?.focus();
     }
   }
 
+  requireElement("mercator-toggle").addEventListener("click", (event) => {
+    event.stopPropagation();
+    toggleSheet("mercator-menu", { modal: false });
+  });
   requireElement("atlas-controls-toggle").addEventListener("click", (event) => {
     event.stopPropagation();
     toggleSheet("atlas-controls");
@@ -1547,9 +1419,23 @@
   });
   requireElement("sheet-backdrop").addEventListener("click", () => closeSheets(true));
 
-  document.querySelectorAll<HTMLElement>(".mode-btn").forEach((button) => {
-    button.addEventListener("click", () => {
-      if (isViewMode(button.dataset.mode)) setMode(button.dataset.mode);
+  document.addEventListener("pointerdown", (event) => {
+    const target = event.target;
+    if (!(target instanceof Node)) return;
+    const searchPanel = document.querySelector(".search-panel");
+    const results = document.getElementById("search-results");
+    if (results && searchPanel && !searchPanel.contains(target)) results.hidden = true;
+    const sheet = document.querySelector(".sheet.is-open");
+    if (!sheet) return;
+    const toggle = document.querySelector(`[aria-controls="${sheet.id}"]`);
+    if (sheet.contains(target) || (toggle instanceof Node && toggle.contains(target))) return;
+    closeSheets();
+  });
+
+  document.querySelectorAll<HTMLElement>("[data-download-map]").forEach((link) => {
+    link.addEventListener("click", () => {
+      const layer = link.dataset.downloadMap;
+      if (isWallLayer(layer)) track("download_map", { layer });
     });
   });
 
@@ -1588,10 +1474,6 @@
   });
   renderAboutVersion();
 
-  window.addEventListener("resize", () => {
-    if (state.mode === "wall" && viewer) viewer.viewport.resize();
-  });
-
   window.addEventListener("keydown", (event) => {
     const sheet = document.querySelector<HTMLElement>(".sheet.is-open");
     if (sheet && event.key === "Tab") {
@@ -1619,12 +1501,18 @@
       }
     }
     if (event.target instanceof HTMLElement && event.target.matches("input, textarea")) return;
-    const zoomRoot = state.mode === "wall" ? document.getElementById("wall-zoom") : document.getElementById("atlas-zoom");
+    const zoomRoot = document.getElementById("atlas-zoom");
     if (!zoomRoot) return;
     if (event.key === "+" || event.key === "=") zoomRoot.querySelector<HTMLElement>("[data-zoom=in]")?.click();
     if (event.key === "-" || event.key === "_") zoomRoot.querySelector<HTMLElement>("[data-zoom=out]")?.click();
     if (event.key === "0") zoomRoot.querySelector<HTMLElement>("[data-zoom=home]")?.click();
     if (event.key === "Escape") {
+      const results = document.getElementById("search-results");
+      if (results && !results.hidden) {
+        results.hidden = true;
+        event.preventDefault();
+        return;
+      }
       if (document.querySelector(".sheet.is-open")) {
         closeSheets(true);
         event.preventDefault();
@@ -1634,5 +1522,5 @@
     }
   });
 
-  setMode("atlas");
+  void initAtlas();
 })();

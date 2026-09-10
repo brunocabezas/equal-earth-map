@@ -1,0 +1,226 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-10T18:10:00.000Z",
+  "title": "Design System: Equal Earth Map",
+  "extensions": {
+    "colorMeta": {
+      "accent": {
+        "role": "primary",
+        "displayName": "Chart coral",
+        "canonical": "#c26148",
+        "tonalRamp": ["#5c241c", "#7f3428", "#a84c38", "#c26148", "#e29578", "#ffddd2", "#ffe8de", "#fff6f2"]
+      },
+      "accent-bright": {
+        "role": "primary",
+        "displayName": "Bright coral",
+        "canonical": "#e29578",
+        "tonalRamp": ["#7f3428", "#a84c38", "#c26148", "#e29578", "#ffddd2", "#ffe8de", "#fff6f2", "#fffaf8"]
+      },
+      "accent-text": {
+        "role": "primary",
+        "displayName": "Text coral",
+        "canonical": "#a84c38",
+        "tonalRamp": ["#5c241c", "#7f3428", "#a84c38", "#c26148", "#e29578", "#ffddd2", "#ffe8de", "#fff6f2"]
+      },
+      "ocean": {
+        "role": "secondary",
+        "displayName": "Globe ocean",
+        "canonical": "#b9d2df",
+        "tonalRamp": ["#3d5e6c", "#6a8a98", "#7f9aa8", "#8fb8cc", "#b9d2df", "#cfe0e8", "#e4eef2", "#f4f8fa"]
+      },
+      "ocean-deep": {
+        "role": "secondary",
+        "displayName": "Ocean deep",
+        "canonical": "#6a9bb0",
+        "tonalRamp": ["#3d5e6c", "#6a8a98", "#6a9bb0", "#7f9aa8", "#8fb8cc", "#b9d2df", "#cfe0e8", "#f4f8fa"]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "canonical": "#054a52",
+        "tonalRamp": ["#032f34", "#054a52", "#006d77", "#4d7378", "#5a9a94", "#83c5be", "#d4e8ea", "#edf6f9"]
+      },
+      "night": {
+        "role": "neutral",
+        "displayName": "Skobeloff",
+        "canonical": "#006d77",
+        "tonalRamp": ["#021c1f", "#032f34", "#054a52", "#006d77", "#4d7378", "#83c5be", "#d4e8ea", "#edf6f9"]
+      },
+      "night-deep": {
+        "role": "neutral",
+        "displayName": "Well teal",
+        "canonical": "#032f34",
+        "tonalRamp": ["#011416", "#032f34", "#054a52", "#006d77", "#4d7378", "#83c5be", "#d4e8ea", "#edf6f9"]
+      },
+      "cream": {
+        "role": "neutral",
+        "displayName": "Ice",
+        "canonical": "#edf6f9",
+        "tonalRamp": ["#032f34", "#054a52", "#4d7378", "#83c5be", "#b8ddd9", "#d4e8ea", "#edf6f9", "#f8fcfd"]
+      },
+      "cream-soft": {
+        "role": "neutral",
+        "displayName": "Ice soft",
+        "canonical": "#d4e8ea",
+        "tonalRamp": ["#032f34", "#054a52", "#4d7378", "#83c5be", "#b8ddd9", "#d4e8ea", "#edf6f9", "#f8fcfd"]
+      },
+      "paper": {
+        "role": "neutral",
+        "displayName": "Paper",
+        "canonical": "#edf6f9",
+        "tonalRamp": ["#032f34", "#054a52", "#4d7378", "#83c5be", "#d4e8ea", "#edf6f9", "#f4fafb", "#ffffff"]
+      },
+      "panel": {
+        "role": "neutral",
+        "displayName": "Legend panel",
+        "canonical": "#f4fafb",
+        "tonalRamp": ["#032f34", "#054a52", "#4d7378", "#83c5be", "#d4e8ea", "#edf6f9", "#f4fafb", "#ffffff"]
+      },
+      "field": {
+        "role": "neutral",
+        "displayName": "Field",
+        "canonical": "#ffffff",
+        "tonalRamp": ["#032f34", "#054a52", "#4d7378", "#83c5be", "#ffddd2", "#edf6f9", "#f4fafb", "#ffffff"]
+      },
+      "field-hover": {
+        "role": "neutral",
+        "displayName": "Unbleached silk",
+        "canonical": "#ffddd2",
+        "tonalRamp": ["#a84c38", "#c26148", "#e29578", "#ffddd2", "#ffe8de", "#fff6f2", "#edf6f9", "#ffffff"]
+      },
+      "ink-soft": {
+        "role": "neutral",
+        "displayName": "Teal mute",
+        "canonical": "#4d7378",
+        "tonalRamp": ["#032f34", "#054a52", "#4d7378", "#5a9a94", "#83c5be", "#b8ddd9", "#d4e8ea", "#edf6f9"]
+      },
+      "stage": {
+        "role": "neutral",
+        "displayName": "Stage",
+        "canonical": "#b9d2df",
+        "tonalRamp": ["#3d5e6c", "#6a8a98", "#8fb8cc", "#b9d2df", "#cfe0e8", "#e4eef2", "#edf6f9", "#f8fcfd"]
+      },
+      "line": {
+        "role": "neutral",
+        "displayName": "Hairline",
+        "canonical": "rgba(5, 74, 82, 0.14)",
+        "tonalRamp": ["#054a52", "#4d7378", "#83c5be", "#b8ddd9", "#d4e8ea", "#edf6f9", "#f4fafb", "#ffffff"]
+      }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Product name in the night bar." },
+      "headline": { "displayName": "Headline", "purpose": "About and 404 titles." },
+      "title": { "displayName": "Title", "purpose": "Selected place name on a legend card." },
+      "body": { "displayName": "Body", "purpose": "UI copy and About prose." },
+      "label": { "displayName": "Label", "purpose": "Buttons, legends, checks." },
+      "meta": { "displayName": "Meta", "purpose": "Footer, fieldset legends, result kinds." },
+      "mono": { "displayName": "Mono", "purpose": "Commit hash in About; measurement, not costume." }
+    },
+    "shadows": [
+      {
+        "name": "legend-lift",
+        "value": "0 8px 22px rgba(3, 47, 52, 0.18)",
+        "purpose": "Floating legend cards, zoom stack, and status."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-standard",
+        "value": "160ms ease",
+        "purpose": "Color and background state changes on controls."
+      }
+    ],
+    "breakpoints": [
+      { "name": "compact", "value": "720px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Dialog Close: ink pill, ice type.",
+      "html": "<button class=\"ds-btn-primary\" type=\"button\">Close</button>",
+      "css": ".ds-btn-primary { background: #054a52; color: #edf6f9; border: 0; border-radius: 999px; min-height: 36px; padding: 0 16px; font-family: 'Source Sans 3', 'Segoe UI', sans-serif; font-size: 0.875rem; font-weight: 550; cursor: pointer; transition: background 160ms ease; } .ds-btn-primary:hover { background: #032f34; } .ds-btn-primary:focus-visible { outline: 2px solid #c26148; outline-offset: 2px; }"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "About control on night chrome.",
+      "html": "<button class=\"ds-btn-ghost\" type=\"button\">About</button>",
+      "css": ".ds-btn-ghost { background: transparent; color: #edf6f9; border: 1px solid rgba(237, 246, 249, 0.22); border-radius: 999px; min-height: 36px; padding: 0 14px; font-family: 'Source Sans 3', 'Segoe UI', sans-serif; font-size: 0.875rem; font-weight: 550; cursor: pointer; transition: background 160ms ease, border-color 160ms ease; } .ds-btn-ghost:hover { background: rgba(237, 246, 249, 0.1); border-color: rgba(237, 246, 249, 0.4); } .ds-btn-ghost:focus-visible { outline: 2px solid #c26148; outline-offset: 2px; }"
+    },
+    {
+      "name": "Segmented Button",
+      "kind": "button",
+      "refersTo": "button-seg",
+      "description": "Projection and center choices on a legend card.",
+      "html": "<div class=\"ds-seg\"><button class=\"ds-seg-btn ds-seg-btn-active\" type=\"button\">Equal Earth</button><button class=\"ds-seg-btn\" type=\"button\">Mercator</button></div>",
+      "css": ".ds-seg { display: flex; gap: 4px; } .ds-seg-btn { flex: 1; background: #ffffff; color: #054a52; border: 1px solid rgba(5, 74, 82, 0.14); border-radius: 999px; min-height: 36px; padding: 0 8px; font-family: 'Source Sans 3', 'Segoe UI', sans-serif; font-size: 0.875rem; font-weight: 550; cursor: pointer; transition: background 160ms ease, color 160ms ease, border-color 160ms ease; } .ds-seg-btn:hover { background: #ffddd2; } .ds-seg-btn-active, .ds-seg-btn-active:hover { background: #054a52; color: #edf6f9; border-color: #054a52; } .ds-seg-btn:focus-visible { outline: 2px solid #c26148; outline-offset: 2px; }"
+    },
+    {
+      "name": "Mode Pill",
+      "kind": "nav",
+      "refersTo": "mode-btn-active",
+      "description": "Atlas / Wall switch on the night bar.",
+      "html": "<div class=\"ds-mode\"><button class=\"ds-mode-btn ds-mode-btn-active\" type=\"button\">Interactive atlas</button><button class=\"ds-mode-btn\" type=\"button\">Wall map</button></div>",
+      "css": ".ds-mode { display: flex; padding: 3px; border-radius: 999px; background: rgba(237, 246, 249, 0.08); } .ds-mode-btn { border: 0; border-radius: 999px; min-height: 36px; padding: 0 14px; background: transparent; color: #d4e8ea; font-family: 'Source Sans 3', 'Segoe UI', sans-serif; font-size: 0.875rem; font-weight: 550; cursor: pointer; transition: background 160ms ease, color 160ms ease; } .ds-mode-btn:hover { color: #edf6f9; background: rgba(237, 246, 249, 0.08); } .ds-mode-btn-active, .ds-mode-btn-active:hover { background: #edf6f9; color: #054a52; } .ds-mode-btn:focus-visible { outline: 2px solid #c26148; outline-offset: 2px; }"
+    },
+    {
+      "name": "Search Field",
+      "kind": "input",
+      "refersTo": "input-search",
+      "description": "Place search well on a legend card.",
+      "html": "<label class=\"ds-search\"><svg class=\"ds-search-icon\" viewBox=\"0 0 16 16\" aria-hidden=\"true\"><circle cx=\"7\" cy=\"7\" r=\"4.25\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\"/><path d=\"M10.2 10.2 13.5 13.5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\"/></svg><input class=\"ds-search-input\" type=\"search\" placeholder=\"Ghana, Tokyo…\" /></label>",
+      "css": ".ds-search { display: flex; align-items: center; gap: 8px; padding: 0 10px 0 12px; border-radius: 8px; background: #ffffff; } .ds-search-icon { width: 16px; height: 16px; color: #4d7378; flex-shrink: 0; } .ds-search-input { width: 100%; min-height: 36px; border: 0; padding: 0; background: transparent; color: #054a52; caret-color: #c26148; font-family: 'Source Sans 3', 'Segoe UI', sans-serif; font-size: 16px; outline: none; } .ds-search-input::placeholder { color: #4d7378; opacity: 1; } .ds-search:focus-within { box-shadow: 0 0 0 2px #c26148; } .ds-search:focus-within .ds-search-icon { color: #054a52; }"
+    },
+    {
+      "name": "Legend Panel",
+      "kind": "card",
+      "refersTo": "panel",
+      "description": "Floating paper card over the map.",
+      "html": "<div class=\"ds-panel\"><p class=\"ds-legend\">Projection</p><p class=\"ds-panel-body\">Equal Earth keeps countries at true relative size.</p></div>",
+      "css": ".ds-panel { padding: 12px 14px; border: 1px solid rgba(5, 74, 82, 0.14); border-radius: 12px; background: #f4fafb; color: #054a52; box-shadow: 0 8px 22px rgba(3, 47, 52, 0.18); font-family: 'Source Sans 3', 'Segoe UI', sans-serif; } .ds-legend { margin: 0 0 6px; color: #4d7378; font-size: 0.75rem; font-weight: 650; line-height: 1.3; } .ds-panel-body { margin: 0; font-size: 0.875rem; line-height: 1.45; color: #4d7378; }"
+    },
+    {
+      "name": "Zoom Button",
+      "kind": "button",
+      "refersTo": "zoom-btn",
+      "description": "Map zoom control in a stacked cluster.",
+      "html": "<div class=\"ds-zoom\"><button class=\"ds-zoom-btn\" type=\"button\" aria-label=\"Zoom in\"><svg viewBox=\"0 0 16 16\" width=\"16\" height=\"16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\"><path d=\"M3.5 8h9M8 3.5v9\"/></svg></button><button class=\"ds-zoom-btn\" type=\"button\" aria-label=\"Zoom out\"><svg viewBox=\"0 0 16 16\" width=\"16\" height=\"16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\"><path d=\"M3.5 8h9\"/></svg></button></div>",
+      "css": ".ds-zoom { display: flex; flex-direction: column; overflow: hidden; border: 1px solid rgba(5, 74, 82, 0.14); border-radius: 12px; box-shadow: 0 8px 22px rgba(3, 47, 52, 0.18); } .ds-zoom-btn { display: grid; place-items: center; width: 42px; height: 42px; border: 0; border-bottom: 1px solid rgba(5, 74, 82, 0.14); background: #f4fafb; color: #054a52; cursor: pointer; transition: background 160ms ease; } .ds-zoom-btn:last-child { border-bottom: 0; } .ds-zoom-btn:hover { background: #ffddd2; } .ds-zoom-btn:focus-visible { outline: 2px solid #c26148; outline-offset: 2px; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Night Chart Table",
+    "overview": "The atlas sits in a dark teal instrument case. Night bars frame the globe; ice legend cards float on the map like paper laid on a chart table. The map is the artifact. Chrome recedes.\n\nDensity is Operate-mode: compact, scannable, one task at a time. Personality lives in the serif name, the coral mark, and the peach-and-sage countries — not in decoration on every control.",
+    "keyCharacteristics": [
+      "Skobeloff chrome, ice legends, light-blue ocean",
+      "Source Serif 4 for the product name and place titles only",
+      "Source Sans 3 for all UI",
+      "Coral used as a rare mark (focus, capitals, checks, caret)",
+      "Offset shadow under floating chrome, never a halo",
+      "Pills for choices, 8–12px rounds for fields and cards"
+    ],
+    "rules": [
+      { "name": "The One Warm Mark Rule", "body": "Coral appears as a mark, never as a page background or a row of filled buttons.", "section": "colors" },
+      { "name": "The No-Cool-Gray Rule", "body": "Secondary text on night is ice-tinted. Secondary text on paper is ink-tinted teal. Do not use neutral gray.", "section": "colors" },
+      { "name": "The Serif-for-Places Rule", "body": "Source Serif 4 is for the product name and geographic titles. Controls, legends, and data stay sans.", "section": "typography" },
+      { "name": "The Offset-Not-Halo Rule", "body": "Shadows have y-offset and blur. Do not use a zero-offset colored glow.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do keep Equal Earth as the visual home of the globe; Mercator is a comparison state, not a restyle of the chrome.",
+      "Do put place names in Source Serif 4 and everything else in Source Sans 3.",
+      "Do tint muted text from ice or ink, never from gray.",
+      "Do use coral for focus, caret, capitals, and checks only."
+    ],
+    "donts": [
+      "Don't introduce Inter, system-display faces, or a second sans.",
+      "Don't nest cards in cards or wrap the map in a card.",
+      "Don't add uppercase micro-kickers above headings.",
+      "Don't fill large chrome with coral or ocean.",
+      "Don't treat country peaches (#ffddd2 and kin) as UI theme colors; they are globe fills only."
+    ]
+  }
+}

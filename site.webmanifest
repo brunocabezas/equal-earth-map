@@ -4,8 +4,8 @@
   "description": "Interactive Equal Earth world map with true relative country sizes.",
   "start_url": "./",
   "display": "standalone",
-  "background_color": "#1a222c",
-  "theme_color": "#141b23",
+  "background_color": "#032f34",
+  "theme_color": "#006d77",
   "lang": "en",
   "icons": [
     {

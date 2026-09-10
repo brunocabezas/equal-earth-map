@@ -1,9 +1,26 @@
 (() => {
   const PALETTE = [
-    "#f3d3a2", "#e4b48a", "#d7c48b", "#c4d3a3", "#e8c3b0",
-    "#f0c98d", "#c9b48a", "#d9d0a8", "#efd3b6", "#cbb89a",
-    "#e2c7a0", "#d4c392", "#f1d8b0", "#cfc09a", "#e6b996"
+    "#ffddd2", "#f3cfc0", "#e8c4b4", "#f5d4c8",
+    "#d4e8ea", "#c5ddd6", "#b8d4cc", "#cfe0dc",
+    "#e8d0c4", "#dcc8bc", "#c9d8d2", "#e4ddd4",
+    "#ffd8cc", "#d0ddd8", "#ecd4c8"
   ];
+  const MAP = {
+    ocean: "#b9d2df",
+    lake: "#8fb8cc",
+    river: "#6a9bb0",
+    sphere: "#7f9aa8",
+    countryStroke: "rgba(5,74,82,0.28)",
+    hover: "#c26148",
+    selected: "#032f34",
+    mercFill: "rgba(194,97,72,0.18)",
+    mercStroke: "#c26148",
+    capital: "#e29578",
+    city: "#032f34",
+    label: "#054a52",
+    labelHalo: "rgba(237,246,249,0.9)",
+    graticule: "rgba(237,246,249,0.35)"
+  };
 
   const WALL_CAPTIONS = {
     political:
@@ -15,7 +32,10 @@
   const state = {
     mode: "atlas",
     wallLayer: "political",
-    projectionName: "equalEarth",
+    projections: {
+      equalEarth: true,
+      mercator: false
+    },
     center: 0,
     layers: {
       countries: true,
@@ -25,8 +45,17 @@
       labels: true,
       graticule: true
     },
+    compareMode: "hover",
     selected: null
   };
+
+  function overlayMode() {
+    return state.projections.equalEarth && state.projections.mercator;
+  }
+
+  function baseProjectionName() {
+    return state.projections.equalEarth ? "equalEarth" : "mercator";
+  }
 
   let viewer = null;
   let atlasReady = false;
@@ -88,6 +117,59 @@
 
   function km2(feature) {
     return d3.geoArea(feature) * 6371.0088 * 6371.0088;
+  }
+
+  function formatAreaKm2(area, { approx = false } = {}) {
+    if (!Number.isFinite(area) || area <= 0) return "—";
+    const rounded = Math.round(area);
+    const text = `${rounded.toLocaleString()} km²`;
+    return approx ? `~${text}` : text;
+  }
+
+  function formatInflation(ratio) {
+    if (ratio == null || !Number.isFinite(ratio) || ratio <= 0) return null;
+    if (ratio >= 0.85 && ratio <= 1.18) return "about the same";
+    if (ratio > 1) {
+      const n = ratio >= 40 ? Math.round(ratio) : ratio >= 10 ? ratio.toFixed(0) : ratio.toFixed(1);
+      return `${n}× larger`;
+    }
+    const inv = 1 / ratio;
+    const n = inv >= 10 ? inv.toFixed(0) : inv.toFixed(1);
+    return `${n}× smaller`;
+  }
+
+  function equatorAnchor(projection, lon0) {
+    const origin = projection([lon0, 0]);
+    const east = projection([lon0 + 1, 0]);
+    if (!origin || !east) return null;
+    return {
+      origin,
+      pxPerDeg: Math.hypot(east[0] - origin[0], east[1] - origin[1])
+    };
+  }
+
+  function alignProjectionTo(source, target, width, height, lon0) {
+    const desired = equatorAnchor(target, lon0);
+    if (!desired) return source;
+    source.translate([width / 2, height / 2]);
+    const first = equatorAnchor(source, lon0);
+    if (!first || first.pxPerDeg <= 0) return source;
+    source.scale(source.scale() * desired.pxPerDeg / first.pxPerDeg);
+    const origin = source([lon0, 0]);
+    if (origin) {
+      const t = source.translate();
+      source.translate([t[0] + desired.origin[0] - origin[0], t[1] + desired.origin[1] - origin[1]]);
+    }
+    const extra = Math.max(width, height) * 4;
+    source.clipExtent([[-extra, -extra], [width + extra, height + extra]]);
+    return source;
+  }
+
+  function makeMeasurePair() {
+    const ee = d3.geoEqualEarth().fitExtent([[20, 20], [420, 420]], { type: "Sphere" });
+    const merc = d3.geoMercator().fitExtent([[20, 20], [420, 420]], mercatorWorld());
+    alignProjectionTo(merc, ee, 440, 440, 0);
+    return { ee, merc };
   }
 
   function track(event, props) {
@@ -272,6 +354,22 @@
     let spherePath;
     let graticulePath;
     let interacting = false;
+    const sizeIndex = new Map();
+    {
+      const pair = makeMeasurePair();
+      const eePath = d3.geoPath(pair.ee);
+      const mercPath = d3.geoPath(pair.merc);
+      for (const feature of countries.features) {
+        const trueKm2 = km2(feature);
+        const eeArea = Math.abs(eePath.area(feature));
+        const mercArea = Math.abs(mercPath.area(feature));
+        const ratio = eeArea > 1 ? mercArea / eeArea : null;
+        sizeIndex.set(feature.properties.name, {
+          trueKm2,
+          ratio: Number.isFinite(ratio) && ratio > 0 ? ratio : null
+        });
+      }
+    }
 
     const zoom = d3.zoom()
       .scaleExtent([0.8, 28])
@@ -323,45 +421,109 @@
       overCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
     }
 
+    function asPath2D(generator, object) {
+      const d = generator(object);
+      return d ? new Path2D(d) : null;
+    }
+
+    function validPoint(xy) {
+      return Array.isArray(xy) && Number.isFinite(xy[0]) && Number.isFinite(xy[1]);
+    }
+
     function rebuildPaths() {
       path = d3.geoPath(projection);
-      spherePath = new Path2D(path(state.projectionName === "mercator" ? mercatorWorld() : { type: "Sphere" }));
-      graticulePath = new Path2D(path(graticule));
+      const baseName = baseProjectionName();
+      spherePath = asPath2D(path, baseName === "mercator" ? mercatorWorld() : { type: "Sphere" });
+      graticulePath = asPath2D(path, graticule);
       countryCache = countries.features.map((feature) => ({
         feature,
         name: feature.properties.name,
         color: colorFor(feature.properties.name),
-        path2d: new Path2D(path(feature))
-      }));
-      lakePath = new Path2D(path({ type: "FeatureCollection", features: lakes }));
+        path2d: asPath2D(path, feature)
+      })).filter((item) => item.path2d);
+      lakePath = asPath2D(path, { type: "FeatureCollection", features: lakes });
       riverPaths = rivers.map((feature) => ({
         rank: feature.properties.scalerank,
-        path2d: new Path2D(path(feature))
-      }));
+        path2d: asPath2D(path, feature)
+      })).filter((item) => item.path2d);
+    }
+
+    function apparentScaleFor(name) {
+      if (!overlayMode() || name === "Antarctica") return 0;
+      const stats = sizeIndex.get(name);
+      return stats && stats.ratio >= 1.35 ? Math.sqrt(stats.ratio) : 0;
+    }
+
+    function drawWater(ctx, zoomK, clipPath) {
+      if (!state.layers.lakes && !state.layers.rivers) return;
+      ctx.save();
+      if (clipPath) ctx.clip(clipPath, "evenodd");
+      if (state.layers.lakes && lakePath) {
+        ctx.fillStyle = MAP.lake;
+        ctx.fill(lakePath);
+      }
+      if (state.layers.rivers) {
+        ctx.strokeStyle = MAP.river;
+        ctx.lineCap = "round";
+        for (const river of riverPaths) {
+          if ((zoomK < 1.8 && river.rank > 3) || river.rank > 6) continue;
+          ctx.lineWidth = (river.rank <= 2 ? 1.15 : 0.65) / zoomK;
+          ctx.stroke(river.path2d);
+        }
+      }
+      ctx.restore();
+    }
+
+    function apparentItemsToBake() {
+      if (!overlayMode() || !state.layers.countries) return [];
+      if (state.compareMode === "always") {
+        return countryCache.filter((item) => apparentScaleFor(item.name) > 0);
+      }
+      if (!state.selected) return [];
+      const selectedItem = countryCache.find((entry) => entry.name === state.selected);
+      return selectedItem && apparentScaleFor(selectedItem.name) > 0 ? [selectedItem] : [];
+    }
+
+    function drawApparentSize(ctx, item, zoomK) {
+      const apparent = apparentScaleFor(item.name);
+      const centroid = path.centroid(item.feature);
+      if (!apparent || !validPoint(centroid)) return false;
+      ctx.save();
+      if (spherePath && baseProjectionName() !== "mercator") ctx.clip(spherePath);
+      ctx.translate(centroid[0], centroid[1]);
+      ctx.scale(apparent, apparent);
+      ctx.translate(-centroid[0], -centroid[1]);
+      ctx.fillStyle = MAP.mercFill;
+      ctx.strokeStyle = MAP.mercStroke;
+      ctx.lineWidth = 2.4 / (zoomK * apparent);
+      ctx.fill(item.path2d);
+      ctx.stroke(item.path2d);
+      ctx.restore();
+      return true;
     }
 
     function bake(t) {
       baked = t;
       mapCanvas.style.transform = "none";
-      mapCtx.fillStyle = "#b9d2df";
+      mapCtx.fillStyle = MAP.ocean;
       mapCtx.fillRect(0, 0, width, height);
       mapCtx.save();
       mapCtx.translate(t.x, t.y);
       mapCtx.scale(t.k, t.k);
-      mapCtx.fillStyle = "#b9d2df";
-      mapCtx.fill(spherePath);
-      if (state.projectionName !== "mercator") {
-        mapCtx.strokeStyle = "#7f9aa8";
+      mapCtx.fillStyle = MAP.ocean;
+      if (spherePath) mapCtx.fill(spherePath);
+      if (spherePath && baseProjectionName() !== "mercator") {
+        mapCtx.strokeStyle = MAP.sphere;
         mapCtx.lineWidth = 1 / t.k;
         mapCtx.stroke(spherePath);
       }
-      if (state.layers.graticule) {
-        mapCtx.strokeStyle = "rgba(255,255,255,0.28)";
+      if (state.layers.graticule && graticulePath) {
+        mapCtx.strokeStyle = MAP.graticule;
         mapCtx.lineWidth = 0.7 / t.k;
         mapCtx.stroke(graticulePath);
       }
       if (state.layers.countries) {
-        mapCtx.strokeStyle = "rgba(60,48,32,0.35)";
+        mapCtx.strokeStyle = MAP.countryStroke;
         mapCtx.lineWidth = 0.6 / t.k;
         for (const item of countryCache) {
           mapCtx.fillStyle = item.color;
@@ -369,19 +531,18 @@
           mapCtx.stroke(item.path2d);
         }
       }
-      if (state.layers.lakes) {
-        mapCtx.fillStyle = "#8fb8cc";
-        mapCtx.fill(lakePath);
-      }
-      if (state.layers.rivers) {
-        mapCtx.strokeStyle = "#6a9bb0";
-        mapCtx.lineCap = "round";
-        for (const river of riverPaths) {
-          if ((t.k < 1.8 && river.rank > 3) || river.rank > 6) continue;
-          mapCtx.lineWidth = (river.rank <= 2 ? 1.15 : 0.65) / t.k;
-          mapCtx.stroke(river.path2d);
+      const ghosts = apparentItemsToBake();
+      for (const item of ghosts) drawApparentSize(mapCtx, item, t.k);
+      if (ghosts.length) {
+        mapCtx.strokeStyle = MAP.countryStroke;
+        mapCtx.lineWidth = 0.6 / t.k;
+        for (const item of ghosts) {
+          mapCtx.fillStyle = item.color;
+          mapCtx.fill(item.path2d);
+          mapCtx.stroke(item.path2d);
         }
       }
+      drawWater(mapCtx, t.k);
       mapCtx.restore();
     }
 
@@ -391,19 +552,23 @@
       const highlight = hoverName || state.selected;
       if (highlight) {
         const item = countryCache.find((entry) => entry.name === highlight);
+        overCtx.save();
+        overCtx.translate(t.x, t.y);
+        overCtx.scale(t.k, t.k);
+        if (item && state.compareMode === "hover" && item.name !== state.selected) {
+          drawApparentSize(overCtx, item, t.k);
+        }
         if (item) {
-          overCtx.save();
-          overCtx.translate(t.x, t.y);
-          overCtx.scale(t.k, t.k);
           overCtx.filter = hoverName === item.name ? "brightness(1.14) saturate(1.2)" : "none";
           overCtx.fillStyle = item.color;
           overCtx.fill(item.path2d);
           overCtx.filter = "none";
-          overCtx.strokeStyle = hoverName === item.name ? "#9a4032" : "#141b23";
+          overCtx.strokeStyle = hoverName === item.name ? MAP.hover : MAP.selected;
           overCtx.lineWidth = (hoverName === item.name ? 2 : 1.6) / t.k;
           overCtx.stroke(item.path2d);
-          overCtx.restore();
+          drawWater(overCtx, t.k, item.path2d);
         }
+        overCtx.restore();
       }
       if (!state.layers.cities && !state.layers.labels) return;
       const compact = isCompactView();
@@ -418,7 +583,7 @@
         if (x < -40 || y < -20 || x > width + 40 || y > height + 20) continue;
         if (showCityDot(place, t.k, compact)) {
           overCtx.beginPath();
-          overCtx.fillStyle = place.capital ? "#c45c4a" : "#141b23";
+          overCtx.fillStyle = place.capital ? MAP.capital : MAP.city;
           overCtx.arc(x, y, place.capital ? 3.2 : 2.1, 0, Math.PI * 2);
           overCtx.fill();
           overCtx.strokeStyle = "#fff";
@@ -431,10 +596,10 @@
       }
       labelCandidates.sort((a, b) => placePriority(b.place) - placePriority(a.place));
       const placed = [];
-      overCtx.strokeStyle = "rgba(250,247,240,0.9)";
+      overCtx.strokeStyle = MAP.labelHalo;
       overCtx.lineWidth = 3;
       overCtx.lineJoin = "round";
-      overCtx.fillStyle = "#243040";
+      overCtx.fillStyle = MAP.label;
       for (const item of labelCandidates) {
         const w = overCtx.measureText(item.place.name).width;
         const box = { x: item.x + 4, y: item.y - 7, w: w + 8, h: 14 };
@@ -459,7 +624,7 @@
       const prev = currentTransform;
       const lonlat = reset ? null : viewLonLat(prev);
       const keepScale = !reset && prev.k ? prev.k : 1;
-      projection = makeProjection(state.projectionName, width, height);
+      projection = makeProjection(baseProjectionName(), width, height);
       rebuildPaths();
       sizeCanvases();
       let next = d3.zoomIdentity;
@@ -515,6 +680,77 @@
     function hidePlace() {
       state.selected = null;
       info.hidden = true;
+      const measures = document.getElementById("info-measures");
+      if (measures) {
+        measures.replaceChildren();
+        measures.hidden = true;
+      }
+      bake(currentTransform);
+    }
+
+    function renderMeasures(rows) {
+      const dl = document.getElementById("info-measures");
+      if (!dl) return;
+      dl.replaceChildren();
+      if (!rows.length) {
+        dl.hidden = true;
+        return;
+      }
+      dl.hidden = false;
+      for (const row of rows) {
+        const wrap = document.createElement("div");
+        const dt = document.createElement("dt");
+        const dd = document.createElement("dd");
+        dt.textContent = row.label;
+        dd.textContent = row.value;
+        wrap.append(dt, dd);
+        dl.append(wrap);
+      }
+    }
+
+    function selectedFeature() {
+      if (!state.selected) return null;
+      return countries.features.find((d) => d.properties.name === state.selected) || null;
+    }
+
+    function updateCountryInfo(feature) {
+      const stats = sizeIndex.get(feature.properties.name) || { trueKm2: km2(feature), ratio: null };
+      info.hidden = false;
+      document.getElementById("info-title").textContent = feature.properties.name;
+      const comparing = overlayMode();
+      const mercOn = state.projections.mercator;
+      if (comparing) {
+        document.getElementById("info-meta").textContent = "Country · Natural Earth 1:50 million. Red outline is Mercator’s apparent size.";
+      } else if (mercOn) {
+        document.getElementById("info-meta").textContent = "Country · Natural Earth 1:50 million. Mercator inflates land toward the poles.";
+      } else {
+        document.getElementById("info-meta").textContent = "Country · Natural Earth 1:50 million. Equal Earth keeps relative area true.";
+      }
+
+      const rows = [{ label: "True area", value: formatAreaKm2(stats.trueKm2) }];
+      const inflation = formatInflation(stats.ratio);
+      if (inflation && stats.ratio) {
+        if (inflation === "about the same") {
+          rows.push({ label: "Mercator appearance", value: "about the same" });
+        } else {
+          rows.push({ label: "Looks like on Mercator", value: formatAreaKm2(stats.trueKm2 * stats.ratio, { approx: true }) });
+          rows.push({ label: "Difference", value: inflation });
+        }
+      }
+      renderMeasures(rows);
+
+      const area = document.getElementById("info-area");
+      if (comparing && stats.ratio > 1.12) {
+        area.textContent = "The red outline is the same country scaled to Mercator's apparent size.";
+      } else if (comparing) {
+        area.textContent = "Near the equator the two projections agree closely on size, so there is no extra outline.";
+      } else if (mercOn && inflation && inflation !== "about the same") {
+        area.textContent = `This land appears ${inflation} than its true size on Mercator.`;
+      } else if (!mercOn) {
+        area.textContent = "On Equal Earth this area stays true to scale relative to other countries.";
+      } else {
+        area.textContent = "Near the equator Mercator and Equal Earth agree on size.";
+      }
     }
 
     function showPlace(place) {
@@ -522,16 +758,14 @@
       const kind = place.capital ? "Capital" : "City";
       document.getElementById("info-title").textContent = place.name;
       document.getElementById("info-meta").textContent = [kind, place.country, formatPop(place.pop)].filter(Boolean).join(" · ");
+      renderMeasures([]);
       document.getElementById("info-area").textContent = "";
     }
 
     function selectCountry(feature) {
       state.selected = feature.properties.name;
-      const area = km2(feature);
-      info.hidden = false;
-      document.getElementById("info-title").textContent = feature.properties.name;
-      document.getElementById("info-meta").textContent = "Country · Natural Earth 1:50 million. Equal Earth keeps this area true to scale.";
-      document.getElementById("info-area").textContent = `Approximate mapped area: ${Math.round(area).toLocaleString()} km²`;
+      updateCountryInfo(feature);
+      bake(currentTransform);
       zoomToFeature(feature);
       drawOverlay();
       track("select_country", { name: feature.properties.name });
@@ -539,14 +773,25 @@
 
     function zoomToFeature(feature) {
       const bounds = path.bounds(feature);
-      const dx = Math.max(bounds[1][0] - bounds[0][0], 1);
-      const dy = Math.max(bounds[1][1] - bounds[0][1], 1);
-      const x = (bounds[0][0] + bounds[1][0]) / 2;
-      const y = (bounds[0][1] + bounds[1][1]) / 2;
-      const scale = Math.max(1.2, Math.min(16, 0.72 / Math.max(dx / width, dy / height)));
+      const centroid = path.centroid(feature);
+      const origin = validPoint(centroid)
+        ? centroid
+        : [(bounds[0][0] + bounds[1][0]) / 2, (bounds[0][1] + bounds[1][1]) / 2];
+      let inflate = 1;
+      if (overlayMode()) {
+        const stats = sizeIndex.get(feature.properties.name);
+        if (stats && stats.ratio > 1.12) inflate = Math.sqrt(stats.ratio);
+      }
+      const x0 = origin[0] + (bounds[0][0] - origin[0]) * inflate;
+      const y0 = origin[1] + (bounds[0][1] - origin[1]) * inflate;
+      const x1 = origin[0] + (bounds[1][0] - origin[0]) * inflate;
+      const y1 = origin[1] + (bounds[1][1] - origin[1]) * inflate;
+      const dx = Math.max(x1 - x0, 1);
+      const dy = Math.max(y1 - y0, 1);
+      const scale = Math.max(1.05, Math.min(16, 0.78 / Math.max(dx / width, dy / height)));
       d3.select(stage).call(
         zoom.transform,
-        d3.zoomIdentity.translate(width / 2, height / 2).scale(scale).translate(-x, -y)
+        d3.zoomIdentity.translate(width / 2, height / 2).scale(scale).translate(-origin[0], -origin[1])
       );
     }
 
@@ -631,7 +876,14 @@
         drawOverlay();
       }
       if (hit) {
-        showTip(vx, vy, hit.name);
+        const stats = sizeIndex.get(hit.name);
+        const inflation = overlayMode() || state.projections.mercator
+          ? formatInflation(stats && stats.ratio)
+          : null;
+        const tip = inflation && inflation !== "about the same"
+          ? `${hit.name} · Mercator ${inflation}`
+          : hit.name;
+        showTip(vx, vy, tip);
         stage.style.cursor = "pointer";
       } else {
         hideTip();
@@ -675,12 +927,57 @@
       event.stopPropagation();
     });
 
+    function syncProjectionUI() {
+      const overlay = overlayMode();
+      document.querySelectorAll("[data-proj]").forEach((node) => {
+        const on = Boolean(state.projections[node.dataset.proj]);
+        node.classList.toggle("is-active", on);
+        node.setAttribute("aria-pressed", String(on));
+      });
+      const hint = document.getElementById("proj-hint");
+      const key = document.getElementById("proj-key");
+      const legend = document.getElementById("overlay-legend");
+      const compareSet = document.getElementById("compare-set");
+      if (hint) {
+        hint.hidden = false;
+        hint.textContent = overlay
+          ? (state.compareMode === "always"
+            ? "Red outlines mark countries Mercator inflates. Hover still highlights a country."
+            : "Hover a country to see Mercator’s apparent size. Tiny differences stay in the numbers only.")
+          : "Turn both on, then hover a country to compare true and apparent size.";
+      }
+      if (key) key.hidden = !overlay;
+      if (legend) legend.hidden = !overlay;
+      if (compareSet) compareSet.hidden = !overlay;
+      document.querySelectorAll("[data-compare]").forEach((node) => {
+        const on = node.dataset.compare === state.compareMode;
+        node.classList.toggle("is-active", on);
+        node.setAttribute("aria-pressed", String(on));
+      });
+      stage.setAttribute(
+        "aria-label",
+        overlay
+          ? "Equal Earth map. Click a country to show Mercator’s apparent size as a scaled outline."
+          : baseProjectionName() === "mercator"
+            ? "Mercator world map"
+            : "Equal Earth world map with countries, lakes, rivers, and cities"
+      );
+    }
+
     document.querySelectorAll("[data-proj]").forEach((button) => {
       button.addEventListener("click", () => {
-        state.projectionName = button.dataset.proj;
-        document.querySelectorAll("[data-proj]").forEach((node) => node.classList.toggle("is-active", node === button));
+        const name = button.dataset.proj;
+        const other = name === "equalEarth" ? "mercator" : "equalEarth";
+        if (state.projections[name] && !state.projections[other]) return;
+        state.projections[name] = !state.projections[name];
+        syncProjectionUI();
         layout();
-        track("projection", { projection: state.projectionName });
+        const selected = selectedFeature();
+        if (selected) updateCountryInfo(selected);
+        track("projection", {
+          equalEarth: state.projections.equalEarth,
+          mercator: state.projections.mercator
+        });
       });
     });
 
@@ -731,6 +1028,7 @@
     }
 
     atlas = { resize: () => layout(), zoom };
+    syncProjectionUI();
     layout({ reset: true });
     if (document.fonts && document.fonts.ready) {
       document.fonts.ready.then(() => drawOverlay());

@@ -86,6 +86,7 @@ html, body {
   line-height: 1.45;
   background: var(--night-deep);
   overscroll-behavior: none;
+  scrollbar-color: var(--ink-soft) var(--night-deep);
 }
 
 ::selection {
@@ -104,6 +105,30 @@ html, body {
   height: 1px;
   overflow: hidden;
   clip: rect(0 0 0 0);
+}
+
+.skip-link {
+  position: absolute;
+  left: var(--space-2);
+  top: var(--space-2);
+  z-index: 30;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: var(--cream);
+  color: var(--ink);
+  font-size: var(--type-ui);
+  font-weight: 650;
+  line-height: var(--control);
+  text-decoration: none;
+}
+
+.skip-link:not(:focus):not(:focus-visible) {
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
 }
 
 .icon {
@@ -180,7 +205,8 @@ html, body {
 .sheet-toggle,
 .sheet-close,
 .info-close,
-.compare-btn {
+.compare-btn,
+.status-refresh {
   font: inherit;
   cursor: pointer;
   touch-action: manipulation;
@@ -312,6 +338,20 @@ main {
 .atlas-status.is-error {
   color: var(--ink);
   pointer-events: auto;
+}
+
+.status-refresh {
+  margin-left: 8px;
+  border: 0;
+  border-radius: 999px;
+  min-height: 32px;
+  padding: 0 12px;
+  background: var(--ink);
+  color: var(--cream);
+  font: inherit;
+  font-size: var(--type-ui);
+  font-weight: 650;
+  cursor: pointer;
 }
 
 .map-chrome {
@@ -703,6 +743,7 @@ legend {
   width: 100%;
   border: 0;
   border-radius: var(--radius);
+  min-height: 44px;
   padding: 8px 10px;
   background: transparent;
   color: inherit;
@@ -1007,6 +1048,7 @@ dialog::backdrop { background: rgba(3, 47, 52, 0.55); }
   .compare-btn,
   .sheet-toggle {
     padding: 0 10px;
+    min-height: 44px;
   }
 
   .sheet {

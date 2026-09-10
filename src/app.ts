@@ -351,15 +351,24 @@
     const status = document.getElementById("atlas-status");
     const setStatus = (message: string, isError = false) => {
       if (!status) return;
+      status.replaceChildren();
       if (!message) {
         status.hidden = true;
-        status.textContent = "";
         status.classList.remove("is-error");
+        status.setAttribute("role", "status");
         return;
       }
       status.hidden = false;
-      status.textContent = message;
       status.classList.toggle("is-error", isError);
+      status.setAttribute("role", isError ? "alert" : "status");
+      status.append(message);
+      if (!isError) return;
+      const retry = document.createElement("button");
+      retry.type = "button";
+      retry.className = "status-refresh";
+      retry.textContent = "Refresh";
+      retry.addEventListener("click", () => window.location.reload());
+      status.append(" ", retry);
     };
 
     let countriesTopo: CountriesTopology | undefined;
@@ -1120,22 +1129,30 @@
       }
     }
 
-    function showPlace(place: Place) {
+    function revealPlace(focusInfo: boolean) {
       info.hidden = false;
+      if (!focusInfo) return;
+      const title = requireElement("info-title");
+      title.focus();
+    }
+
+    function showPlace(place: Place, focusInfo = false) {
       const kind = place.capital ? "Capital" : "City";
       requireElement("info-title").textContent = place.name;
       requireElement("info-meta").textContent = [kind, place.country, formatPop(place.pop)].filter((part): part is string => Boolean(part)).join(" · ");
       renderMeasures([]);
       requireElement("info-area").textContent = "";
+      revealPlace(focusInfo);
     }
 
-    function selectCountry(feature: CountryFeature) {
+    function selectCountry(feature: CountryFeature, focusInfo = false) {
       state.selected = feature.properties.name;
       updateCountryInfo(feature);
       bake(currentTransform);
       zoomToFeature(feature);
       drawOverlay();
       track("select_country", { name: feature.properties.name });
+      revealPlace(focusInfo);
     }
 
     function zoomToFeature(feature: CountryFeature) {
@@ -1190,6 +1207,7 @@
       if (hits.length === 0) {
         const empty = document.createElement("li");
         empty.className = "search-empty";
+        empty.setAttribute("role", "status");
         empty.textContent = `No places match “${query.trim()}”`;
         results.append(empty);
         return;
@@ -1208,11 +1226,11 @@
           results.hidden = true;
           searchInput.value = hit.name;
           closeSheets();
-          if (hit.kind === "country") selectCountry(hit.feature);
+          if (hit.kind === "country") selectCountry(hit.feature, true);
           else {
             const xy = projection([hit.lon, hit.lat]);
             if (xy) {
-              showPlace(hit);
+              showPlace(hit, true);
               zoomToPoint(xy[0], xy[1], 8);
             }
           }
@@ -1338,6 +1356,7 @@
       event.stopPropagation();
       hidePlace();
       drawOverlay();
+      searchInput.focus();
     });
 
     window.addEventListener("resize", onViewportChange);
@@ -1377,10 +1396,17 @@
     track("mode", { mode });
   }
 
-  function closeSheets() {
+  let sheetFocusReturn: HTMLElement | null = null;
+
+  function closeSheets(restoreFocus = false) {
+    const wasOpen = Boolean(document.querySelector(".sheet.is-open"));
     document.querySelectorAll(".sheet.is-open").forEach((sheet) => sheet.classList.remove("is-open"));
     document.querySelectorAll(".sheet-toggle").forEach((button) => button.setAttribute("aria-expanded", "false"));
     document.body.classList.remove("sheet-open");
+    if (restoreFocus && wasOpen && sheetFocusReturn) {
+      sheetFocusReturn.focus();
+      sheetFocusReturn = null;
+    }
   }
 
   function toggleSheet(id: string) {
@@ -1392,8 +1418,12 @@
       const results = document.getElementById("search-results");
       if (results) results.hidden = true;
       sheet.classList.add("is-open");
-      if (button) button.setAttribute("aria-expanded", "true");
+      if (button instanceof HTMLElement) {
+        button.setAttribute("aria-expanded", "true");
+        sheetFocusReturn = button;
+      }
       document.body.classList.add("sheet-open");
+      sheet.querySelector<HTMLElement>(".sheet-close")?.focus();
     }
   }
 
@@ -1402,9 +1432,9 @@
     toggleSheet("atlas-controls");
   });
   document.querySelectorAll(".sheet-close").forEach((button) => {
-    button.addEventListener("click", closeSheets);
+    button.addEventListener("click", () => closeSheets(true));
   });
-  requireElement("sheet-backdrop").addEventListener("click", closeSheets);
+  requireElement("sheet-backdrop").addEventListener("click", () => closeSheets(true));
 
   document.querySelectorAll<HTMLElement>(".mode-btn").forEach((button) => {
     button.addEventListener("click", () => {
@@ -1459,7 +1489,11 @@
     if (event.key === "-" || event.key === "_") zoomRoot.querySelector<HTMLElement>("[data-zoom=out]")?.click();
     if (event.key === "0") zoomRoot.querySelector<HTMLElement>("[data-zoom=home]")?.click();
     if (event.key === "Escape") {
-      closeSheets();
+      if (document.querySelector(".sheet.is-open")) {
+        closeSheets(true);
+        event.preventDefault();
+        return;
+      }
       about.close();
     }
   });

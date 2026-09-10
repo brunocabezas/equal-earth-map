@@ -99,6 +99,7 @@
     </script>
   </head>
   <body>
+    <a class="skip-link" href="#search">Skip to search</a>
     <header class="topbar">
       <div class="brand">
         <h1>Equal Earth</h1>
@@ -147,9 +148,9 @@
       </section>
 
       <section id="atlas-view" class="view is-visible" aria-label="Interactive Equal Earth atlas">
-        <div id="atlas-stage" role="img" aria-label="Equal Earth map with Mercator size outlines. Click a country for the numbers.">
-          <canvas id="atlas-map"></canvas>
-          <canvas id="atlas-overlay"></canvas>
+        <div id="atlas-stage" aria-label="Interactive Equal Earth map. Search for a country, or use plus and minus to zoom.">
+          <canvas id="atlas-map" aria-hidden="true"></canvas>
+          <canvas id="atlas-overlay" aria-hidden="true"></canvas>
         </div>
         <p id="atlas-status" class="atlas-status" role="status">Loading Natural Earth data…</p>
         <div class="map-chrome left">
@@ -163,23 +164,23 @@
                 <span class="sr-only">Search a country or city</span>
                 <input id="search" type="search" placeholder="Greenland…" autocomplete="off" enterkeyhint="search" />
               </label>
-              <ul id="search-results" hidden></ul>
+              <ul id="search-results" hidden aria-label="Search results"></ul>
             </div>
-            <button type="button" class="compare-btn is-active" id="mercator-size" aria-pressed="true">
+            <button type="button" class="compare-btn is-active" id="mercator-size" aria-pressed="true" aria-label="Mercator size">
               <span class="label-full">Mercator size</span>
               <span class="label-short">Size</span>
             </button>
-            <button type="button" class="sheet-toggle" id="atlas-controls-toggle" aria-expanded="false" aria-controls="atlas-controls">
+            <button type="button" class="sheet-toggle" id="atlas-controls-toggle" aria-expanded="false" aria-controls="atlas-controls" aria-haspopup="dialog">
               <svg class="icon" viewBox="0 0 16 16" aria-hidden="true">
                 <path d="M2.5 4.5h11M4 8h8M5.5 11.5h5" />
               </svg>
               Layers
             </button>
           </div>
-          <div class="sheet" id="atlas-controls">
+          <div class="sheet" id="atlas-controls" role="dialog" aria-labelledby="atlas-controls-title">
             <div class="panel">
               <div class="sheet-head">
-                <h2>Map options</h2>
+                <h2 id="atlas-controls-title">Map options</h2>
                 <button type="button" class="sheet-close">Close</button>
               </div>
               <fieldset>
@@ -205,11 +206,11 @@
             <span><span class="swatch swatch-ee" aria-hidden="true"></span> True size</span>
             <span><span class="swatch swatch-merc" aria-hidden="true"></span> Looks this big on Mercator</span>
           </div>
-          <div class="panel info-panel" id="place-info" hidden>
+          <div class="panel info-panel" id="place-info" hidden role="region" aria-live="polite" aria-labelledby="info-title">
             <button type="button" class="info-close" id="info-close" aria-label="Clear selection">
               <svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" /></svg>
             </button>
-            <h2 id="info-title"></h2>
+            <h2 id="info-title" tabindex="-1"></h2>
             <p id="info-meta"></p>
             <dl id="info-measures" hidden></dl>
             <p id="info-area"></p>
@@ -239,9 +240,9 @@
 
     <div id="sheet-backdrop" class="sheet-backdrop"></div>
 
-    <dialog id="about">
+    <dialog id="about" aria-labelledby="about-title">
       <div class="about-card">
-        <h2>Why this map looks different</h2>
+        <h2 id="about-title">Why this map looks different</h2>
         <p>
           Most web maps use Mercator, which inflates countries near the poles. Greenland looks
           similar in size to Africa there, though Africa is about 14 times larger. Equal Earth is

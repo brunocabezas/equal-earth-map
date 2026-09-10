@@ -54,6 +54,8 @@
     selected: "#032f34",
     mercFill: "rgba(194,97,72,0.18)",
     mercStroke: "#c26148",
+    mercMuteFill: "rgba(152, 162, 168, 0.78)",
+    mercMuteStroke: "rgba(120, 130, 136, 0.9)",
     capital: "#e29578",
     city: "#032f34",
     label: "#054a52",
@@ -165,16 +167,18 @@
     return approx ? `~${text}` : text;
   }
 
+  function formatFactor(n: number) {
+    if (n >= 40) return String(Math.round(n));
+    if (n >= 10) return n.toFixed(0);
+    if (n >= 2) return n.toFixed(1);
+    return n.toFixed(2);
+  }
+
   function formatInflation(ratio: number | null | undefined) {
     if (ratio == null || !Number.isFinite(ratio) || ratio <= 0) return null;
-    if (ratio >= 0.85 && ratio <= 1.18) return "about the same";
-    if (ratio > 1) {
-      const n = ratio >= 40 ? Math.round(ratio) : ratio >= 10 ? ratio.toFixed(0) : ratio.toFixed(1);
-      return `${n}× larger`;
-    }
-    const inv = 1 / ratio;
-    const n = inv >= 10 ? inv.toFixed(0) : inv.toFixed(1);
-    return `${n}× smaller`;
+    if (ratio > 1) return `${formatFactor(ratio)}× larger`;
+    if (ratio < 1) return `${formatFactor(1 / ratio)}× smaller`;
+    return "1.00×";
   }
 
   function equatorAnchor(projection: GeoProjection, lon0: number) {
@@ -341,6 +345,10 @@
     if (!mapCtxMaybe || !overCtxMaybe) return;
     const mapCtx = mapCtxMaybe;
     const overCtx = overCtxMaybe;
+    const hideCanvas = document.createElement("canvas");
+    const hideCtxMaybe = hideCanvas.getContext("2d", { willReadFrequently: true });
+    if (!hideCtxMaybe) return;
+    const hideCtx = hideCtxMaybe;
     const tooltip = requireElement("tooltip");
     const info = requireElement("place-info");
     const searchInput = requireElement<HTMLInputElement>("search");
@@ -398,6 +406,11 @@
     let currentTransform: ZoomTransform = d3.zoomIdentity;
     let hoverName: string | null = null;
     let countryCache: CountryCacheItem[] = [];
+    let hideGhosts: OverlayGhost[] = [];
+    let hideGhostsKey = "";
+    let hideMask: Uint8ClampedArray | null = null;
+    let hideMaskW = 0;
+    let hideMaskH = 0;
     let lakePath: Path2D | null;
     let riverPaths: RiverPath[] = [];
     let spherePath: Path2D | null;
@@ -484,12 +497,24 @@
       const baseName = baseProjectionName();
       spherePath = asPath2D(path, baseName === "mercator" ? mercatorWorld() : { type: "Sphere" });
       graticulePath = asPath2D(path, graticule);
-      countryCache = countries.features.map((feature) => ({
-        feature,
-        name: feature.properties.name,
-        color: colorFor(feature.properties.name),
-        path2d: asPath2D(path, feature)
-      })).filter(hasPath);
+      countryCache = countries.features.flatMap((feature) => {
+        const path2d = asPath2D(path, feature);
+        if (!path2d) return [];
+        const centroid = path.centroid(feature);
+        const bounds = path.bounds(feature);
+        const center: [number, number] = validPoint(centroid)
+          ? centroid
+          : [(bounds[0][0] + bounds[1][0]) / 2, (bounds[0][1] + bounds[1][1]) / 2];
+        return [{
+          feature,
+          name: feature.properties.name,
+          color: colorFor(feature.properties.name),
+          path2d,
+          bounds,
+          centroid: center
+        }];
+      });
+      hideGhostsKey = "";
       lakePath = asPath2D(path, { type: "FeatureCollection", features: lakes });
       riverPaths = rivers.map((feature) => ({
         rank: feature.properties.scalerank,
@@ -498,9 +523,115 @@
     }
 
     function apparentScaleFor(name: string) {
-      if (!overlayMode() || name === "Antarctica") return 0;
+      if (!overlayMode()) return 0;
       const stats = sizeIndex.get(name);
-      return stats && stats.ratio != null && stats.ratio >= 1.35 ? Math.sqrt(stats.ratio) : 0;
+      if (!stats || stats.ratio == null || stats.ratio <= 0) return 0;
+      const scale = Math.sqrt(stats.ratio);
+      return name === "Antarctica" ? Math.min(scale, 4) : scale;
+    }
+
+    function itemCentroid(item: CountryCacheItem) {
+      if (validPoint(item.centroid)) return item.centroid;
+      const b = item.bounds;
+      const mid: [number, number] = [(b[0][0] + b[1][0]) / 2, (b[0][1] + b[1][1]) / 2];
+      return validPoint(mid) ? mid : null;
+    }
+
+    function pointInPath2d(path2d: Path2D, xy: [number, number]) {
+      return mapCtx.isPointInPath(path2d, xy[0] * dpr, xy[1] * dpr, "evenodd");
+    }
+
+    function ghostHideData(item: CountryCacheItem): OverlayGhost | null {
+      const scale = apparentScaleFor(item.name);
+      const centroid = itemCentroid(item);
+      if (!scale || !validPoint(centroid)) return null;
+      const [[x0, y0], [x1, y1]] = item.bounds;
+      const sx0 = centroid[0] + (x0 - centroid[0]) * scale;
+      const sy0 = centroid[1] + (y0 - centroid[1]) * scale;
+      const sx1 = centroid[0] + (x1 - centroid[0]) * scale;
+      const sy1 = centroid[1] + (y1 - centroid[1]) * scale;
+      return {
+        item,
+        scale,
+        centroid,
+        x0: Math.min(sx0, sx1),
+        y0: Math.min(sy0, sy1),
+        x1: Math.max(sx0, sx1),
+        y1: Math.max(sy0, sy1)
+      };
+    }
+
+    function activeGhosts() {
+      if (!overlayMode() || !state.layers.countries) return [];
+      if (state.compareMode === "always") return apparentItemsToBake();
+      const name = hoverName || state.selected;
+      if (!name) return [];
+      const item = countryCache.find((entry) => entry.name === name);
+      return item && apparentScaleFor(item.name) > 0 ? [item] : [];
+    }
+
+    function rebuildHideMask(ghosts: OverlayGhost[]) {
+      const w = Math.max(1, width | 0);
+      const h = Math.max(1, height | 0);
+      if (hideCanvas.width !== w || hideCanvas.height !== h) {
+        hideCanvas.width = w;
+        hideCanvas.height = h;
+      }
+      hideCtx.setTransform(1, 0, 0, 1, 0, 0);
+      hideCtx.clearRect(0, 0, w, h);
+      hideCtx.fillStyle = "#fff";
+      for (const ghost of ghosts) {
+        hideCtx.save();
+        hideCtx.translate(ghost.centroid[0], ghost.centroid[1]);
+        hideCtx.scale(ghost.scale, ghost.scale);
+        hideCtx.translate(-ghost.centroid[0], -ghost.centroid[1]);
+        hideCtx.fill(ghost.item.path2d);
+        hideCtx.restore();
+      }
+      hideCtx.globalCompositeOperation = "destination-out";
+      for (const ghost of ghosts) hideCtx.fill(ghost.item.path2d);
+      hideCtx.globalCompositeOperation = "source-over";
+      hideMask = hideCtx.getImageData(0, 0, w, h).data;
+      hideMaskW = w;
+      hideMaskH = h;
+    }
+
+    function currentHideGhosts() {
+      const key = overlayMode() && state.layers.countries
+        ? (state.compareMode === "always" ? "always" : `h:${hoverName || state.selected || ""}`)
+        : "";
+      if (key === hideGhostsKey) return hideGhosts;
+      hideGhostsKey = key;
+      hideGhosts = key
+        ? activeGhosts().flatMap((item) => {
+            const ghost = ghostHideData(item);
+            return ghost ? [ghost] : [];
+          })
+        : [];
+      if (hideGhosts.length > 2) rebuildHideMask(hideGhosts);
+      else hideMask = null;
+      return hideGhosts;
+    }
+
+    function hiddenBySizeOverlay(xy: [number, number] | null | undefined) {
+      if (!validPoint(xy)) return false;
+      const ghosts = currentHideGhosts();
+      if (!ghosts.length) return false;
+      if (hideMask) {
+        const x = xy[0] | 0;
+        const y = xy[1] | 0;
+        if (x < 0 || y < 0 || x >= hideMaskW || y >= hideMaskH) return false;
+        return hideMask[(y * hideMaskW + x) * 4 + 3] !== 0;
+      }
+      for (const ghost of ghosts) {
+        if (xy[0] < ghost.x0 || xy[0] > ghost.x1 || xy[1] < ghost.y0 || xy[1] > ghost.y1) continue;
+        const local: [number, number] = [
+          ghost.centroid[0] + (xy[0] - ghost.centroid[0]) / ghost.scale,
+          ghost.centroid[1] + (xy[1] - ghost.centroid[1]) / ghost.scale
+        ];
+        if (pointInPath2d(ghost.item.path2d, local) && !pointInPath2d(ghost.item.path2d, xy)) return true;
+      }
+      return false;
     }
 
     function drawWater(ctx: CanvasRenderingContext2D, zoomK: number, clipPath?: Path2D | null) {
@@ -533,22 +664,59 @@
       return selectedItem && apparentScaleFor(selectedItem.name) > 0 ? [selectedItem] : [];
     }
 
-    function drawApparentSize(ctx: CanvasRenderingContext2D, item: CountryCacheItem, zoomK: number) {
+    function withApparentTransform(
+      ctx: CanvasRenderingContext2D,
+      item: CountryCacheItem,
+      fn: (apparent: number) => void
+    ) {
       const apparent = apparentScaleFor(item.name);
-      const centroid = path.centroid(item.feature);
-      if (!apparent || !validPoint(centroid)) return false;
+      const centroid = itemCentroid(item);
+      if (!apparent || !validPoint(centroid)) return 0;
       ctx.save();
       if (spherePath && baseProjectionName() !== "mercator") ctx.clip(spherePath);
       ctx.translate(centroid[0], centroid[1]);
       ctx.scale(apparent, apparent);
       ctx.translate(-centroid[0], -centroid[1]);
-      ctx.fillStyle = MAP.mercFill;
-      ctx.strokeStyle = MAP.mercStroke;
-      ctx.lineWidth = 2.4 / (zoomK * apparent);
-      ctx.fill(item.path2d);
-      ctx.stroke(item.path2d);
+      fn(apparent);
       ctx.restore();
-      return true;
+      return apparent;
+    }
+
+    function strokeApparent(ctx: CanvasRenderingContext2D, item: CountryCacheItem, zoomK: number) {
+      return withApparentTransform(ctx, item, (apparent) => {
+        ctx.strokeStyle = MAP.mercStroke;
+        ctx.lineWidth = 2.4 / (zoomK * apparent);
+        ctx.stroke(item.path2d);
+      }) > 0;
+    }
+
+    function drawApparentSize(
+      ctx: CanvasRenderingContext2D,
+      item: CountryCacheItem,
+      zoomK: number,
+      { muted = false }: { muted?: boolean } = {}
+    ) {
+      return withApparentTransform(ctx, item, (apparent) => {
+        if (apparent > 1) {
+          ctx.fillStyle = muted ? MAP.mercMuteFill : MAP.mercFill;
+          ctx.fill(item.path2d);
+        }
+        ctx.strokeStyle = muted ? MAP.mercMuteStroke : MAP.mercStroke;
+        ctx.lineWidth = 2.4 / (zoomK * apparent);
+        ctx.stroke(item.path2d);
+      }) > 0;
+    }
+
+    function drawCenteredGhost(ctx: CanvasRenderingContext2D, item: CountryCacheItem, zoomK: number) {
+      const apparent = apparentScaleFor(item.name);
+      if (!apparent) return;
+      if (apparent > 1) drawApparentSize(ctx, item, zoomK);
+      ctx.fillStyle = item.color;
+      ctx.fill(item.path2d);
+      ctx.strokeStyle = MAP.countryStroke;
+      ctx.lineWidth = 0.6 / zoomK;
+      ctx.stroke(item.path2d);
+      strokeApparent(ctx, item, zoomK);
     }
 
     function bake(t: ZoomTransform) {
@@ -581,15 +749,9 @@
         }
       }
       const ghosts = apparentItemsToBake();
-      for (const item of ghosts) drawApparentSize(mapCtx, item, t.k);
       if (ghosts.length) {
-        mapCtx.strokeStyle = MAP.countryStroke;
-        mapCtx.lineWidth = 0.6 / t.k;
-        for (const item of ghosts) {
-          mapCtx.fillStyle = item.color;
-          mapCtx.fill(item.path2d);
-          mapCtx.stroke(item.path2d);
-        }
+        ghosts.sort((a, b) => apparentScaleFor(b.name) - apparentScaleFor(a.name));
+        for (const item of ghosts) drawCenteredGhost(mapCtx, item, t.k);
       }
       drawWater(mapCtx, t.k);
       mapCtx.restore();
@@ -599,12 +761,21 @@
       overCtx.clearRect(0, 0, width, height);
       const t = currentTransform;
       const highlight = hoverName || state.selected;
+      overCtx.save();
+      overCtx.translate(t.x, t.y);
+      overCtx.scale(t.k, t.k);
+      if (state.compareMode === "always" && hoverName) {
+        for (const item of apparentItemsToBake()) {
+          if (item.name === hoverName) continue;
+          drawApparentSize(overCtx, item, t.k, { muted: true });
+        }
+      }
       if (highlight) {
         const item = countryCache.find((entry) => entry.name === highlight);
-        overCtx.save();
-        overCtx.translate(t.x, t.y);
-        overCtx.scale(t.k, t.k);
         if (item && state.compareMode === "hover" && item.name !== state.selected) {
+          drawApparentSize(overCtx, item, t.k);
+        }
+        if (item && state.compareMode === "always" && hoverName === item.name) {
           drawApparentSize(overCtx, item, t.k);
         }
         if (item) {
@@ -616,11 +787,13 @@
           overCtx.lineWidth = (hoverName === item.name ? 2 : 1.6) / t.k;
           overCtx.stroke(item.path2d);
           drawWater(overCtx, t.k, item.path2d);
+          if (overlayMode()) strokeApparent(overCtx, item, t.k);
         }
-        overCtx.restore();
       }
+      overCtx.restore();
       if (!state.layers.cities && !state.layers.labels) return;
       const compact = isCompactView();
+      const hideGhostsNow = currentHideGhosts();
       overCtx.save();
       overCtx.font = "600 12px 'Source Sans 3', 'Segoe UI', sans-serif";
       overCtx.textBaseline = "middle";
@@ -628,6 +801,7 @@
       for (const place of citySource) {
         const xy = projection([place.lon, place.lat]);
         if (!xy) continue;
+        if (hideGhostsNow.length && hiddenBySizeOverlay(xy)) continue;
         const [x, y] = t.apply(xy);
         if (x < -40 || y < -20 || x > width + 40 || y > height + 20) continue;
         if (showCityDot(place, t.k, compact)) {
@@ -708,12 +882,15 @@
 
     function cityAt(screenX: number, screenY: number) {
       if (!state.layers.cities) return null;
+      const hide = currentHideGhosts().length > 0;
       for (const place of citySource) {
         const xy = projection([place.lon, place.lat]);
         if (!xy) continue;
         const [x, y] = currentTransform.apply(xy);
         const r = place.capital ? 6 : 4;
-        if ((screenX - x) ** 2 + (screenY - y) ** 2 <= r * r) return place;
+        if ((screenX - x) ** 2 + (screenY - y) ** 2 > r * r) continue;
+        if (hide && hiddenBySizeOverlay(xy)) continue;
+        return place;
       }
       return null;
     }
@@ -772,7 +949,9 @@
       const comparing = overlayMode();
       const mercOn = state.projections.mercator;
       if (comparing) {
-        requireElement("info-meta").textContent = "Country · Natural Earth 1:50 million. Red outline is Mercator’s apparent size.";
+        requireElement("info-meta").textContent = apparentScaleFor(feature.properties.name) > 0
+          ? "Country · Natural Earth 1:50 million. Red outline is Mercator’s apparent size."
+          : "Country · Natural Earth 1:50 million. Mercator barely changes this country’s size.";
       } else if (mercOn) {
         requireElement("info-meta").textContent = "Country · Natural Earth 1:50 million. Mercator inflates land toward the poles.";
       } else {
@@ -782,21 +961,17 @@
       const rows = [{ label: "True area", value: formatAreaKm2(stats.trueKm2) }];
       const inflation = formatInflation(stats.ratio);
       if (inflation && stats.ratio) {
-        if (inflation === "about the same") {
-          rows.push({ label: "Mercator appearance", value: "about the same" });
-        } else {
-          rows.push({ label: "Looks like on Mercator", value: formatAreaKm2(stats.trueKm2 * stats.ratio, { approx: true }) });
-          rows.push({ label: "Difference", value: inflation });
-        }
+        rows.push({ label: "Looks like on Mercator", value: formatAreaKm2(stats.trueKm2 * stats.ratio, { approx: true }) });
+        rows.push({ label: "Difference", value: inflation });
       }
       renderMeasures(rows);
 
       const area = requireElement("info-area");
-      if (comparing && stats.ratio != null && stats.ratio > 1.12) {
+      if (comparing && apparentScaleFor(feature.properties.name) > 0) {
         area.textContent = "The red outline is the same country scaled to Mercator's apparent size.";
       } else if (comparing) {
         area.textContent = "Near the equator the two projections agree closely on size, so there is no extra outline.";
-      } else if (mercOn && inflation && inflation !== "about the same") {
+      } else if (mercOn && inflation) {
         area.textContent = `This land appears ${inflation} than its true size on Mercator.`;
       } else if (!mercOn) {
         area.textContent = "On Equal Earth this area stays true to scale relative to other countries.";
@@ -932,7 +1107,7 @@
         const inflation = overlayMode() || state.projections.mercator
           ? formatInflation(stats && stats.ratio)
           : null;
-        const tip = inflation && inflation !== "about the same"
+        const tip = inflation
           ? `${hit.name} · Mercator ${inflation}`
           : hit.name;
         showTip(vx, vy, tip);
@@ -995,8 +1170,8 @@
         hint.hidden = false;
         hint.textContent = overlay
           ? (state.compareMode === "always"
-            ? "Red outlines mark countries Mercator inflates. Hover still highlights a country."
-            : "Hover a country to see Mercator’s apparent size. Tiny differences stay in the numbers only.")
+            ? "Every measurable country gets a centered overlay. Zoom in to see even tiny size differences."
+            : "Hover a country to see Mercator’s apparent size. Dots under the overlay are hidden.")
           : "Turn both on, then hover a country to compare true and apparent size.";
       }
       if (key) key.hidden = !overlay;
@@ -1032,6 +1207,19 @@
           equalEarth: state.projections.equalEarth,
           mercator: state.projections.mercator
         });
+      });
+    });
+
+    document.querySelectorAll<HTMLElement>("[data-compare]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const mode = button.dataset.compare;
+        if (!isCompareMode(mode) || mode === state.compareMode) return;
+        state.compareMode = mode;
+        hideGhostsKey = "";
+        syncProjectionUI();
+        bake(currentTransform);
+        drawOverlay();
+        track("compare_mode", { mode });
       });
     });
 

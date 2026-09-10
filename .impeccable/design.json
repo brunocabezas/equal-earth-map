@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-09-10T18:10:00.000Z",
+  "generatedAt": "2026-09-10T22:50:00.000Z",
   "title": "Design System: Equal Earth Map",
   "extensions": {
     "colorMeta": {
@@ -131,6 +131,7 @@
       }
     ],
     "breakpoints": [
+      { "name": "narrow", "value": "1100px" },
       { "name": "compact", "value": "720px" }
     ]
   },
@@ -144,14 +145,6 @@
       "css": ".ds-btn-primary { background: #054a52; color: #edf6f9; border: 0; border-radius: 999px; min-height: 36px; padding: 0 16px; font-family: 'Source Sans 3', 'Segoe UI', sans-serif; font-size: 0.875rem; font-weight: 550; cursor: pointer; transition: background 160ms ease; } .ds-btn-primary:hover { background: #032f34; } .ds-btn-primary:focus-visible { outline: 2px solid #c26148; outline-offset: 2px; }"
     },
     {
-      "name": "Ghost Button",
-      "kind": "button",
-      "refersTo": "button-ghost",
-      "description": "About control on night chrome.",
-      "html": "<button class=\"ds-btn-ghost\" type=\"button\">About</button>",
-      "css": ".ds-btn-ghost { background: transparent; color: #edf6f9; border: 1px solid rgba(237, 246, 249, 0.22); border-radius: 999px; min-height: 36px; padding: 0 14px; font-family: 'Source Sans 3', 'Segoe UI', sans-serif; font-size: 0.875rem; font-weight: 550; cursor: pointer; transition: background 160ms ease, border-color 160ms ease; } .ds-btn-ghost:hover { background: rgba(237, 246, 249, 0.1); border-color: rgba(237, 246, 249, 0.4); } .ds-btn-ghost:focus-visible { outline: 2px solid #c26148; outline-offset: 2px; }"
-    },
-    {
       "name": "Segmented Button",
       "kind": "button",
       "refersTo": "button-seg",
@@ -163,8 +156,8 @@
       "name": "Mode Pill",
       "kind": "nav",
       "refersTo": "mode-btn-active",
-      "description": "Atlas / Wall switch on the night bar.",
-      "html": "<div class=\"ds-mode\"><button class=\"ds-mode-btn ds-mode-btn-active\" type=\"button\">Interactive atlas</button><button class=\"ds-mode-btn\" type=\"button\">Wall map</button></div>",
+      "description": "Projection and center choices on the night bar.",
+      "html": "<div class=\"ds-mode\"><button class=\"ds-mode-btn ds-mode-btn-active\" type=\"button\">Equal Earth</button><button class=\"ds-mode-btn ds-mode-btn-active\" type=\"button\">Mercator</button></div>",
       "css": ".ds-mode { display: flex; padding: 3px; border-radius: 999px; background: rgba(237, 246, 249, 0.08); } .ds-mode-btn { border: 0; border-radius: 999px; min-height: 36px; padding: 0 14px; background: transparent; color: #d4e8ea; font-family: 'Source Sans 3', 'Segoe UI', sans-serif; font-size: 0.875rem; font-weight: 550; cursor: pointer; transition: background 160ms ease, color 160ms ease; } .ds-mode-btn:hover { color: #edf6f9; background: rgba(237, 246, 249, 0.08); } .ds-mode-btn-active, .ds-mode-btn-active:hover { background: #edf6f9; color: #054a52; } .ds-mode-btn:focus-visible { outline: 2px solid #c26148; outline-offset: 2px; }"
     },
     {
@@ -190,6 +183,14 @@
       "description": "Map zoom control in a stacked cluster.",
       "html": "<div class=\"ds-zoom\"><button class=\"ds-zoom-btn\" type=\"button\" aria-label=\"Zoom in\"><svg viewBox=\"0 0 16 16\" width=\"16\" height=\"16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\"><path d=\"M3.5 8h9M8 3.5v9\"/></svg></button><button class=\"ds-zoom-btn\" type=\"button\" aria-label=\"Zoom out\"><svg viewBox=\"0 0 16 16\" width=\"16\" height=\"16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\"><path d=\"M3.5 8h9\"/></svg></button></div>",
       "css": ".ds-zoom { display: flex; flex-direction: column; overflow: hidden; border: 1px solid rgba(5, 74, 82, 0.14); border-radius: 12px; box-shadow: 0 8px 22px rgba(3, 47, 52, 0.18); } .ds-zoom-btn { display: grid; place-items: center; width: 42px; height: 42px; border: 0; border-bottom: 1px solid rgba(5, 74, 82, 0.14); background: #f4fafb; color: #054a52; cursor: pointer; transition: background 160ms ease; } .ds-zoom-btn:last-child { border-bottom: 0; } .ds-zoom-btn:hover { background: #ffddd2; } .ds-zoom-btn:focus-visible { outline: 2px solid #c26148; outline-offset: 2px; }"
+    },
+    {
+      "name": "Icon Button",
+      "kind": "button",
+      "refersTo": "button-icon",
+      "description": "Layers and About on night chrome.",
+      "html": "<button class=\"ds-icon-btn\" type=\"button\" aria-label=\"Layers\"><svg viewBox=\"0 0 16 16\" width=\"16\" height=\"16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\"><path d=\"M2.5 4.5h11M4 8h8M5.5 11.5h5\"/></svg></button>",
+      "css": ".ds-icon-btn { display: grid; place-items: center; width: 36px; height: 36px; border: 1px solid rgba(237, 246, 249, 0.22); border-radius: 999px; background: transparent; color: #edf6f9; cursor: pointer; transition: background 160ms ease, border-color 160ms ease, color 160ms ease; } .ds-icon-btn:hover { background: rgba(237, 246, 249, 0.1); border-color: rgba(237, 246, 249, 0.4); } .ds-icon-btn[aria-expanded=\"true\"], .ds-icon-btn.is-active { background: #edf6f9; border-color: #edf6f9; color: #054a52; } .ds-icon-btn:focus-visible { outline: 2px solid #c26148; outline-offset: 2px; }"
     }
   ],
   "narrative": {
@@ -207,13 +208,15 @@
       { "name": "The One Warm Mark Rule", "body": "Coral appears as a mark, never as a page background or a row of filled buttons.", "section": "colors" },
       { "name": "The No-Cool-Gray Rule", "body": "Secondary text on night is ice-tinted. Secondary text on paper is ink-tinted teal. Do not use neutral gray.", "section": "colors" },
       { "name": "The Serif-for-Places Rule", "body": "Source Serif 4 is for the product name and geographic titles. Controls, legends, and data stay sans.", "section": "typography" },
-      { "name": "The Offset-Not-Halo Rule", "body": "Shadows have y-offset and blur. Do not use a zero-offset colored glow.", "section": "elevation" }
+      { "name": "The Offset-Not-Halo Rule", "body": "Shadows have y-offset and blur. Do not use a zero-offset colored glow.", "section": "elevation" },
+      { "name": "The Ice-on-Night Rule", "body": "Ice cards set ink type themselves. Never inherit cream from night chrome.", "section": "colors" }
     ],
     "dos": [
       "Do keep Equal Earth as the visual home of the globe; Mercator is a comparison state, not a restyle of the chrome.",
       "Do put place names in Source Serif 4 and everything else in Source Sans 3.",
       "Do tint muted text from ice or ink, never from gray.",
-      "Do use coral for focus, caret, capitals, and checks only."
+      "Do use coral for focus, caret, capitals, and checks only.",
+      "Do set ink on every ice card, including popovers nested in the night bar."
     ],
     "donts": [
       "Don't introduce Inter, system-display faces, or a second sans.",

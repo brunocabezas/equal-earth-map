@@ -97,6 +97,7 @@
   }
 
   let viewer: OsdViewer | null = null;
+  let wallReady: Promise<void> | null = null;
   let atlasReady = false;
   let atlasLoading = false;
   let atlas: { resize: () => void } | null = null;
@@ -225,6 +226,46 @@
     if (window.posthog && typeof window.posthog.capture === "function") {
       window.posthog.capture(event, props);
     }
+  }
+
+  function loadOpenSeadragon() {
+    if (typeof OpenSeadragon === "function") return Promise.resolve();
+    return new Promise<void>((resolve, reject) => {
+      const script = document.createElement("script");
+      script.src = "vendor/openseadragon.min.js";
+      script.async = true;
+      script.onload = () => resolve();
+      script.onerror = () => reject(new Error("Could not load wall map viewer"));
+      document.head.appendChild(script);
+    });
+  }
+
+  function ensureWall() {
+    if (viewer) {
+      viewer.viewport.resize();
+      return Promise.resolve();
+    }
+    if (!wallReady) {
+      wallView.setAttribute("aria-busy", "true");
+      wallReady = loadOpenSeadragon()
+        .then(() => {
+          if (!viewer) initWall();
+        })
+        .catch((error: unknown) => {
+          wallReady = null;
+          const caption = document.getElementById("wall-caption");
+          if (caption) {
+            caption.textContent = error instanceof Error
+              ? error.message
+              : "Could not load wall map viewer";
+          }
+          throw error;
+        })
+        .finally(() => {
+          wallView.removeAttribute("aria-busy");
+        });
+    }
+    return wallReady;
   }
 
   function initWall() {
@@ -1462,10 +1503,7 @@
     atlasView.hidden = mode !== "atlas";
     closeSheets();
     if (mode === "atlas") initAtlas();
-    if (mode === "wall") {
-      if (!viewer) initWall();
-      else viewer.viewport.resize();
-    }
+    if (mode === "wall") void ensureWall();
     track("mode", { mode });
   }
 

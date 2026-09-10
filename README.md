@@ -16,7 +16,7 @@ bun install
 bun run serve
 ```
 
-That compiles TypeScript from `src/` into `dist/`, then serves the site. Open http://127.0.0.1:8765/
+That installs D3, OpenSeadragon, and TopoJSON from npm, copies their minified files into `vendor/` (gitignored), compiles TypeScript from `src/` into `dist/`, then serves the site. Open http://127.0.0.1:8765/
 
 `bun run check` type-checks without emitting files. npm works the same way if you prefer it.
 

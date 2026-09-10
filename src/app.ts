@@ -50,7 +50,8 @@
     river: "#6a9bb0",
     sphere: "#7f9aa8",
     countryStroke: "rgba(5,74,82,0.28)",
-    hover: "#c26148",
+    hover: "#054a52",
+    hoverFill: "rgba(5,74,82,0.07)",
     selected: "#032f34",
     mercFill: "rgba(194,97,72,0.18)",
     mercStroke: "#c26148",
@@ -667,13 +668,14 @@
     function withApparentTransform(
       ctx: CanvasRenderingContext2D,
       item: CountryCacheItem,
-      fn: (apparent: number) => void
+      fn: (apparent: number) => void,
+      { clip = false }: { clip?: boolean } = {}
     ) {
       const apparent = apparentScaleFor(item.name);
       const centroid = itemCentroid(item);
       if (!apparent || !validPoint(centroid)) return 0;
       ctx.save();
-      if (spherePath && baseProjectionName() !== "mercator") ctx.clip(spherePath);
+      if (clip && spherePath && baseProjectionName() !== "mercator") ctx.clip(spherePath);
       ctx.translate(centroid[0], centroid[1]);
       ctx.scale(apparent, apparent);
       ctx.translate(-centroid[0], -centroid[1]);
@@ -682,15 +684,20 @@
       return apparent;
     }
 
-    function strokeApparent(ctx: CanvasRenderingContext2D, item: CountryCacheItem, zoomK: number) {
+    function strokeApparent(
+      ctx: CanvasRenderingContext2D,
+      item: CountryCacheItem,
+      zoomK: number,
+      { muted = false }: { muted?: boolean } = {}
+    ) {
       return withApparentTransform(ctx, item, (apparent) => {
-        ctx.strokeStyle = MAP.mercStroke;
+        ctx.strokeStyle = muted ? MAP.mercMuteStroke : MAP.mercStroke;
         ctx.lineWidth = 2.4 / (zoomK * apparent);
         ctx.stroke(item.path2d);
       }) > 0;
     }
 
-    function drawApparentSize(
+    function drawApparentFill(
       ctx: CanvasRenderingContext2D,
       item: CountryCacheItem,
       zoomK: number,
@@ -701,22 +708,61 @@
           ctx.fillStyle = muted ? MAP.mercMuteFill : MAP.mercFill;
           ctx.fill(item.path2d);
         }
-        ctx.strokeStyle = muted ? MAP.mercMuteStroke : MAP.mercStroke;
-        ctx.lineWidth = 2.4 / (zoomK * apparent);
-        ctx.stroke(item.path2d);
-      }) > 0;
+      }, { clip: true }) > 0;
     }
 
-    function drawCenteredGhost(ctx: CanvasRenderingContext2D, item: CountryCacheItem, zoomK: number) {
-      const apparent = apparentScaleFor(item.name);
-      if (!apparent) return;
-      if (apparent > 1) drawApparentSize(ctx, item, zoomK);
+    function paintCountries(ctx: CanvasRenderingContext2D, zoomK: number) {
+      if (!state.layers.countries) return;
+      ctx.strokeStyle = MAP.countryStroke;
+      ctx.lineWidth = 0.6 / zoomK;
+      for (const item of countryCache) {
+        ctx.fillStyle = item.color;
+        ctx.fill(item.path2d);
+        ctx.stroke(item.path2d);
+      }
+    }
+
+    function paintCountry(ctx: CanvasRenderingContext2D, item: CountryCacheItem, zoomK: number) {
       ctx.fillStyle = item.color;
       ctx.fill(item.path2d);
       ctx.strokeStyle = MAP.countryStroke;
       ctx.lineWidth = 0.6 / zoomK;
       ctx.stroke(item.path2d);
+    }
+
+    function drawCenteredGhost(ctx: CanvasRenderingContext2D, item: CountryCacheItem, zoomK: number) {
+      if (!apparentScaleFor(item.name)) return;
+      drawApparentFill(ctx, item, zoomK);
+      paintCountry(ctx, item, zoomK);
       strokeApparent(ctx, item, zoomK);
+    }
+
+    function coverOutsideSphere(t: ZoomTransform) {
+      if (!spherePath || baseProjectionName() === "mercator") return;
+      const outside = new Path2D();
+      outside.rect(0, 0, width, height);
+      outside.addPath(spherePath, { a: t.k, b: 0, c: 0, d: t.k, e: t.x, f: t.y });
+      mapCtx.fillStyle = MAP.ocean;
+      mapCtx.fill(outside, "evenodd");
+      mapCtx.save();
+      mapCtx.translate(t.x, t.y);
+      mapCtx.scale(t.k, t.k);
+      mapCtx.strokeStyle = MAP.sphere;
+      mapCtx.lineWidth = 1 / t.k;
+      mapCtx.stroke(spherePath);
+      mapCtx.restore();
+    }
+
+    function clipOverlayToSphere(t: ZoomTransform) {
+      if (!spherePath || baseProjectionName() === "mercator") return;
+      overCtx.save();
+      overCtx.globalCompositeOperation = "destination-in";
+      overCtx.translate(t.x, t.y);
+      overCtx.scale(t.k, t.k);
+      overCtx.fillStyle = "#fff";
+      overCtx.fill(spherePath);
+      overCtx.restore();
+      overCtx.globalCompositeOperation = "source-over";
     }
 
     function bake(t: ZoomTransform) {
@@ -739,22 +785,24 @@
         mapCtx.lineWidth = 0.7 / t.k;
         mapCtx.stroke(graticulePath);
       }
-      if (state.layers.countries) {
-        mapCtx.strokeStyle = MAP.countryStroke;
-        mapCtx.lineWidth = 0.6 / t.k;
-        for (const item of countryCache) {
-          mapCtx.fillStyle = item.color;
-          mapCtx.fill(item.path2d);
-          mapCtx.stroke(item.path2d);
-        }
-      }
+      paintCountries(mapCtx, t.k);
       const ghosts = apparentItemsToBake();
       if (ghosts.length) {
         ghosts.sort((a, b) => apparentScaleFor(b.name) - apparentScaleFor(a.name));
-        for (const item of ghosts) drawCenteredGhost(mapCtx, item, t.k);
+        const always = state.compareMode === "always";
+        if (always) {
+          for (const item of ghosts) drawApparentFill(mapCtx, item, t.k);
+          paintCountries(mapCtx, t.k);
+        } else {
+          for (const item of ghosts) drawCenteredGhost(mapCtx, item, t.k);
+        }
       }
       drawWater(mapCtx, t.k);
+      if (ghosts.length && state.compareMode === "always") {
+        for (const item of ghosts) strokeApparent(mapCtx, item, t.k);
+      }
       mapCtx.restore();
+      if (ghosts.length) coverOutsideSphere(t);
     }
 
     function drawOverlay() {
@@ -767,30 +815,39 @@
       if (state.compareMode === "always" && hoverName) {
         for (const item of apparentItemsToBake()) {
           if (item.name === hoverName) continue;
-          drawApparentSize(overCtx, item, t.k, { muted: true });
+          drawApparentFill(overCtx, item, t.k, { muted: true });
+        }
+        paintCountries(overCtx, t.k);
+        for (const item of apparentItemsToBake()) {
+          if (item.name === hoverName) continue;
+          strokeApparent(overCtx, item, t.k, { muted: true });
         }
       }
       if (highlight) {
         const item = countryCache.find((entry) => entry.name === highlight);
         if (item && state.compareMode === "hover" && item.name !== state.selected) {
-          drawApparentSize(overCtx, item, t.k);
+          drawApparentFill(overCtx, item, t.k);
         }
         if (item && state.compareMode === "always" && hoverName === item.name) {
-          drawApparentSize(overCtx, item, t.k);
+          drawApparentFill(overCtx, item, t.k);
         }
         if (item) {
-          overCtx.filter = hoverName === item.name ? "brightness(1.14) saturate(1.2)" : "none";
+          const hovering = hoverName === item.name;
           overCtx.fillStyle = item.color;
           overCtx.fill(item.path2d);
-          overCtx.filter = "none";
-          overCtx.strokeStyle = hoverName === item.name ? MAP.hover : MAP.selected;
-          overCtx.lineWidth = (hoverName === item.name ? 2 : 1.6) / t.k;
+          if (hovering) {
+            overCtx.fillStyle = MAP.hoverFill;
+            overCtx.fill(item.path2d);
+          }
+          overCtx.strokeStyle = hovering ? MAP.hover : MAP.selected;
+          overCtx.lineWidth = (hovering ? 1.85 : 1.7) / t.k;
           overCtx.stroke(item.path2d);
           drawWater(overCtx, t.k, item.path2d);
           if (overlayMode()) strokeApparent(overCtx, item, t.k);
         }
       }
       overCtx.restore();
+      clipOverlayToSphere(t);
       if (!state.layers.cities && !state.layers.labels) return;
       const compact = isCompactView();
       const hideGhostsNow = currentHideGhosts();

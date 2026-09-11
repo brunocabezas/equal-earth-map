@@ -9,6 +9,29 @@ Live site: https://trueearthmap.com/
 - **Interactive atlas** — Natural Earth 1:50 million vectors in the Equal Earth projection, with pan/zoom, search, layers, and a Mercator comparison.
 - **Wall maps** — original Patterson political map and BMZ physical map, available as downloads.
 
+## Git workflow
+
+Work on a topic branch, not `master`. Name branches `type/short-kebab-description`.
+
+| Prefix | Use |
+| --- | --- |
+| `feat` | New user-facing behavior |
+| `fix` | Bug fix |
+| `chore` | Maintenance that is not a feature or fix |
+| `deps` | Dependency changes |
+| `migrate` | One-off migrations |
+
+Examples: `feat/topbar-filters`, `fix/always-overlay`, `chore/unvendor-cursor-skills`.
+
+Two worktrees exist so two agents can work on the same repo without sharing a directory:
+
+- `code/equal-earth-map`
+- `code/equal-earth-map-ts`
+
+Each session stays in the workspace it was opened in, on its own branch. Git will not check out the same branch in both worktrees.
+
+Cursor agents pick this up from `.cursor/rules/git-workflow.mdc` in every session.
+
 ## Run locally
 
 ```bash

@@ -83,7 +83,10 @@ interface LabelBox {
   h: number;
 }
 
+type MeasureKind = "true" | "mercator" | "ratio";
+
 interface MeasureRow {
+  kind: MeasureKind;
   label: string;
   value: string;
 }

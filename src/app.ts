@@ -94,6 +94,10 @@
     return window.matchMedia("(max-width: 720px)").matches;
   }
 
+  function inspectOnTap() {
+    return isCompactView() || window.matchMedia("(hover: none)").matches;
+  }
+
   function placePriority(place: Place) {
     if (place.capital && (place.rank <= 1 || place.pop > 5e6)) return 4;
     if (place.capital) return 3;
@@ -852,7 +856,7 @@
       overCtx.scale(t.k, t.k);
       if (highlight) {
         const item = countryByName.get(highlight);
-        if (item && state.compareMode === "hover" && item.name !== state.selected) {
+        if (item && state.compareMode === "hover" && (inspectOnTap() || item.name !== state.selected)) {
           drawApparentFill(overCtx, item, t.k);
         }
         if (item && state.compareMode === "always" && hoverName === item.name) {
@@ -1023,6 +1027,33 @@
       bake(currentTransform);
     }
 
+    function measureMark(kind: MeasureKind) {
+      if (kind === "true" || kind === "mercator") {
+        const mark = document.createElement("span");
+        mark.className = kind === "true" ? "swatch swatch-ee" : "swatch swatch-merc";
+        mark.setAttribute("aria-hidden", "true");
+        return mark;
+      }
+      const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      svg.setAttribute("class", "icon");
+      svg.setAttribute("viewBox", "0 0 16 16");
+      svg.setAttribute("aria-hidden", "true");
+      const outer = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+      outer.setAttribute("x", "2.5");
+      outer.setAttribute("y", "2.5");
+      outer.setAttribute("width", "11");
+      outer.setAttribute("height", "11");
+      outer.setAttribute("rx", "1.5");
+      const inner = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+      inner.setAttribute("x", "5.5");
+      inner.setAttribute("y", "5.5");
+      inner.setAttribute("width", "5");
+      inner.setAttribute("height", "5");
+      inner.setAttribute("rx", "0.75");
+      svg.append(outer, inner);
+      return svg;
+    }
+
     function renderMeasures(rows: MeasureRow[]) {
       const dl = document.getElementById("info-measures");
       if (!dl) return;
@@ -1034,9 +1065,13 @@
       dl.hidden = false;
       for (const row of rows) {
         const wrap = document.createElement("div");
+        wrap.title = row.label;
         const dt = document.createElement("dt");
+        const named = document.createElement("span");
+        named.className = "sr-only";
+        named.textContent = row.label;
+        dt.append(measureMark(row.kind), named);
         const dd = document.createElement("dd");
-        dt.textContent = row.label;
         dd.textContent = row.value;
         wrap.append(dt, dd);
         dl.append(wrap);
@@ -1051,35 +1086,38 @@
     function updateCountryInfo(feature: CountryFeature) {
       const stats = sizeIndex.get(feature.properties.name) || { trueKm2: km2(feature), ratio: null };
       info.hidden = false;
+      info.classList.add("is-country");
+      info.classList.remove("is-city");
       requireElement("info-title").textContent = feature.properties.name;
       const comparing = overlayMode();
       const hasOutline = apparentScaleFor(feature.properties.name) > 0;
-      if (comparing && hasOutline) {
-        requireElement("info-meta").textContent = "The outline is Mercator’s apparent size — muted teal at rest, coral when you point at it.";
-      } else if (comparing) {
-        requireElement("info-meta").textContent = "Mercator barely changes this country’s size.";
-      } else {
-        requireElement("info-meta").textContent = "Equal Earth keeps relative area true.";
-      }
-
-      const rows = [{ label: "True area", value: formatAreaKm2(stats.trueKm2) }];
-      const inflation = formatInflation(stats.ratio);
-      if (inflation && stats.ratio) {
-        rows.push({ label: "Looks like on Mercator", value: formatAreaKm2(stats.trueKm2 * stats.ratio, { approx: true }) });
-        rows.push({ label: "Difference", value: inflation });
-      }
-      renderMeasures(rows);
-
+      const compact = isCompactView();
+      const meta = requireElement("info-meta");
       const area = requireElement("info-area");
-      if (comparing && hasOutline) {
+      if (compact) {
+        meta.textContent = "";
+        area.textContent = "";
+      } else if (comparing && hasOutline) {
+        meta.textContent = "The outline is Mercator’s apparent size — muted teal at rest, coral when you point at it.";
         area.textContent = "The outline is this country scaled to how large it looks on Mercator.";
       } else if (comparing) {
+        meta.textContent = "Mercator barely changes this country’s size.";
         area.textContent = "Near the equator the two projections agree closely on size, so there is no extra outline.";
-      } else if (inflation) {
-        area.textContent = `On Mercator this land would appear ${inflation} than its true size.`;
       } else {
-        area.textContent = "Near the equator Mercator and Equal Earth agree on size.";
+        meta.textContent = "Equal Earth keeps relative area true.";
+        const inflationNote = formatInflation(stats.ratio);
+        area.textContent = inflationNote
+          ? `On Mercator this land would appear ${inflationNote} than its true size.`
+          : "Near the equator Mercator and Equal Earth agree on size.";
       }
+
+      const rows: MeasureRow[] = [{ kind: "true", label: "True area", value: formatAreaKm2(stats.trueKm2) }];
+      const inflation = formatInflation(stats.ratio);
+      if (inflation && stats.ratio) {
+        rows.push({ kind: "mercator", label: "Looks like on Mercator", value: formatAreaKm2(stats.trueKm2 * stats.ratio, { approx: true }) });
+        rows.push({ kind: "ratio", label: "Difference", value: inflation });
+      }
+      renderMeasures(rows);
     }
 
     function revealPlace(focusInfo: boolean) {
@@ -1091,6 +1129,8 @@
 
     function showPlace(place: Place, focusInfo = false) {
       const kind = place.capital ? "Capital" : "City";
+      info.classList.add("is-city");
+      info.classList.remove("is-country");
       requireElement("info-title").textContent = place.name;
       requireElement("info-meta").textContent = [kind, place.country, formatPop(place.pop)].filter((part): part is string => Boolean(part)).join(" · ");
       renderMeasures([]);
@@ -1195,7 +1235,7 @@
     }
 
     stage.addEventListener("pointermove", (event) => {
-      if (interacting) return;
+      if (interacting || inspectOnTap()) return;
       const [vx, vy] = d3.pointer(event, atlasView);
       const [sx, sy] = d3.pointer(event, stage);
       pendingPointer = { vx, vy, sx, sy };
@@ -1204,6 +1244,7 @@
 
     stage.addEventListener("pointerleave", () => {
       pendingPointer = null;
+      if (inspectOnTap()) return;
       hoverName = null;
       hideTip();
       drawOverlay();
@@ -1222,8 +1263,10 @@
       const hit = countryHitAt(sx, sy);
       if (hit) {
         closeSheets();
+        if (inspectOnTap()) hoverName = hit.name;
         selectCountry(hit.feature);
       } else {
+        hoverName = null;
         hidePlace();
         drawOverlay();
       }
@@ -1270,7 +1313,9 @@
       if (hint) {
         hint.textContent = state.compareMode === "always"
           ? "Outlines show how large countries look on Mercator."
-          : "Point at a country to see Mercator’s apparent size.";
+          : inspectOnTap()
+            ? "Tap a country to see Mercator’s apparent size."
+            : "Point at a country to see Mercator’s apparent size.";
       }
       const legend = document.getElementById("overlay-legend");
       if (legend) legend.hidden = !overlay;
@@ -1284,7 +1329,9 @@
         overlay
           ? (state.compareMode === "always"
             ? "Equal Earth map with Mercator size outlines. Arrow keys pan, Enter selects the country in the center, plus and minus zoom."
-            : "Equal Earth map. Hover a country for Mercator size. Arrow keys pan, Enter selects the country in the center, plus and minus zoom.")
+            : inspectOnTap()
+              ? "Equal Earth map. Tap a country for Mercator size. Arrow keys pan, Enter selects the country in the center, plus and minus zoom."
+              : "Equal Earth map. Hover a country for Mercator size. Arrow keys pan, Enter selects the country in the center, plus and minus zoom.")
           : "Equal Earth world map. Arrow keys pan, Enter selects the country in the center, plus and minus zoom."
       );
     }
@@ -1356,6 +1403,7 @@
 
     function onViewportChange() {
       layout();
+      syncProjectionUI();
     }
 
     atlas = { resize: () => layout() };

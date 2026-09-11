@@ -210,7 +210,13 @@ html, body {
 }
 
 .label-short,
-.legend-short { display: none; }
+.legend-short,
+.compare-tap { display: none; }
+
+@media (max-width: 720px), (hover: none) {
+  .compare-hover { display: none; }
+  .compare-tap { display: inline; }
+}
 
 .bar-btn,
 .bar-action,
@@ -512,6 +518,11 @@ legend {
   line-height: 1.45;
 }
 
+#info-meta:empty,
+#info-area:empty {
+  display: none;
+}
+
 .overlay-legend > span {
   display: flex;
   align-items: center;
@@ -560,40 +571,36 @@ legend {
 }
 
 #info-measures {
-  margin: 10px 0 0;
+  margin: 8px 0 0;
   padding: 0;
-  border-top: 1px solid var(--line);
 }
 
 #info-measures > div {
   display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  align-items: baseline;
-  padding: 8px 0;
-  border-bottom: 1px solid var(--line);
-}
-
-#info-measures > div:last-child {
-  border-bottom: 0;
+  align-items: center;
+  gap: 8px;
+  min-height: 22px;
+  padding: 3px 0;
 }
 
 #info-measures dt {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 16px;
+  margin: 0;
   color: var(--ink-soft);
-  font-size: var(--type-meta);
-  font-weight: 650;
-  min-width: 0;
 }
 
 #info-measures dd {
   margin: 0;
   min-width: 0;
   color: var(--ink);
-  font-size: var(--type-ui);
+  font-size: var(--type-meta);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
-  text-align: right;
   overflow-wrap: anywhere;
+  white-space: nowrap;
 }
 
 .segmented {
@@ -1382,27 +1389,48 @@ dialog::backdrop { background: rgba(3, 47, 52, 0.55); }
   }
 
   .info-panel {
-    position: fixed;
+    position: absolute;
+    top: 12px;
     left: 8px;
-    right: 8px;
-    top: auto;
-    bottom: calc(56px + max(8px, env(safe-area-inset-bottom)));
-    z-index: 4;
-    padding: 10px 36px 10px 12px;
+    right: auto;
+    bottom: auto;
+    width: max-content;
+    max-width: min(280px, calc(100% - 72px));
+    padding: 8px 32px 8px 10px;
     border-radius: var(--radius-lg);
+    overflow: visible;
+    z-index: 4;
   }
 
   .info-panel:not([hidden]) {
     flex: none;
-    max-height: min(42dvh, 320px);
+    max-height: none;
+    overflow: visible;
   }
 
   .info-panel h2 {
-    padding-right: 8px;
-    font-size: 1.25rem;
+    padding-right: 4px;
+    font-size: 1.05rem;
   }
 
-  #info-meta, #info-area { font-size: var(--type-ui); }
+  .info-close {
+    top: 4px;
+    right: 4px;
+    width: 28px;
+    height: 28px;
+  }
+
+  .info-panel.is-country #info-meta,
+  .info-panel #info-area { display: none; }
+
+  .info-panel.is-city #info-meta {
+    margin-top: 4px;
+    font-size: var(--type-meta);
+  }
+
+  #info-measures {
+    margin-top: 6px;
+  }
 
   .overlay-legend:not([hidden]) {
     display: inline-flex;
@@ -1417,15 +1445,6 @@ dialog::backdrop { background: rgba(3, 47, 52, 0.55); }
 
   .overlay-legend > span {
     white-space: nowrap;
-  }
-
-  #atlas-view:has(#place-info:not([hidden])) .map-chrome.bottom-left {
-    top: 8px;
-    bottom: auto;
-  }
-
-  #atlas-view:has(#place-info:not([hidden])) .map-chrome.bottom-right {
-    visibility: hidden;
   }
 
   .zoom-stack button {
@@ -1460,18 +1479,12 @@ dialog::backdrop { background: rgba(3, 47, 52, 0.55); }
   }
 
   .info-panel {
-    right: 8px;
-    bottom: max(8px, env(safe-area-inset-bottom));
-    max-height: 30dvh;
-    overflow: auto;
+    overflow: visible;
   }
 }
 
 @media (max-width: 720px) and (pointer: coarse) {
   .map-chrome.bottom-right { right: 60px; }
-  .info-panel {
-    bottom: calc(60px + max(8px, env(safe-area-inset-bottom)));
-  }
 }
 
 @media (pointer: coarse) {

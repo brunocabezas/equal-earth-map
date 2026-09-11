@@ -182,7 +182,7 @@ Night and ice do the structure. Coral is the only warm UI accent. Ocean and peac
 ### Hierarchy
 - **Display** (600, 1.25rem, 1.15): Product name in the night bar.
 - **Headline** (600, 1.5rem, 1.2): About and 404 titles.
-- **Title** (600, 1.375rem, 1.2): Selected place name on a legend card. 1.25rem on narrow viewports.
+- **Title** (600, 1.375rem, 1.2): Selected place name on a legend card. 1.05rem on narrow viewports.
 - **Body** (450, 1rem, 1.45): About prose, max ~62ch.
 - **Label** (550, 0.875rem): Buttons, legends, checks.
 - **Meta** (450–650, 0.75rem): Footer, fieldset legends, search result kinds.
@@ -191,7 +191,7 @@ Night and ice do the structure. Coral is the only warm UI accent. Ocean and peac
 
 ## Layout
 
-Full-viewport app shell: night top bar (min-height 64px, 48px on small screens) with a thin-line globe mark beside the serif name. A single Mercator size menu sits in the right cluster before search on desktop (Equal Earth is always the globe). Always / On hover live in that menu. Layers and About follow as labeled ice pills (icon-only on ≤720px). Flex-grown map, night footer (short credit on compact). Place cards sit top-left on desktop (`16px`). On compact they pin above the zoom cluster (`8px`). The overlay legend sits bottom-left on compact, just above the center cluster (swatch label shortens to Mercator). When a place card is open it moves top-left. Zoom stack top-right on desktop, bottom-right on viewports ≤720px. Map centering (Africa / Americas / Pacific) is an ice pill cluster floating bottom-right, to the left of zoom on compact. Layers open as a compact ice popover under the Layers pill (X to close) at every size. Mercator size opens a compact ice menu under its pill for Always / On hover. Wall maps download from About, not the toolbar. Ice cards always set ink type so they stay readable when nested in night chrome. The place card scrolls inside the remaining map height so size numbers stay above the footer. Spacing scale is 4 / 8 / 12 / 16 / 24. Breakpoints: ≤1100px hides the tagline and shortens the Mercator control label; ≤720px drops search so the night bar stays one row (name, Mercator, Layers, About), keeps the overlay legend top-left, and parks Africa / Americas / Pacific left of zoom. Short landscape also hides the name. Tall viewports scale Equal Earth up so the oval fills more of the stage.
+Full-viewport app shell: night top bar (min-height 64px, 48px on small screens) with a thin-line globe mark beside the serif name. A single Mercator size menu sits in the right cluster before search on desktop (Equal Earth is always the globe). Always / On hover live in that menu. Layers and About follow as labeled ice pills (icon-only on ≤720px). Flex-grown map, night footer (short credit on compact). Place cards sit top-left on desktop (`16px`). On compact they also pin top-left (`8px`) so the zoomed country stays in view. The overlay legend sits bottom-left on compact, just above the center cluster (swatch label shortens to Mercator). Zoom stack top-right on desktop, bottom-right on viewports ≤720px. Map centering (Africa / Americas / Pacific) is an ice pill cluster floating bottom-right, to the left of zoom on compact. Layers open as a compact ice popover under the Layers pill (X to close) at every size. Mercator size opens a compact ice menu under its pill for Always / On hover. Wall maps download from About, not the toolbar. Ice cards always set ink type so they stay readable when nested in night chrome. The place card scrolls inside the remaining map height so size numbers stay above the footer. Spacing scale is 4 / 8 / 12 / 16 / 24. Breakpoints: ≤1100px hides the tagline and shortens the Mercator control label; ≤720px drops search so the night bar stays one row (name, Mercator, Layers, About), keeps the overlay legend top-left, and parks Africa / Americas / Pacific left of zoom. Short landscape also hides the name. Tall viewports scale Equal Earth up so the oval fills more of the stage.
 
 ## Elevation & Depth
 
@@ -236,7 +236,7 @@ Night bar, cream brand serif, thin-line globe mark, Mercator size menu before th
 Ice card hugging content, two-column layer checks, X to close. Absolute under the Layers pill at every size.
 
 ### Mercator size menu
-Ice card under the Mercator size pill with Always / On hover. Not a bottom sheet; it stays a dropdown on compact.
+Ice card under the Mercator size pill with Always / On hover. On compact and hover-less pointers that control is On tap: tap a country to zoom, open the place card, and keep Mercator’s outline. Not a bottom sheet; it stays a dropdown on compact.
 
 ### Zoom stack
 42×42 (40×40 on small screens) paper buttons in a 12px cluster with hairline dividers.

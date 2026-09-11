@@ -1,0 +1,41 @@
+---
+description: Topic branches, never master, never collide with a sibling worktree
+alwaysApply: true
+---
+
+# Git workflow
+
+Do not commit or implement on `master`. At the start of a task, if HEAD is `master` (or another long-lived branch), create or switch to a topic branch before changing files.
+
+## Parallel agents
+
+This repo has two worktrees so two agents can run at once, each on a different branch:
+
+- `code/equal-earth-map`
+- `code/equal-earth-map-ts`
+
+Stay in the workspace this session was opened in. Do not edit files, run the app, or issue git commands in the sibling directory. Another agent may already be working there.
+
+Do not check out a branch that another worktree already has (`git worktree list`). Create a new topic branch instead. Do not move, remove, or prune worktrees to resolve a collision.
+
+## Branch names
+
+`type/short-kebab-description`
+
+| Prefix | Use |
+| --- | --- |
+| `feat` | New user-facing behavior |
+| `fix` | Bug fix |
+| `chore` | Maintenance that is not a feature or fix |
+| `deps` | Dependency changes |
+| `migrate` | One-off migrations (e.g. language/tooling) |
+
+Examples from this repo: `feat/topbar-filters`, `fix/always-overlay`, `chore/unvendor-cursor-skills`.
+
+Keep the description short (a few words). Do not use `PascalCase`, spaces, or underscored prefixes.
+
+## After creating a branch
+
+Call `SetActiveBranch` so the session tracks the new branch.
+
+Do not commit, push, or open a PR unless the user asks.

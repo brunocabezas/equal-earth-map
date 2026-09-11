@@ -242,50 +242,52 @@
 
     <dialog id="about" aria-labelledby="about-title">
       <div class="about-card">
-        <h2 id="about-title">Why this map looks different</h2>
-        <p>
-          Most web maps use Mercator, which inflates countries near the poles. Greenland looks
-          similar in size to Africa there, though Africa is about 14 times larger. Equal Earth is
-          an equal-area projection: landmasses keep their true relative sizes, with more familiar
-          continent shapes than Gall–Peters. Muted outlines show how large those countries look on
-          Mercator; they turn coral when you point at one. Click one for the numbers.
-        </p>
-        <p>
-          The atlas redraws Natural Earth 1:50 million vectors in Equal Earth so countries, rivers,
-          lakes, and cities stay interactive as you pan and zoom. The original wall maps are
-          available as downloads:
-        </p>
-        <div class="about-downloads">
-          <a
-            class="about-download"
-            href="maps/political.jpg"
-            download="Equal-Earth-political-wall-map.jpg"
-            data-download-map="political"
-          >
-            <svg class="icon" viewBox="0 0 16 16" aria-hidden="true">
-              <rect x="2.5" y="3.5" width="11" height="9" rx="1" />
-              <path d="M2.5 8h11M8 3.5c1.7 2.2 1.7 6.8 0 9M8 3.5C6.3 5.7 6.3 10.3 8 12.5" />
-            </svg>
-            Political map
-          </a>
-          <a
-            class="about-download"
-            href="maps/physical.jpg"
-            download="Equal-Earth-physical-wall-map.jpg"
-            data-download-map="physical"
-          >
-            <svg class="icon" viewBox="0 0 16 16" aria-hidden="true">
-              <path d="M1.5 12.5h13" />
-              <path d="M2 12.5 5.5 6.5 8 10 11 4.5 14.5 12.5" />
-            </svg>
-            Physical map
-          </a>
+        <h2 id="about-title" tabindex="-1">Why this map looks different</h2>
+        <div class="about-body">
+          <p>
+            Most web maps use Mercator, which inflates countries near the poles. Greenland looks
+            similar in size to Africa there, though Africa is about 14 times larger. Equal Earth is
+            an equal-area projection: landmasses keep their true relative sizes, with more familiar
+            continent shapes than Gall–Peters. Muted outlines show how large those countries look on
+            Mercator; they turn coral when you point at one. Click one for the numbers.
+          </p>
+          <p>
+            The atlas redraws Natural Earth 1:50 million vectors in Equal Earth so countries, rivers,
+            lakes, and cities stay interactive as you pan and zoom. The original wall maps are
+            available as downloads:
+          </p>
+          <div class="about-downloads">
+            <a
+              class="about-download"
+              href="maps/political.jpg"
+              download="Equal-Earth-political-wall-map.jpg"
+              data-download-map="political"
+            >
+              <svg class="icon" viewBox="0 0 16 16" aria-hidden="true">
+                <rect x="2.5" y="3.5" width="11" height="9" rx="1" />
+                <path d="M2.5 8h11M8 3.5c1.7 2.2 1.7 6.8 0 9M8 3.5C6.3 5.7 6.3 10.3 8 12.5" />
+              </svg>
+              Political map
+            </a>
+            <a
+              class="about-download"
+              href="maps/physical.jpg"
+              download="Equal-Earth-physical-wall-map.jpg"
+              data-download-map="physical"
+            >
+              <svg class="icon" viewBox="0 0 16 16" aria-hidden="true">
+                <path d="M1.5 12.5h13" />
+                <path d="M2 12.5 5.5 6.5 8 10 11 4.5 14.5 12.5" />
+              </svg>
+              Physical map
+            </a>
+          </div>
+          <p class="fine">
+            Political map: Tom Patterson, public domain. Physical map: BMZ German edition based on
+            Equal Earth / Natural Earth. No cookies are used for visit counts.
+          </p>
+          <p class="fine about-version" id="about-version">Version …</p>
         </div>
-        <p class="fine">
-          Political map: Tom Patterson, public domain. Physical map: BMZ German edition based on
-          Equal Earth / Natural Earth. No cookies are used for visit counts.
-        </p>
-        <p class="fine about-version" id="about-version">Version …</p>
         <button type="button" id="about-close">Close</button>
       </div>
     </dialog>

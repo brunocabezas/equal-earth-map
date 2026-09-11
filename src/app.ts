@@ -1508,7 +1508,9 @@
 
   document.getElementById("about-open")?.addEventListener("click", () => {
     about.showModal();
-    requireElement("about-close").focus();
+    const body = about.querySelector(".about-body");
+    if (body instanceof HTMLElement) body.scrollTop = 0;
+    requireElement("about-title").focus({ preventScroll: true });
   });
   requireElement("about-close").addEventListener("click", () => about.close());
   about.addEventListener("click", (event) => {

@@ -232,12 +232,12 @@
     const extent: [[number, number], [number, number]] = [[pad, pad], [width - pad, height - pad]];
     const view = atlasView.getBoundingClientRect();
     if (!view.width) return extent;
-    const left = document.querySelector("#atlas-view .map-chrome.left");
-    if (left) {
-      const box = left.getBoundingClientRect();
-      if (box.width > view.width * 0.55) {
-        extent[0][1] = Math.max(pad, Math.round(box.bottom - view.top + 16));
-      }
+    const info = document.getElementById("place-info");
+    if (!info || info.hidden) return extent;
+    const box = info.getBoundingClientRect();
+    const pinned = getComputedStyle(info).position === "fixed";
+    if (!pinned && box.width > view.width * 0.55) {
+      extent[0][1] = Math.max(pad, Math.round(box.bottom - view.top + 16));
     }
     return extent;
   }
@@ -256,12 +256,6 @@
       return projection;
     }
     const projection = d3.geoEqualEarth().rotate(rotate).fitExtent(extent, { type: "Sphere" });
-    const fitW = extent[1][0] - extent[0][0];
-    const fitH = extent[1][1] - extent[0][1];
-    const fittedH = fitW / 2.05;
-    if (fitH > fittedH * 1.2) {
-      projection.scale(projection.scale() * Math.min(1.38, (fitH * 0.9) / fittedH));
-    }
     return projection;
   }
 

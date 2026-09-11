@@ -126,7 +126,10 @@
           <div class="sheet sheet-menu" id="mercator-menu" role="menu" aria-label="When to show Mercator size">
             <div class="panel">
               <button type="button" class="menu-item is-active" role="menuitemradio" data-compare="always" aria-checked="true">Always</button>
-              <button type="button" class="menu-item" role="menuitemradio" data-compare="hover" aria-checked="false">On hover</button>
+              <button type="button" class="menu-item" role="menuitemradio" data-compare="hover" aria-checked="false">
+                <span class="compare-hover">On hover</span>
+                <span class="compare-tap">On tap</span>
+              </button>
               <p class="panel-note" id="proj-hint">Outlines show how large countries look on Mercator.</p>
             </div>
           </div>
@@ -199,8 +202,8 @@
         </div>
         <div class="map-chrome bottom-left">
           <div class="panel overlay-legend" id="overlay-legend">
-            <span><span class="swatch swatch-ee" aria-hidden="true"></span> True size</span>
-            <span><span class="swatch swatch-merc" aria-hidden="true"></span> Looks this big on Mercator</span>
+            <span><span class="swatch swatch-ee" aria-hidden="true"></span> Equal Earth</span>
+            <span><span class="swatch swatch-merc" aria-hidden="true"></span> <span class="legend-full">Looks this big on Mercator</span><span class="legend-short">Mercator</span></span>
           </div>
         </div>
         <div class="map-chrome right">

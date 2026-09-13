@@ -37,6 +37,7 @@
     "#ffd8cc", "#d0ddd8", "#ecd4c8"
   ] as const;
   const OVERLAY_HOVER_MIN_FACTOR = 1.5;
+  const OVERLAY_DIM_ALPHA = 0.5;
   const MAP = {
     ocean: "#b9d2df",
     lake: "#8fb8cc",
@@ -685,6 +686,22 @@
       return apparent;
     }
 
+    function withOverlayDim(ctx: CanvasRenderingContext2D, dimmed: boolean, fn: () => void) {
+      if (!dimmed) {
+        fn();
+        return;
+      }
+      ctx.save();
+      ctx.globalAlpha *= OVERLAY_DIM_ALPHA;
+      fn();
+      ctx.restore();
+    }
+
+    function apparentPaintStyle(item: CountryCacheItem, focus: string | null) {
+      const focused = Boolean(focus && item.name === focus);
+      return { muted: !focused, dimmed: Boolean(focus && !focused) };
+    }
+
     function strokeApparent(
       ctx: CanvasRenderingContext2D,
       item: CountryCacheItem,
@@ -788,8 +805,14 @@
       }
       const ghosts = apparentItemsToBake();
       const always = state.compareMode === "always" && ghosts.length > 0;
+      const focus = always ? state.selected : null;
       if (always) {
-        for (const item of ghosts) drawApparentFill(mapCtx, item, t.k, { muted: true });
+        for (const item of ghosts) {
+          const { muted, dimmed } = apparentPaintStyle(item, focus);
+          withOverlayDim(mapCtx, dimmed, () => {
+            drawApparentFill(mapCtx, item, t.k, { muted });
+          });
+        }
       }
       paintCountries(mapCtx, t.k);
       if (!always) {
@@ -797,7 +820,12 @@
       }
       drawWater(mapCtx, t.k);
       if (always) {
-        for (const item of ghosts) strokeApparent(mapCtx, item, t.k, { muted: true });
+        for (const item of ghosts) {
+          const { muted, dimmed } = apparentPaintStyle(item, focus);
+          withOverlayDim(mapCtx, dimmed, () => {
+            strokeApparent(mapCtx, item, t.k, { muted });
+          });
+        }
       }
       mapCtx.restore();
       if (ghosts.length) coverOutsideSphere(t);
@@ -859,7 +887,7 @@
         if (item && state.compareMode === "hover" && (inspectOnTap() || item.name !== state.selected)) {
           drawApparentFill(overCtx, item, t.k);
         }
-        if (item && state.compareMode === "always" && hoverName === item.name) {
+        if (item && state.compareMode === "always" && hoverName === item.name && item.name !== state.selected) {
           drawApparentFill(overCtx, item, t.k);
         }
         if (item) {

@@ -239,7 +239,7 @@ Full-viewport layer (`100svh`), ice card centered. Title and Close stay pinned; 
 Ice card hugging content, two-column layer checks, X to close. Absolute under the Layers pill on desktop; centered under the night bar on compact so the card stays in view.
 
 ### Mercator size menu
-Ice card under the Mercator size pill with Always / On hover. On compact and hover-less pointers that control is On tap: tap a country to zoom, open the place card, and keep Mercator’s outline. Not a bottom sheet; it stays a dropdown on compact, centered under the night bar.
+Ice card under the Mercator size pill with Always / On hover. On compact and hover-less pointers that control is On tap: tap a country to zoom, open the place card, and keep Mercator’s outline. Selecting a country keeps its outline at full strength and greys the others. Not a bottom sheet; it stays a dropdown on compact, centered under the night bar.
 
 ### Zoom stack
 42×42 (40×40 on small screens) paper buttons in a 12px cluster with hairline dividers.

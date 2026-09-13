@@ -538,13 +538,29 @@ legend {
 }
 
 .swatch-ee {
-  background: #ffddd2;
-  border: 1px solid rgba(5, 74, 82, 0.4);
+  background: linear-gradient(
+    90deg,
+    #ffddd2 0 25%,
+    #d4e8ea 25% 50%,
+    #e8c4b4 50% 75%,
+    #b8d4cc 75% 100%
+  );
+  border: 1px solid rgba(5, 74, 82, 0.28);
+}
+
+#info-measures .swatch-ee,
+#overlay-legend.is-focus .swatch-ee {
+  border-color: var(--night-deep);
 }
 
 .swatch-merc {
-  background: rgba(77, 115, 120, 0.34);
-  border: 1.5px solid rgba(5, 74, 82, 0.72);
+  background-color: transparent;
+  background-image: repeating-linear-gradient(
+    -45deg,
+    transparent 0 3px,
+    rgba(194, 97, 72, 0.42) 3px 3.8px
+  );
+  border: 1.5px solid #c26148;
 }
 
 .overlay-legend {
@@ -1465,10 +1481,6 @@ body:has(#about[open]) .map-chrome {
 
   .overlay-legend > span {
     white-space: nowrap;
-  }
-
-  #atlas-view:has(#place-info:not([hidden])) .overlay-legend {
-    display: none;
   }
 
   .zoom-stack button {

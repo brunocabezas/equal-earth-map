@@ -47,10 +47,10 @@
     hover: "#054a52",
     hoverFill: "rgba(5,74,82,0.07)",
     selected: "#032f34",
-    mercFill: "rgba(194,97,72,0.4)",
+    mercFill: "rgba(194,97,72,0.5)",
     mercStroke: "#c26148",
-    mercMuteFill: "rgba(77,115,120,0.34)",
-    mercMuteStroke: "rgba(5,74,82,0.72)",
+    mercMuteFill: "rgba(194,97,72,0.22)",
+    mercMuteStroke: "rgba(194,97,72,0.62)",
     capital: "#e29578",
     city: "#032f34",
     label: "#054a52",
@@ -717,13 +717,14 @@
       ctx: CanvasRenderingContext2D,
       item: CountryCacheItem,
       fn: (apparent: number) => void,
-      { clip = false }: { clip?: boolean } = {}
+      { clip = false, clipPath = null }: { clip?: boolean; clipPath?: Path2D | null } = {}
     ) {
       const apparent = item.apparent;
       const centroid = itemCentroid(item);
       if (!apparent || !validPoint(centroid)) return 0;
       ctx.save();
       if (clip && clipToSphere && spherePath) ctx.clip(spherePath);
+      if (clipPath) ctx.clip(clipPath, "evenodd");
       ctx.translate(centroid[0], centroid[1]);
       ctx.scale(apparent, apparent);
       ctx.translate(-centroid[0], -centroid[1]);
@@ -761,17 +762,83 @@
       }) > 0;
     }
 
+    const mercHatchByCtx = new WeakMap<CanvasRenderingContext2D, { full: CanvasPattern; mute: CanvasPattern }>();
+
+    function makeMercHatch(ctx: CanvasRenderingContext2D, muted: boolean) {
+      const size = 12;
+      const tile = document.createElement("canvas");
+      tile.width = size;
+      tile.height = size;
+      const ink = tile.getContext("2d");
+      if (!ink) return null;
+      ink.strokeStyle = muted ? "rgba(194,97,72,0.24)" : "rgba(194,97,72,0.42)";
+      ink.lineWidth = 0.9;
+      ink.lineCap = "square";
+      ink.beginPath();
+      ink.moveTo(-1, size - 1);
+      ink.lineTo(1, size + 1);
+      ink.moveTo(0, size);
+      ink.lineTo(size, 0);
+      ink.moveTo(size - 1, -1);
+      ink.lineTo(size + 1, 1);
+      ink.stroke();
+      return ctx.createPattern(tile, "repeat");
+    }
+
+    function mercHatchFill(ctx: CanvasRenderingContext2D, muted: boolean) {
+      let pair = mercHatchByCtx.get(ctx);
+      if (!pair) {
+        const full = makeMercHatch(ctx, false);
+        const mute = makeMercHatch(ctx, true);
+        if (!full || !mute) return muted ? MAP.mercMuteFill : MAP.mercFill;
+        pair = { full, mute };
+        mercHatchByCtx.set(ctx, pair);
+      }
+      return muted ? pair.mute : pair.full;
+    }
+
+    function apparentMatrix(item: CountryCacheItem) {
+      const centroid = itemCentroid(item);
+      if (!item.apparent || !validPoint(centroid)) return null;
+      return new DOMMatrix()
+        .translate(centroid[0], centroid[1])
+        .scale(item.apparent, item.apparent)
+        .translate(-centroid[0], -centroid[1]);
+    }
+
+    function applyMercHatch(ctx: CanvasRenderingContext2D, muted: boolean, zoomK: number, apparent: number) {
+      const fill = mercHatchFill(ctx, muted);
+      if (typeof fill !== "string") {
+        const scale = 1 / Math.max(0.4, zoomK * Math.max(apparent, 1));
+        fill.setTransform(new DOMMatrix().scale(scale, scale));
+      }
+      ctx.fillStyle = fill;
+    }
+
     function drawApparentFill(
       ctx: CanvasRenderingContext2D,
       item: CountryCacheItem,
       zoomK: number,
       { muted = false }: { muted?: boolean } = {}
     ) {
-      return withApparentTransform(ctx, item, (apparent) => {
-        if (apparent > 1) {
-          ctx.fillStyle = muted ? MAP.mercMuteFill : MAP.mercFill;
-          ctx.fill(item.path2d);
-        }
+      const apparent = item.apparent;
+      const matrix = apparentMatrix(item);
+      if (!apparent || !matrix) return false;
+      ctx.save();
+      if (clipToSphere && spherePath) ctx.clip(spherePath);
+      applyMercHatch(ctx, muted, zoomK, apparent);
+      if (apparent > 1) {
+        const ring = new Path2D();
+        ring.addPath(item.path2d, matrix);
+        ring.addPath(item.path2d);
+        ctx.fill(ring, "evenodd");
+        ctx.restore();
+        return true;
+      }
+      ctx.restore();
+      return withApparentTransform(ctx, item, () => {
+        applyMercHatch(ctx, muted, zoomK, apparent);
+        ctx.fill(item.path2d);
       }, { clip: true }) > 0;
     }
 
@@ -796,8 +863,8 @@
 
     function drawCenteredGhost(ctx: CanvasRenderingContext2D, item: CountryCacheItem, zoomK: number) {
       if (!item.apparent) return;
-      drawApparentFill(ctx, item, zoomK);
       paintCountry(ctx, item, zoomK);
+      drawApparentFill(ctx, item, zoomK);
       strokeApparent(ctx, item, zoomK);
     }
 
@@ -852,26 +919,18 @@
       const ghosts = apparentItemsToBake();
       const always = state.compareMode === "always" && ghosts.length > 0;
       const focus = always ? state.selected : null;
-      if (always) {
-        for (const item of ghosts) {
-          const { muted, dimmed } = apparentPaintStyle(item, focus);
-          withOverlayDim(mapCtx, dimmed, () => {
-            drawApparentFill(mapCtx, item, t.k, { muted });
-          });
-        }
-      }
       paintCountries(mapCtx, t.k);
-      if (!always) {
-        for (const item of ghosts) drawCenteredGhost(mapCtx, item, t.k);
-      }
       drawWater(mapCtx, t.k);
       if (always) {
         for (const item of ghosts) {
           const { muted, dimmed } = apparentPaintStyle(item, focus);
           withOverlayDim(mapCtx, dimmed, () => {
+            drawApparentFill(mapCtx, item, t.k, { muted });
             strokeApparent(mapCtx, item, t.k, { muted });
           });
         }
+      } else {
+        for (const item of ghosts) drawCenteredGhost(mapCtx, item, t.k);
       }
       mapCtx.restore();
       if (ghosts.length) coverOutsideSphere(t);
@@ -922,6 +981,7 @@
     }
 
     function drawOverlay() {
+      syncOverlayLegendFocus();
       overCtx.clearRect(0, 0, width, height);
       const t = currentTransform;
       overCtx.save();
@@ -946,7 +1006,10 @@
         overCtx.lineWidth = (hovering ? 1.85 : 1.7) / t.k;
         overCtx.stroke(item.path2d);
         drawWater(overCtx, t.k, item.path2d);
-        if (overlayMode()) strokeApparent(overCtx, item, t.k);
+        if (overlayMode()) {
+          drawApparentFill(overCtx, item, t.k);
+          strokeApparent(overCtx, item, t.k);
+        }
       }
       overCtx.restore();
       clipOverlayToSphere(t);
@@ -1087,6 +1150,13 @@
       tooltip.hidden = true;
     }
 
+    function syncOverlayLegendFocus() {
+      const legend = document.getElementById("overlay-legend");
+      if (!legend) return;
+      const selected = Boolean(state.selected) && !info.hidden && info.classList.contains("is-country");
+      legend.classList.toggle("is-focus", Boolean(hoverName) || selected);
+    }
+
     function hidePlace() {
       const hadSelection = state.selected !== null;
       state.selected = null;
@@ -1097,13 +1167,15 @@
         measures.hidden = true;
       }
       bake(currentTransform);
+      syncOverlayLegendFocus();
       if (hadSelection) syncLocation("push");
     }
 
-    function measureMark(kind: MeasureKind) {
+    function measureMark(kind: MeasureKind, fill?: string) {
       if (kind === "true" || kind === "mercator") {
         const mark = document.createElement("span");
         mark.className = kind === "true" ? "swatch swatch-ee" : "swatch swatch-merc";
+        if (kind === "true" && fill) mark.style.background = fill;
         mark.setAttribute("aria-hidden", "true");
         return mark;
       }
@@ -1143,7 +1215,7 @@
         const named = document.createElement("span");
         named.className = "sr-only";
         named.textContent = row.label;
-        dt.append(measureMark(row.kind), named);
+        dt.append(measureMark(row.kind, row.fill), named);
         const dd = document.createElement("dd");
         dd.textContent = row.value;
         wrap.append(dt, dd);
@@ -1171,7 +1243,7 @@
         meta.textContent = "";
         area.textContent = "";
       } else if (comparing && hasOutline) {
-        meta.textContent = "The outline is Mercator’s apparent size — muted teal at rest, coral when you point at it.";
+        meta.textContent = "The outline is Mercator’s apparent size — muted at rest, full coral when you point at it.";
         area.textContent = "The outline is this country scaled to how large it looks on Mercator.";
       } else if (comparing) {
         meta.textContent = "Mercator barely changes this country’s size.";
@@ -1184,10 +1256,15 @@
           : "Near the equator Mercator and Equal Earth agree on size.";
       }
 
-      const rows: MeasureRow[] = [{ kind: "true", label: "True area", value: formatAreaKm2(stats.trueKm2) }];
+      const rows: MeasureRow[] = [{
+        kind: "true",
+        label: "True area",
+        value: formatAreaKm2(stats.trueKm2),
+        fill: colorFor(feature.properties.name)
+      }];
       const inflation = formatInflation(stats.ratio);
       if (inflation && stats.ratio) {
-        rows.push({ kind: "mercator", label: "Looks like on Mercator", value: formatAreaKm2(stats.trueKm2 * stats.ratio, { approx: true }) });
+        rows.push({ kind: "mercator", label: "Looks this size on Mercator", value: formatAreaKm2(stats.trueKm2 * stats.ratio, { approx: true }) });
         rows.push({ kind: "ratio", label: "Difference", value: inflation });
       }
       renderMeasures(rows);
@@ -1208,6 +1285,7 @@
       requireElement("info-meta").textContent = [kind, place.country, formatPop(place.pop)].filter((part): part is string => Boolean(part)).join(" · ");
       renderMeasures([]);
       requireElement("info-area").textContent = "";
+      syncOverlayLegendFocus();
       revealPlace(focusInfo);
     }
 

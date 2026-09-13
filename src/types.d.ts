@@ -1,6 +1,6 @@
 type WallLayer = "political" | "physical";
 type ProjectionName = "equalEarth" | "mercator";
-type CompareMode = "hover" | "always";
+type CompareMode = "hover" | "always" | "off";
 type ZoomAction = "in" | "out" | "home";
 type LayerName = "countries" | "lakes" | "rivers" | "cities" | "labels" | "graticule";
 type AtlasCenterName = "africa" | "americas" | "pacific";

@@ -41,7 +41,7 @@ function isAtlasCenterName(value: string): value is AtlasCenterName {
 }
 
 function isAtlasCompareMode(value: string): value is CompareMode {
-  return value === "hover" || value === "always";
+  return value === "hover" || value === "always" || value === "off";
 }
 
 function defaultAtlasLocale(): AtlasLocaleId {

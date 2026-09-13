@@ -19,7 +19,7 @@
   }
 
   function isCompareMode(value: string | undefined): value is CompareMode {
-    return value === "hover" || value === "always";
+    return value === "hover" || value === "always" || value === "off";
   }
 
   function hasPath<T extends { path2d: Path2D | null }>(item: T): item is T & { path2d: Path2D } {
@@ -114,7 +114,7 @@
   let applyingUrl = false;
 
   function overlayMode() {
-    return state.projections.mercator;
+    return state.projections.mercator && state.compareMode !== "off";
   }
 
   function syncSettingsChrome() {
@@ -1654,6 +1654,8 @@
       if (hint) {
         hint.textContent = state.compareMode === "always"
           ? t("hintAlways")
+          : state.compareMode === "off"
+            ? "Equal Earth only. Mercator outlines are hidden."
           : inspectOnTap()
             ? t("hintTap")
             : t("hintHover");
@@ -1668,7 +1670,6 @@
       stage.setAttribute(
         "aria-label",
         overlay
-          ? (state.compareMode === "always"
           ? (state.compareMode === "always"
             ? t("stageAriaAlways")
             : inspectOnTap()

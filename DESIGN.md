@@ -212,7 +212,7 @@ Pills (`999px`) for projection, center, and segmented choices. Fields `8px`. Leg
 - **Shape:** Full pill, min-height 36px, label type.
 - **Primary (dialog Close):** Ink fill, ice type, hover well teal.
 - **Icon (layers, About):** Cream-stroke pill on night with a visible label; icon-only 36×36 on compact. Active layers invert to cream fill and ink.
-- **Mode pill:** Transparent until active, then cream fill and ink type. Mercator size is a menu in the night bar (Always / On hover), not a second home projection.
+- **Mode pill:** Transparent until the menu is open, then cream fill and ink type. Mercator size is a menu in the night bar (Always / On hover), not a second home projection.
 - **Segmented:** Field fill; active is ink fill and cream type; hover field-hover.
 - **Dismiss X:** 36×36 transparent circle on ice, teal-mute stroke, ink on hover. 44×44 on coarse pointers. Accessible name only; no visible Close label.
 - **Hover / Focus:** 160ms ease color/background. Focus-visible is a 2px coral ring, 2px offset.

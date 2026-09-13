@@ -1447,6 +1447,12 @@
         event.stopPropagation();
         return;
       }
+      if (document.getElementById("search-panel")?.classList.contains("is-open")) {
+        closeSearch(true);
+        event.preventDefault();
+        event.stopPropagation();
+        return;
+      }
       if (dismissSelection()) {
         event.preventDefault();
         event.stopPropagation();
@@ -1568,6 +1574,7 @@
     function onViewportChange() {
       layout();
       syncProjectionUI();
+      if (!isCompactView()) closeSearch();
     }
 
     atlas = { resize: () => layout(), dismissSelection };
@@ -1598,6 +1605,33 @@
 
   let sheetFocusReturn: HTMLElement | null = null;
 
+  function closeSearch(restoreFocus = false) {
+    const panel = document.getElementById("search-panel");
+    const toggle = document.getElementById("search-toggle");
+    if (!panel?.classList.contains("is-open")) return;
+    panel.classList.remove("is-open");
+    toggle?.setAttribute("aria-expanded", "false");
+    document.body.classList.remove("search-open");
+    const results = document.getElementById("search-results");
+    if (results) {
+      results.hidden = true;
+      results.replaceChildren();
+    }
+    if (restoreFocus && toggle instanceof HTMLElement) toggle.focus();
+  }
+
+  function openSearch() {
+    closeSheets();
+    const panel = requireElement("search-panel");
+    const toggle = document.getElementById("search-toggle");
+    if (isCompactView()) {
+      panel.classList.add("is-open");
+      toggle?.setAttribute("aria-expanded", "true");
+      document.body.classList.add("search-open");
+    }
+    requireElement<HTMLInputElement>("search").focus();
+  }
+
   function closeSheets(restoreFocus = false) {
     const wasOpen = Boolean(document.querySelector(".sheet.is-open"));
     document.querySelectorAll(".sheet.is-open").forEach((sheet) => sheet.classList.remove("is-open"));
@@ -1619,6 +1653,7 @@
     if (open) {
       const results = document.getElementById("search-results");
       if (results) results.hidden = true;
+      closeSearch();
       sheet.classList.add("is-open");
       if (button instanceof HTMLElement) {
         button.setAttribute("aria-expanded", "true");
@@ -1640,14 +1675,33 @@
   document.querySelectorAll(".sheet-close").forEach((button) => {
     button.addEventListener("click", () => closeSheets(true));
   });
-  requireElement("sheet-backdrop").addEventListener("click", () => closeSheets(true));
+  requireElement("sheet-backdrop").addEventListener("click", () => {
+    closeSheets(true);
+    closeSearch(true);
+  });
+
+  document.querySelector(".skip-link")?.addEventListener("click", (event) => {
+    if (!isCompactView()) return;
+    event.preventDefault();
+    openSearch();
+  });
+  document.getElementById("search-toggle")?.addEventListener("click", (event) => {
+    event.stopPropagation();
+    const panel = requireElement("search-panel");
+    if (panel.classList.contains("is-open")) closeSearch(true);
+    else openSearch();
+  });
 
   document.addEventListener("pointerdown", (event) => {
     const target = event.target;
     if (!(target instanceof Node)) return;
     const searchPanel = document.querySelector(".search-panel");
+    const searchToggle = document.getElementById("search-toggle");
     const results = document.getElementById("search-results");
-    if (results && searchPanel && !searchPanel.contains(target)) results.hidden = true;
+    if (searchPanel && !searchPanel.contains(target) && !(searchToggle instanceof Node && searchToggle.contains(target))) {
+      if (results) results.hidden = true;
+      closeSearch();
+    }
     const sheet = document.querySelector(".sheet.is-open");
     if (!sheet) return;
     const toggle = document.querySelector(`[aria-controls="${sheet.id}"]`);
@@ -1739,6 +1793,11 @@
         if (active instanceof HTMLElement && results.contains(active)) {
           document.getElementById("search")?.focus();
         }
+        event.preventDefault();
+        return;
+      }
+      if (document.getElementById("search-panel")?.classList.contains("is-open")) {
+        closeSearch(true);
         event.preventDefault();
         return;
       }

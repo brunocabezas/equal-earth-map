@@ -134,7 +134,14 @@
             </div>
           </div>
         </div>
-        <div class="search-panel">
+        <button type="button" class="bar-action search-toggle" id="search-toggle" aria-label="Search" aria-expanded="false" aria-controls="search-panel">
+          <svg class="icon" viewBox="0 0 16 16" aria-hidden="true">
+            <circle cx="7" cy="7" r="4.25" />
+            <path d="M10.2 10.2 13.5 13.5" />
+          </svg>
+          <span class="action-label">Search</span>
+        </button>
+        <div class="search-panel" id="search-panel">
           <label class="search-field" for="search">
             <svg class="icon search-icon" viewBox="0 0 16 16" aria-hidden="true">
               <circle cx="7" cy="7" r="4.25" />

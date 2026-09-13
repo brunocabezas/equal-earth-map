@@ -626,6 +626,10 @@ legend {
   line-height: 1.35;
 }
 
+.legend-lead-compact {
+  display: none;
+}
+
 @media (prefers-reduced-motion: no-preference) {
   .legend-lead {
     animation: legend-lead-in 160ms ease;
@@ -1534,10 +1538,10 @@ body:has(#about[open]) .map-chrome {
   .map-chrome.bottom-left {
     top: auto;
     inset-inline-start: 8px;
-    inset-inline-end: auto;
-    width: max-content;
+    inset-inline-end: 56px;
+    width: auto;
+    max-width: none;
     bottom: max(8px, env(safe-area-inset-bottom));
-    max-width: calc(100% - 72px);
   }
 
   .map-chrome.right {
@@ -1750,23 +1754,32 @@ body:has(#about[open]) .map-chrome {
     display: inline-flex;
     flex-direction: column;
     align-items: stretch;
-    width: max-content;
-    min-width: min-content;
-    max-width: none;
+    width: fit-content;
+    min-width: 0;
+    max-width: 100%;
     gap: 4px;
     padding: 8px 12px;
     font-size: var(--type-meta);
   }
 
+  .legend-lead-wide {
+    display: none;
+  }
+
+  .legend-lead-compact {
+    display: inline;
+  }
+
   .legend-lead,
   .legend-restore {
-    max-width: none;
+    max-width: 100%;
     font-size: inherit;
   }
 
   .overlay-legend > span,
   #legend-compare > span {
-    white-space: nowrap;
+    min-width: 0;
+    white-space: normal;
   }
 
   .zoom-stack button {

@@ -1,0 +1,10 @@
+---
+description: Atlas layout floor is 320px wide
+alwaysApply: true
+---
+
+# Viewport floor
+
+Support **320px** as the minimum width. Compact chrome, overlay legend, menus, and place cards must stay fully visible there — no overflow under zoom, no clipped labels, no horizontal page scroll.
+
+Check 320px when changing layout or copy. Do not treat 360px or 720px as the smallest phone.

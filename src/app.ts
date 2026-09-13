@@ -314,6 +314,9 @@
     if (atlasLoading) return;
     atlasLoading = true;
 
+    const countriesPromise = d3.json<CountriesTopology>("data/countries-50m.json");
+    const placesPromise = d3.json<Place[]>("data/places.json");
+
     const stage = requireElement("atlas-stage");
     const mapCanvas = requireElement<HTMLCanvasElement>("atlas-map");
     const overlayCanvas = requireElement<HTMLCanvasElement>("atlas-overlay");
@@ -363,19 +366,38 @@
     };
 
     setStatus("Loading Natural Earth data…");
+    {
+      const w = stage.clientWidth || atlasView.clientWidth;
+      const h = stage.clientHeight || atlasView.clientHeight;
+      if (w > 0 && h > 0) {
+        const d = Math.min(window.devicePixelRatio || 1, 2);
+        mapCanvas.width = Math.round(w * d);
+        mapCanvas.height = Math.round(h * d);
+        mapCanvas.style.width = `${w}px`;
+        mapCanvas.style.height = `${h}px`;
+        mapCtx.setTransform(d, 0, 0, d, 0, 0);
+        mapCtx.fillStyle = MAP.ocean;
+        mapCtx.fillRect(0, 0, w, h);
+        const outline = d3.geoPath(makeProjection(baseProjectionName(), w, h))({ type: "Sphere" });
+        if (outline) {
+          const sphere = new Path2D(outline);
+          mapCtx.fill(sphere);
+          mapCtx.strokeStyle = MAP.sphere;
+          mapCtx.lineWidth = 1;
+          mapCtx.stroke(sphere);
+        }
+      }
+    }
+
     let countriesTopo: CountriesTopology | undefined;
-    let places: Place[] | undefined;
     try {
-      [countriesTopo, places] = await Promise.all([
-        d3.json<CountriesTopology>("data/countries-50m.json"),
-        d3.json<Place[]>("data/places.json")
-      ]);
+      countriesTopo = await countriesPromise;
     } catch {
       atlasLoading = false;
       setStatus("Could not load map data. Try again.", true);
       return;
     }
-    if (!countriesTopo || !isPlaceList(places) || !countriesTopo.objects.countries) {
+    if (!countriesTopo || !countriesTopo.objects.countries) {
       atlasLoading = false;
       setStatus("Could not load map data. Try again.", true);
       return;
@@ -386,8 +408,8 @@
     const countries = topojson.feature(countriesTopo, countriesTopo.objects.countries) as CountryCollection;
     let lakes: LakeFeature[] = [];
     let rivers: RiverFeature[] = [];
-    const placeList = places;
-    const citySource = placeList.filter((place) => place.capital || place.rank <= 3 || place.pop >= 1e6);
+    let placeList: Place[] = [];
+    let citySource: Place[] = [];
     const graticule = d3.geoGraticule10();
 
     let width = 0;
@@ -1644,6 +1666,14 @@
     }
 
     void loadWater();
+    void placesPromise.then((loaded) => {
+      if (!isPlaceList(loaded)) return;
+      placeList = loaded;
+      citySource = placeList.filter((place) => place.capital || place.rank <= 3 || place.pop >= 1e6);
+      drawOverlay();
+    }).catch(() => {
+      // Countries already painted; city dots and city search stay empty.
+    });
     atlasLoading = false;
   }
 

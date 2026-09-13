@@ -359,14 +359,10 @@
 
     setStatus("Loading Natural Earth data…");
     let countriesTopo: CountriesTopology | undefined;
-    let lakesGeo: LakeCollection | undefined;
-    let riversGeo: RiverCollection | undefined;
     let places: Place[] | undefined;
     try {
-      [countriesTopo, lakesGeo, riversGeo, places] = await Promise.all([
+      [countriesTopo, places] = await Promise.all([
         d3.json<CountriesTopology>("data/countries-50m.json"),
-        d3.json<LakeCollection>("data/lakes-50m.geojson"),
-        d3.json<RiverCollection>("data/rivers-50m.geojson"),
         d3.json<Place[]>("data/places.json")
       ]);
     } catch {
@@ -374,7 +370,7 @@
       setStatus("Could not load map data. Try again.", true);
       return;
     }
-    if (!countriesTopo || !lakesGeo || !riversGeo || !isPlaceList(places) || !countriesTopo.objects.countries) {
+    if (!countriesTopo || !isPlaceList(places) || !countriesTopo.objects.countries) {
       atlasLoading = false;
       setStatus("Could not load map data. Try again.", true);
       return;
@@ -383,8 +379,8 @@
     setStatus("");
 
     const countries = topojson.feature(countriesTopo, countriesTopo.objects.countries) as CountryCollection;
-    const lakes = lakesGeo.features.filter((d: LakeFeature) => d.properties.scalerank <= 2);
-    const rivers = riversGeo.features.filter((d: RiverFeature) => d.properties.featurecla !== "Lake Centerline");
+    let lakes: LakeFeature[] = [];
+    let rivers: RiverFeature[] = [];
     const placeList = places;
     const citySource = placeList.filter((place) => place.capital || place.rank <= 3 || place.pop >= 1e6);
     const graticule = d3.geoGraticule10();
@@ -1624,6 +1620,25 @@
     if (document.fonts && document.fonts.ready) {
       document.fonts.ready.then(() => drawOverlay());
     }
+
+    async function loadWater() {
+      try {
+        const [lakesGeo, riversGeo] = await Promise.all([
+          d3.json<LakeCollection>("data/lakes-50m.geojson"),
+          d3.json<RiverCollection>("data/rivers-50m.geojson")
+        ]);
+        if (!lakesGeo || !riversGeo) return;
+        lakes = lakesGeo.features.filter((d: LakeFeature) => d.properties.scalerank <= 2);
+        rivers = riversGeo.features.filter((d: RiverFeature) => d.properties.featurecla !== "Lake Centerline");
+        rebuildPaths();
+        bake(currentTransform);
+        drawOverlay();
+      } catch {
+        // Countries already painted; lakes and rivers stay empty.
+      }
+    }
+
+    void loadWater();
     atlasLoading = false;
   }
 

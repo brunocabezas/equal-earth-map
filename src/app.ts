@@ -164,8 +164,8 @@
 
   function formatInflation(ratio: number | null | undefined) {
     if (ratio == null || !Number.isFinite(ratio) || ratio <= 0) return null;
-    if (ratio > 1) return `${formatFactor(ratio)}× larger`;
-    if (ratio < 1) return `${formatFactor(1 / ratio)}× smaller`;
+    if (ratio > 1) return `${formatFactor(ratio)}× larger in Mercator`;
+    if (ratio < 1) return `${formatFactor(1 / ratio)}× smaller in Mercator`;
     return "1.00×";
   }
 
@@ -837,7 +837,7 @@
           ? formatInflation(stats?.ratio)
           : null;
         const tip = inflation
-          ? `${hit.name} · Mercator ${inflation}`
+          ? `${hit.name} · ${inflation}`
           : hit.name;
         showTip(vx, vy, tip);
         stage.style.cursor = "pointer";
@@ -1107,7 +1107,7 @@
         meta.textContent = "Equal Earth keeps relative area true.";
         const inflationNote = formatInflation(stats.ratio);
         area.textContent = inflationNote
-          ? `On Mercator this land would appear ${inflationNote} than its true size.`
+          ? `This land would appear ${inflationNote} than its true size.`
           : "Near the equator Mercator and Equal Earth agree on size.";
       }
 

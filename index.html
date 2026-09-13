@@ -3,15 +3,15 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>Equal Earth Map — Interactive True-Size World Atlas</title>
+    <title>Equal Earth Projection — Interactive True-Size World Atlas</title>
     <meta
       name="description"
-      content="Browse an interactive Equal Earth world map. Countries keep their true relative sizes, unlike Mercator. Search Natural Earth places and download original wall maps."
+      content="Interactive Equal Earth projection atlas. An equal-area world map with true country sizes, unlike Mercator. Search the map and download wall maps."
     />
     <link rel="canonical" href="https://trueearthmap.com/" />
     <meta name="robots" content="index, follow" />
     <meta name="google-site-verification" content="Veh-jW6bby_QXCCJP9wlzjsK-h1Fbvfc5zWNtBTKSVU" />
-    <meta name="author" content="Equal Earth interactive atlas" />
+    <meta name="author" content="Equal Earth projection atlas" />
     <meta name="theme-color" content="#006d77" />
     <meta name="color-scheme" content="light" />
     <link rel="icon" href="favicon.svg" type="image/svg+xml" />
@@ -20,23 +20,24 @@
     <meta property="og:type" content="website" />
     <meta property="og:locale" content="en_US" />
     <meta property="og:site_name" content="Equal Earth Map" />
-    <meta property="og:title" content="Equal Earth Map — Interactive True-Size World Atlas" />
+    <meta property="og:title" content="Equal Earth Projection — Interactive True-Size World Atlas" />
     <meta
       property="og:description"
-      content="See countries at their true relative sizes. Pan, zoom, and compare Equal Earth with Mercator using Natural Earth data."
+      content="Interactive Equal Earth projection atlas. An equal-area world map with true country sizes, unlike Mercator. Search the map and download wall maps."
     />
     <meta property="og:url" content="https://trueearthmap.com/" />
     <meta property="og:image" content="https://trueearthmap.com/og-image.jpg" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="Equal Earth political world map centered on the Pacific" />
+    <meta property="og:image:alt" content="Equal Earth projection political world map centered on the Pacific" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Equal Earth Map — Interactive True-Size World Atlas" />
+    <meta name="twitter:title" content="Equal Earth Projection — Interactive True-Size World Atlas" />
     <meta
       name="twitter:description"
-      content="See countries at their true relative sizes. Pan, zoom, and compare Equal Earth with Mercator."
+      content="Interactive Equal Earth projection atlas. True country sizes, unlike Mercator. Search the map and download wall maps."
     />
     <meta name="twitter:image" content="https://trueearthmap.com/og-image.jpg" />
+    <meta name="twitter:image:alt" content="Equal Earth projection political world map centered on the Pacific" />
     <link rel="stylesheet" href="styles.css" />
     <link rel="preload" href="vendor/d3.min.js" as="script" />
     <link rel="preload" href="data/countries-preview.json" as="fetch" crossorigin />
@@ -47,8 +48,9 @@
           {
             "@type": "WebApplication",
             "name": "Equal Earth Map",
+            "alternateName": "Equal Earth projection atlas",
             "url": "https://trueearthmap.com/",
-            "description": "Interactive Equal Earth world map with Natural Earth vectors and downloadable original wall maps.",
+            "description": "Interactive world atlas using the Equal Earth projection. Equal-area map with true relative country sizes, unlike Mercator, plus Natural Earth vectors and downloadable wall maps.",
             "applicationCategory": "EducationalApplication",
             "operatingSystem": "Any",
             "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
@@ -59,6 +61,19 @@
               { "@type": "Person", "name": "Tom Patterson" },
               { "@type": "Person", "name": "Bernhard Jenny" }
             ]
+          },
+          {
+            "@type": "WebPage",
+            "name": "Equal Earth Projection — Interactive True-Size World Atlas",
+            "url": "https://trueearthmap.com/",
+            "description": "Interactive Equal Earth projection atlas. An equal-area world map with true country sizes, unlike Mercator. Search the map and download wall maps.",
+            "keywords": "Equal Earth projection, equal-area projection, Mercator projection, true size world map, interactive world atlas, Africa true size",
+            "dateModified": "2026-09-13",
+            "about": { "@type": "Thing", "name": "Equal Earth projection" },
+            "speakable": {
+              "@type": "SpeakableSpecification",
+              "cssSelector": [".brand h1", "#about-title"]
+            }
           },
           {
             "@type": "Dataset",
@@ -83,7 +98,7 @@
                 "name": "Why does Africa look larger than on Google Maps?",
                 "acceptedAnswer": {
                   "@type": "Answer",
-                  "text": "Google Maps uses Mercator, which inflates land near the poles. Africa is about 14 times larger than Greenland; Equal Earth shows that true size relationship."
+                  "text": "Google Maps uses the Mercator projection, which inflates land near the poles. Africa is about 14 times larger than Greenland. The Equal Earth projection shows that true size relationship."
                 }
               },
               {
@@ -91,7 +106,31 @@
                 "name": "Did the United Nations replace the world map?",
                 "acceptedAnswer": {
                   "@type": "Answer",
-                  "text": "No. In September 2026 the UN General Assembly adopted Correct the Map, a request to use equal-area maps such as Equal Earth when country size is compared. The vote was 164 in favor, 1 against (United States), and 6 abstentions (Estonia, Georgia, Lithuania, Moldova, Serbia, and Ukraine). The resolution does not ban Mercator or set borders."
+                  "text": "No. In September 2026 the UN General Assembly adopted Correct the Map, a request to use equal-area map projections such as Equal Earth when country size is compared. The vote was 164 in favor, 1 against (United States), and 6 abstentions (Estonia, Georgia, Lithuania, Moldova, Serbia, and Ukraine). The resolution does not ban Mercator or set borders."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "What is an equal-area projection?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "An equal-area projection is a flat map that keeps true relative size. Land that is twice as large on Earth takes about twice the space on the map. Mercator is not equal-area. Equal Earth is."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "How does the Equal Earth projection differ from Mercator?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Mercator keeps compass direction and stretches land near the poles. Equal Earth is an equal-area projection: countries keep true relative size, with more familiar continent shapes than Gall–Peters. This atlas uses Equal Earth and shows Mercator size as a comparison overlay."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "How big is Africa compared with Greenland?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Africa is about 14 times larger than Greenland. On a Mercator web map they can look similar in size because Mercator inflates land near the poles. The Equal Earth projection keeps that 14-to-1 relationship."
                 }
               },
               {
@@ -111,7 +150,7 @@
   <body>
     <a class="skip-link" href="#search">Skip to search</a>
     <header class="topbar">
-      <div class="brand">
+      <a class="brand" id="brand-home" href="./" aria-label="Equal Earth home">
         <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true">
           <circle cx="16" cy="16" r="13" />
           <ellipse cx="16" cy="16" rx="6.5" ry="13" />
@@ -119,9 +158,9 @@
         </svg>
         <div class="brand-copy">
           <h1>Equal Earth</h1>
-          <p>Interactive atlas, not Mercator</p>
+          <p>Equal Earth projection, not Mercator</p>
         </div>
-      </div>
+      </a>
       <div class="bar-end">
         <div class="bar-menu">
           <div class="bar-seg">
@@ -259,11 +298,11 @@
 
     <dialog id="about" aria-labelledby="about-title">
       <div class="about-card">
-        <h2 id="about-title" tabindex="-1">An interactive Equal Earth atlas</h2>
+        <h2 id="about-title" tabindex="-1">An interactive Equal Earth projection atlas</h2>
         <div class="about-body">
           <p>
-            This is an interactive atlas. You can pan, zoom, and search. The map uses Equal Earth, not
-            Mercator.
+            This is an interactive atlas. You can pan, zoom, and search. The map uses the Equal Earth
+            projection, not Mercator.
           </p>
           <p>
             Mercator is the usual web map method from 1569. It stretches land near the poles so

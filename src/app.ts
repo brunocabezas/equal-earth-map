@@ -138,6 +138,17 @@
   const atlasView = requireElement("atlas-view");
   const about = requireElement<HTMLDialogElement>("about");
 
+  function atlasHomeHref(): string {
+    const host = location.hostname;
+    if (host === "localhost" || host === "127.0.0.1") {
+      return `${location.origin}/`;
+    }
+    return (window.EQUAL_EARTH_SITE && window.EQUAL_EARTH_SITE.siteUrl) || "https://trueearthmap.com/";
+  }
+
+  const brandHome = document.getElementById("brand-home");
+  if (brandHome instanceof HTMLAnchorElement) brandHome.href = atlasHomeHref();
+
   function openAboutDialog() {
     if (about.open) return;
     about.showModal();

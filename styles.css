@@ -103,7 +103,7 @@ html, body {
 }
 
 ::selection {
-  background: rgba(194, 97, 72, 0.28);
+  background: color-mix(in srgb, var(--accent) 28%, transparent);
   color: var(--ink);
 }
 
@@ -278,7 +278,7 @@ html, body {
   flex-shrink: 0;
   padding: 3px;
   border-radius: 999px;
-  background: rgba(237, 246, 249, 0.08);
+  background: color-mix(in srgb, var(--cream) 8%, transparent);
 }
 
 .bar-btn {
@@ -304,7 +304,7 @@ html, body {
 
 .bar-btn:hover {
   color: var(--cream);
-  background: rgba(237, 246, 249, 0.08);
+  background: color-mix(in srgb, var(--cream) 8%, transparent);
 }
 
 .bar-btn.is-active,
@@ -319,7 +319,7 @@ html, body {
   place-items: center;
   width: var(--control);
   height: var(--control);
-  border: 1px solid rgba(237, 246, 249, 0.22);
+  border: 1px solid color-mix(in srgb, var(--cream) 22%, transparent);
   border-radius: 999px;
   background: transparent;
   color: var(--cream);
@@ -328,8 +328,8 @@ html, body {
 }
 
 .icon-btn:hover {
-  background: rgba(237, 246, 249, 0.1);
-  border-color: rgba(237, 246, 249, 0.4);
+  background: color-mix(in srgb, var(--cream) 10%, transparent);
+  border-color: color-mix(in srgb, var(--cream) 40%, transparent);
 }
 
 .icon-btn[aria-expanded="true"] {
@@ -343,7 +343,7 @@ html, body {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  border: 1px solid rgba(237, 246, 249, 0.22);
+  border: 1px solid color-mix(in srgb, var(--cream) 22%, transparent);
   border-radius: 999px;
   min-height: var(--control);
   padding: 0 12px 0 10px;
@@ -355,8 +355,8 @@ html, body {
 }
 
 .bar-action:hover {
-  background: rgba(237, 246, 249, 0.1);
-  border-color: rgba(237, 246, 249, 0.4);
+  background: color-mix(in srgb, var(--cream) 10%, transparent);
+  border-color: color-mix(in srgb, var(--cream) 40%, transparent);
 }
 
 .bar-action[aria-expanded="true"] {
@@ -1101,7 +1101,7 @@ legend {
 }
 .graticule {
   fill: none;
-  stroke: rgba(237, 246, 249, 0.35);
+  stroke: var(--graticule);
   stroke-width: 0.7px;
   vector-effect: non-scaling-stroke;
 }
@@ -1116,7 +1116,7 @@ legend {
   fill: var(--ink);
   font-size: 12px;
   paint-order: stroke;
-  stroke: rgba(237, 246, 249, 0.9);
+  stroke: var(--label-halo);
   stroke-width: 3px;
   pointer-events: none;
 }

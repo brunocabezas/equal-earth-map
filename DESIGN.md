@@ -178,7 +178,7 @@ Night and ice do the structure. Coral is the only warm UI accent. Ocean and peac
 
 ### Neutral
 - **Skobeloff** (`colors.night`) and **well teal** (`colors.night-deep`): Top bar and footer.
-- **Ice** (`colors.cream`) and **ice-soft** (`colors.cream-soft`): Type and active pills on night.
+- **Ice** (`colors.cream`) and **ice-soft** (`colors.cream-soft`): Type and active pills on night. Night-bar hover and borders mix this ice onto skobeloff; text selection mixes coral.
 - **Ink** (`colors.ink`) and **teal mute** (`colors.ink-soft`): Type on paper. Mute is teal, not gray.
 - **Legend panel** (`colors.panel`), **paper** (`colors.paper`), **field** (`colors.field`): Cards and inputs. Field hover uses unbleached silk (`colors.field-hover`).
 - **Hairline** (`colors.line`): Borders on paper.

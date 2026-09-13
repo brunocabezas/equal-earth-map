@@ -3,6 +3,7 @@ type ProjectionName = "equalEarth" | "mercator";
 type CompareMode = "hover" | "always";
 type ZoomAction = "in" | "out" | "home";
 type LayerName = "countries" | "lakes" | "rivers" | "cities" | "labels" | "graticule";
+type AtlasCenterName = "africa" | "americas" | "pacific";
 
 type LayerFlags = { [K in LayerName]: boolean };
 type ProjectionFlags = { [K in ProjectionName]: boolean };
@@ -13,6 +14,13 @@ interface AtlasState {
   layers: LayerFlags;
   compareMode: CompareMode;
   selected: string | null;
+}
+
+interface AtlasUrlView {
+  country: string | null;
+  compareMode: CompareMode;
+  center: number;
+  layers: LayerFlags;
 }
 
 interface SiteConfig {

@@ -57,27 +57,64 @@
     graticule: "rgba(237,246,249,0.35)"
   } as const satisfies DeepReadonly<Record<string, string>>;
 
+  const HOME_TITLE = document.title;
   const state: AtlasState = {
     projections: {
       equalEarth: true,
       mercator: true
     },
-    center: 0,
-    layers: {
-      countries: true,
-      lakes: true,
-      rivers: true,
-      cities: true,
-      labels: true,
-      graticule: true
-    },
-    compareMode: "always",
+    center: defaultAtlasCenter(),
+    layers: defaultAtlasLayers(),
+    compareMode: defaultAtlasCompareMode(),
     selected: null
   };
+  const bootUrl = parseAtlasUrl(location.search);
+  state.center = bootUrl.center;
+  state.layers = { ...bootUrl.layers };
+  state.compareMode = bootUrl.compareMode;
+
+  let applyingUrl = false;
 
   function overlayMode() {
     return state.projections.mercator;
   }
+
+  function syncSettingsChrome() {
+    document.querySelectorAll<HTMLElement>("[data-compare]").forEach((node) => {
+      const on = node.dataset.compare === state.compareMode;
+      node.classList.toggle("is-active", on);
+      node.setAttribute("aria-checked", String(on));
+    });
+    document.querySelectorAll<HTMLElement>("[data-center]").forEach((node) => {
+      node.classList.toggle("is-active", Number(node.dataset.center) === state.center);
+    });
+    document.querySelectorAll<HTMLInputElement>("[data-layer]").forEach((input) => {
+      const layer = input.dataset.layer;
+      if (!isLayerName(layer)) return;
+      input.checked = state.layers[layer];
+    });
+  }
+
+  function atlasHrefForState() {
+    const search = formatAtlasSearch(state);
+    const query = search ? `?${search}` : "";
+    return `${location.pathname}${query}${location.hash}`;
+  }
+
+  function applyDocumentTitle() {
+    document.title = state.selected ? `${state.selected} — Equal Earth Map` : HOME_TITLE;
+  }
+
+  function syncLocation(mode: "push" | "replace") {
+    if (applyingUrl) return;
+    applyDocumentTitle();
+    const next = atlasHrefForState();
+    if (`${location.pathname}${location.search}${location.hash}` === next) return;
+    if (mode === "push") history.pushState(null, "", next);
+    else history.replaceState(null, "", next);
+  }
+
+  syncSettingsChrome();
 
   function baseProjectionName(): ProjectionName {
     return "equalEarth";
@@ -1017,6 +1054,7 @@
     }
 
     function hidePlace() {
+      const hadSelection = state.selected !== null;
       state.selected = null;
       info.hidden = true;
       const measures = document.getElementById("info-measures");
@@ -1025,6 +1063,7 @@
         measures.hidden = true;
       }
       bake(currentTransform);
+      if (hadSelection) syncLocation("push");
     }
 
     function measureMark(kind: MeasureKind) {
@@ -1139,13 +1178,44 @@
     }
 
     function selectCountry(feature: CountryFeature, focusInfo = false) {
+      const changed = state.selected !== feature.properties.name;
       state.selected = feature.properties.name;
       updateCountryInfo(feature);
       bake(currentTransform);
       zoomToFeature(feature);
       drawOverlay();
-      track("select_country", { name: feature.properties.name });
+      if (changed && !applyingUrl) {
+        track("select_country", { name: feature.properties.name });
+        syncLocation("push");
+      }
       revealPlace(focusInfo);
+    }
+
+    function featureByName(name: string) {
+      return countries.features.find((d) => d.properties.name === name) ?? null;
+    }
+
+    function applyUrlView(view: AtlasUrlView) {
+      const centerChanged = view.center !== state.center;
+      state.compareMode = view.compareMode;
+      state.center = view.center;
+      Object.assign(state.layers, view.layers);
+      syncSettingsChrome();
+      syncProjectionUI();
+      const resolved = view.country
+        ? matchPlaceName(countries.features.map((d) => d.properties.name), view.country)
+        : null;
+      const feature = resolved ? featureByName(resolved) : null;
+      applyingUrl = true;
+      try {
+        if (centerChanged) layout({ reset: true });
+        if (feature) selectCountry(feature);
+        else hidePlace();
+        if (!feature) drawOverlay();
+      } finally {
+        applyingUrl = false;
+      }
+      applyDocumentTitle();
     }
 
     function zoomToFeature(feature: CountryFeature) {
@@ -1347,6 +1417,7 @@
           bake(currentTransform);
           drawOverlay();
           track("compare_mode", { mode });
+          syncLocation("replace");
         }
         closeSheets(true);
       });
@@ -1355,10 +1426,9 @@
     document.querySelectorAll<HTMLElement>("[data-center]").forEach((button) => {
       button.addEventListener("click", () => {
         state.center = Number(button.dataset.center);
-        document.querySelectorAll<HTMLElement>("[data-center]").forEach((node) => {
-          node.classList.toggle("is-active", Number(node.dataset.center) === state.center);
-        });
+        syncSettingsChrome();
         layout();
+        syncLocation("replace");
       });
     });
 
@@ -1369,6 +1439,7 @@
         state.layers[layer] = input.checked;
         bake(currentTransform);
         drawOverlay();
+        syncLocation("replace");
       });
       input.addEventListener("click", (event) => event.stopPropagation());
     });
@@ -1409,6 +1480,23 @@
     atlas = { resize: () => layout() };
     syncProjectionUI();
     layout({ reset: true });
+    applyingUrl = true;
+    try {
+      if (bootUrl.country) {
+        const resolved = matchPlaceName(
+          countries.features.map((d) => d.properties.name),
+          bootUrl.country
+        );
+        const feature = resolved ? featureByName(resolved) : null;
+        if (feature) selectCountry(feature);
+      }
+    } finally {
+      applyingUrl = false;
+    }
+    syncLocation("replace");
+    window.addEventListener("popstate", () => {
+      applyUrlView(parseAtlasUrl(location.search));
+    });
     if (document.fonts && document.fonts.ready) {
       document.fonts.ready.then(() => drawOverlay());
     }

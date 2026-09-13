@@ -18,6 +18,7 @@ colors:
   ocean: "#b9d2df"
   ocean-deep: "#6a9bb0"
   stage: "#b9d2df"
+  lake: "#8fb8cc"
   line: "rgba(5, 74, 82, 0.14)"
 typography:
   display:
@@ -25,6 +26,30 @@ typography:
     fontSize: "1.25rem"
     fontWeight: 600
     lineHeight: 1.15
+    letterSpacing: "-0.02em"
+  display-compact:
+    fontFamily: "Source Serif 4, Iowan Old Style, Georgia, serif"
+    fontSize: "1.125rem"
+    fontWeight: 600
+    lineHeight: 1.15
+    letterSpacing: "-0.02em"
+  headline:
+    fontFamily: "Source Serif 4, Iowan Old Style, Georgia, serif"
+    fontSize: "1.5rem"
+    fontWeight: 600
+    lineHeight: 1.2
+    letterSpacing: "-0.02em"
+  title:
+    fontFamily: "Source Serif 4, Iowan Old Style, Georgia, serif"
+    fontSize: "1.375rem"
+    fontWeight: 600
+    lineHeight: 1.2
+    letterSpacing: "-0.02em"
+  title-compact:
+    fontFamily: "Source Serif 4, Iowan Old Style, Georgia, serif"
+    fontSize: "1.05rem"
+    fontWeight: 600
+    lineHeight: 1.2
     letterSpacing: "-0.02em"
   headline:
     fontFamily: "Source Serif 4, Iowan Old Style, Georgia, serif"
@@ -63,6 +88,7 @@ typography:
     lineHeight: 1.35
     letterSpacing: "normal"
 rounded:
+  xs: "2px"
   md: "8px"
   lg: "12px"
   dialog: "16px"
@@ -157,7 +183,7 @@ Night and ice do the structure. Coral is the only warm UI accent. Ocean and peac
 - **Chart coral** (`colors.accent`): Focus rings, search caret, checkbox accent, text selection wash. Bright coral (`colors.accent-bright`) for capital dots on the globe. Text coral (`colors.accent-text`) for links on ice so they meet 4.5:1. Not a fill for large surfaces.
 
 ### Secondary
-- **Globe ocean** (`colors.ocean`): Equal Earth water fill, the previous light blue. Stage (`colors.stage`) matches it so the empty canvas is the same water.
+- **Globe ocean** (`colors.ocean`): Equal Earth water fill, the previous light blue. Stage (`colors.stage`) matches it so the empty canvas is the same water. Lakes (`colors.lake`) are a slightly deeper blue on that ocean.
 
 ### Neutral
 - **Skobeloff** (`colors.night`) and **well teal** (`colors.night-deep`): Top bar and footer.
@@ -183,6 +209,7 @@ Night and ice do the structure. Coral is the only warm UI accent. Ocean and peac
 - **Display** (600, 1.25rem, 1.15): Product name in the night bar.
 - **Headline** (600, 1.5rem, 1.2): About and 404 titles.
 - **Title** (600, 1.375rem, 1.2): Selected place name on a legend card. 1.05rem on narrow viewports.
+- **Display compact** (600, 1.125rem): Product name in the night bar on ≤720px.
 - **Body** (450, 1rem, 1.45): About prose, max ~62ch.
 - **Label** (550, 0.875rem): Buttons, legends, checks.
 - **Meta** (450–650, 0.75rem): Footer, fieldset legends, search result kinds.

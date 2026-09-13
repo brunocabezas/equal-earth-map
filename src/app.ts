@@ -36,27 +36,32 @@
     "#e8d0c4", "#dcc8bc", "#c9d8d2", "#e4ddd4",
     "#ffd8cc", "#d0ddd8", "#ecd4c8"
   ] as const;
+  function cssToken(name: string, fallback: string) {
+    const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    return value || fallback;
+  }
+
   const OVERLAY_HOVER_MIN_FACTOR = 1.5;
   const OVERLAY_DIM_ALPHA = 0.5;
   const MAP = {
-    ocean: "#b9d2df",
-    lake: "#8fb8cc",
-    river: "#6a9bb0",
-    sphere: "#7f9aa8",
-    countryStroke: "rgba(5,74,82,0.28)",
-    hover: "#054a52",
-    hoverFill: "rgba(5,74,82,0.07)",
-    selected: "#032f34",
-    mercFill: "rgba(194,97,72,0.5)",
-    mercStroke: "#c26148",
-    mercMuteFill: "rgba(194,97,72,0.22)",
-    mercMuteStroke: "rgba(194,97,72,0.62)",
-    capital: "#e29578",
-    city: "#032f34",
-    label: "#054a52",
-    labelHalo: "rgba(237,246,249,0.9)",
-    graticule: "rgba(237,246,249,0.35)"
-  } as const satisfies DeepReadonly<Record<string, string>>;
+    ocean: cssToken("--ocean", "#b9d2df"),
+    lake: cssToken("--lake", "#8fb8cc"),
+    river: cssToken("--ocean-deep", "#6a9bb0"),
+    sphere: cssToken("--sphere", "#7f9aa8"),
+    countryStroke: cssToken("--country-stroke", "rgba(5, 74, 82, 0.28)"),
+    hover: cssToken("--ink", "#054a52"),
+    hoverFill: cssToken("--hover-fill", "rgba(5, 74, 82, 0.07)"),
+    selected: cssToken("--night-deep", "#032f34"),
+    mercFill: cssToken("--merc-fill", "rgba(194, 97, 72, 0.5)"),
+    mercStroke: cssToken("--accent", "#c26148"),
+    mercMuteFill: cssToken("--merc-mute-fill", "rgba(194, 97, 72, 0.22)"),
+    mercMuteStroke: cssToken("--merc-mute-stroke", "rgba(194, 97, 72, 0.62)"),
+    capital: cssToken("--accent-bright", "#e29578"),
+    city: cssToken("--night-deep", "#032f34"),
+    label: cssToken("--ink", "#054a52"),
+    labelHalo: cssToken("--label-halo", "rgba(237, 246, 249, 0.9)"),
+    graticule: cssToken("--graticule", "rgba(237, 246, 249, 0.35)")
+  };
 
   const HOME_TITLE = document.title;
   const state: AtlasState = {

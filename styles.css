@@ -52,11 +52,21 @@
   --field: #ffffff;
   --field-hover: #ffddd2;
   --stage: #b9d2df;
+  --lake: #8fb8cc;
+  --sphere: #7f9aa8;
+  --country-stroke: rgba(5, 74, 82, 0.28);
+  --hover-fill: rgba(5, 74, 82, 0.07);
+  --merc-fill: rgba(194, 97, 72, 0.5);
+  --merc-mute-fill: rgba(194, 97, 72, 0.22);
+  --merc-mute-stroke: rgba(194, 97, 72, 0.62);
+  --label-halo: rgba(237, 246, 249, 0.9);
+  --graticule: rgba(237, 246, 249, 0.35);
   --shadow: 0 8px 22px rgba(3, 47, 52, 0.18);
   --sans: "Source Sans 3", "Segoe UI", sans-serif;
   --serif: "Source Serif 4", "Iowan Old Style", Georgia, serif;
   --radius: 8px;
   --radius-lg: 12px;
+  --radius-xs: 2px;
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
@@ -389,14 +399,11 @@ main {
   transform-origin: 0 0;
 }
 
-#atlas-map {
-  will-change: transform;
-}
-
 #atlas-overlay {
   pointer-events: none;
 }
 
+#atlas-stage.is-zooming #atlas-map,
 #atlas-stage.is-zooming #atlas-overlay {
   will-change: transform;
 }
@@ -536,7 +543,7 @@ legend {
   width: 14px;
   height: 10px;
   flex-shrink: 0;
-  border-radius: 2px;
+  border-radius: var(--radius-xs, 2px);
 }
 
 .swatch-ee {
@@ -1059,7 +1066,7 @@ legend {
   stroke: var(--accent);
 }
 
-.lakes { fill: #8fb8cc; stroke: none; pointer-events: none; }
+.lakes { fill: var(--lake); stroke: none; pointer-events: none; }
 .rivers {
   fill: none;
   stroke: var(--ocean-deep);
@@ -1574,8 +1581,11 @@ body:has(#about[open]) .map-chrome {
   .zoom-stack button,
   .center-stack button,
   #about-close,
+  .about-download,
   .compare-btn,
-  .sheet-toggle {
+  .sheet-toggle,
+  .sheet-close,
+  .info-close {
     transition: none;
   }
 }

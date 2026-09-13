@@ -317,6 +317,7 @@
     if (atlasLoading) return;
     atlasLoading = true;
 
+    const countriesPreviewPromise = d3.json<CountriesTopology>("data/countries-preview.json");
     const countriesPromise = d3.json<CountriesTopology>("data/countries-50m.json");
     const placesPromise = d3.json<Place[]>("data/places.json");
 
@@ -394,7 +395,7 @@
 
     let countriesTopo: CountriesTopology | undefined;
     try {
-      countriesTopo = await countriesPromise;
+      countriesTopo = await countriesPreviewPromise;
     } catch {
       atlasLoading = false;
       setStatus("Could not load map data. Try again.", true);
@@ -408,7 +409,7 @@
     atlasReady = true;
     setStatus("");
 
-    const countries = topojson.feature(countriesTopo, countriesTopo.objects.countries) as CountryCollection;
+    let countries = topojson.feature(countriesTopo, countriesTopo.objects.countries) as CountryCollection;
     let lakes: LakeFeature[] = [];
     let rivers: RiverFeature[] = [];
     let placeList: Place[] = [];
@@ -441,7 +442,8 @@
     let graticulePath: Path2D | null;
     let interacting = false;
     const sizeIndex = new Map<string, SizeStats>();
-    {
+    function fillSizeIndex() {
+      sizeIndex.clear();
       const pair = makeMeasurePair();
       const eePath = d3.geoPath(pair.ee);
       const mercPath = d3.geoPath(pair.merc);
@@ -456,6 +458,7 @@
         });
       }
     }
+    fillSizeIndex();
 
     const zoom = d3.zoom<HTMLElement, unknown>()
       .scaleExtent([0.8, 28])
@@ -1669,6 +1672,19 @@
     }
 
     void loadWater();
+    void countriesPromise.then((full) => {
+      if (!full?.objects.countries) return;
+      countries = topojson.feature(full, full.objects.countries) as CountryCollection;
+      fillSizeIndex();
+      rebuildPaths();
+      bake(currentTransform);
+      drawOverlay();
+      if (!state.selected) return;
+      const selected = featureByName(state.selected);
+      if (selected) updateCountryInfo(selected);
+    }).catch(() => {
+      // Preview land is already on screen.
+    });
     void placesPromise.then((loaded) => {
       if (!isPlaceList(loaded)) return;
       placeList = loaded;

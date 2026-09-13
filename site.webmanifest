@@ -1,7 +1,7 @@
 {
   "name": "Equal Earth Map",
   "short_name": "Equal Earth",
-  "description": "Interactive Equal Earth world map with true relative country sizes.",
+  "description": "Interactive Equal Earth projection atlas with true relative country sizes.",
   "start_url": "./",
   "display": "standalone",
   "background_color": "#032f34",

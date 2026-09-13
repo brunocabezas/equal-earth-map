@@ -1313,7 +1313,16 @@
       const area = requireElement("info-area");
       if (compact) {
         meta.textContent = "";
-        area.textContent = "";
+        if (comparing && hasOutline) {
+          area.textContent = "The outline is how large this looks on Mercator.";
+        } else if (comparing) {
+          area.textContent = "Mercator barely changes this country’s size.";
+        } else {
+          const inflationNote = formatInflation(stats.ratio);
+          area.textContent = inflationNote
+            ? `This land would appear ${inflationNote} than its true size.`
+            : "Near the equator Mercator and Equal Earth agree on size.";
+        }
       } else if (comparing && hasOutline) {
         meta.textContent = t("outlineMuted");
         area.textContent = t("outlineScaled");

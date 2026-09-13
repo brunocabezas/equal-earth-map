@@ -1089,6 +1089,10 @@ legend {
   color: var(--cream);
 }
 
+.center-in-layers {
+  display: none;
+}
+
 .tooltip {
   position: absolute;
   z-index: 4;
@@ -1441,8 +1445,11 @@ body:has(#about[open]) .map-chrome {
     padding: 0;
   }
 
-  .overlay-legend .legend-full { display: none; }
-  .overlay-legend .legend-short { display: inline; }
+  .overlay-legend {
+    font-size: 0.7rem;
+  }
+
+  .info-panel.is-country #info-meta { display: none; }
 
   .map-chrome {
     max-width: none;
@@ -1546,6 +1553,36 @@ body:has(#about[open]) .map-chrome {
     gap: 0 8px;
   }
 
+  .center-in-layers {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px;
+    margin-top: 10px;
+    padding: 3px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--field);
+  }
+
+  .center-in-layers button {
+    flex: 1 1 auto;
+    min-height: 36px;
+    border: 0;
+    border-radius: 999px;
+    padding: 0 8px;
+    background: transparent;
+    color: var(--ink);
+    font-family: inherit;
+    font-size: var(--type-ui);
+    font-weight: 550;
+    cursor: pointer;
+  }
+
+  .center-in-layers button.is-active {
+    background: var(--ink);
+    color: var(--cream);
+  }
+
   legend {
     margin-bottom: 6px;
   }
@@ -1620,9 +1657,6 @@ body:has(#about[open]) .map-chrome {
     width: 36px;
     height: 36px;
   }
-
-  .info-panel.is-country #info-meta,
-  .info-panel #info-area { display: none; }
 
   .info-panel.is-city #info-meta {
     margin-top: 4px;
@@ -1711,6 +1745,10 @@ body:has(#about[open]) .map-chrome {
     min-height: 44px;
     height: 44px;
     padding: 0 14px;
+  }
+
+  .center-in-layers button {
+    min-height: 44px;
   }
 
   .check {

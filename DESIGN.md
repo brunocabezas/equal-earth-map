@@ -230,7 +230,7 @@ Pills (`999px`) for projection, center, and segmented choices. Fields `8px`. Leg
 
 ### Buttons
 - **Shape:** Full pill, min-height 36px, label type.
-- **Primary (dialog Close):** Ink fill, ice type, hover well teal.
+- **Primary (dialog action):** Ink fill, ice type, hover well teal. Used for About wall-map downloads.
 - **Icon (layers, About):** Cream-stroke pill on night with a visible label; icon-only 36×36 only under 360px / short landscape. Active layers invert to cream fill and ink.
 - **Mode pill:** Transparent until the menu is open, then cream fill and ink type. How Mercator stretches is a menu in the night bar (Every country / When I point / Hide comparison), not a second home projection.
 - **Segmented:** Field fill; active is ink fill and cream type; hover field-hover.
@@ -253,7 +253,7 @@ Pills (`999px`) for projection, center, and segmented choices. Fields `8px`. Leg
 Night bar, cream brand serif, thin-line globe mark, How Mercator stretches menu before the ice search well, then labeled Layers and About pills and a Language menu. On ≤1100px the tagline hides, that control shortens to Mercator stretch, and Language shortens to EN / ES / FR / PT / AR / ZH / RU. On ≤720px search becomes a labeled Search pill; the field opens as an ice overlay under the bar, and Mercator, Search, Layers, and Language menus center under the bar. The compact bar wraps onto a second row if the controls cannot fit. Under 360px the serif name hides and Mercator is chevron-only so the globe mark stands beside the icons; Language keeps its two-letter code. Wall-map downloads live in About as ice pills.
 
 ### About overlay
-Full-viewport layer (`100svh`), ice card centered. Title and Close stay pinned; only the prose column scrolls. Opening focuses the title without scrolling so the heading stays on screen. Map chrome hides while it is open.
+Full-viewport layer (`100svh`), ice card centered. Title and dismiss X stay pinned; only the prose column scrolls. Opening focuses the title without scrolling so the heading stays on screen. Map chrome hides while it is open.
 
 ### Layers popover
 Ice card hugging content, three default layer checks (Countries on, Cities and Labels off) plus a More layers disclosure for lakes, rivers, and the lat/long grid (also off until chosen). Countries is disabled so land cannot be turned off. Shared URLs use `on=` for extra layers. X to close. Absolute under the Layers pill on desktop; centered under the night bar on compact so the card stays in view. On compact, Africa / Americas / Pacific sit in this card so recenter stays reachable. While it is open, the rest of the atlas is inert so keyboard and assistive tech stay in the card.

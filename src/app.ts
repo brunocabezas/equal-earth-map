@@ -365,21 +365,6 @@
     const stage = requireElement("atlas-stage");
     const mapCanvas = requireElement<HTMLCanvasElement>("atlas-map");
     const overlayCanvas = requireElement<HTMLCanvasElement>("atlas-overlay");
-    const mapCtxMaybe = mapCanvas.getContext("2d", { alpha: false });
-    const overCtxMaybe = overlayCanvas.getContext("2d");
-    if (!mapCtxMaybe || !overCtxMaybe) {
-      atlasLoading = false;
-      return;
-    }
-    const mapCtx = mapCtxMaybe;
-    const overCtx = overCtxMaybe;
-    const hideCanvas = document.createElement("canvas");
-    const hideCtxMaybe = hideCanvas.getContext("2d", { willReadFrequently: true });
-    if (!hideCtxMaybe) {
-      atlasLoading = false;
-      return;
-    }
-    const hideCtx = hideCtxMaybe;
     const tooltip = requireElement("tooltip");
     const info = requireElement("place-info");
     const searchInput = requireElement<HTMLInputElement>("search");
@@ -411,6 +396,24 @@
       });
       status.append(" ", retry);
     };
+
+    const mapCtxMaybe = mapCanvas.getContext("2d", { alpha: false });
+    const overCtxMaybe = overlayCanvas.getContext("2d");
+    if (!mapCtxMaybe || !overCtxMaybe) {
+      atlasLoading = false;
+      setStatus("This browser cannot draw the map. Try again.", true);
+      return;
+    }
+    const mapCtx = mapCtxMaybe;
+    const overCtx = overCtxMaybe;
+    const hideCanvas = document.createElement("canvas");
+    const hideCtxMaybe = hideCanvas.getContext("2d", { willReadFrequently: true });
+    if (!hideCtxMaybe) {
+      atlasLoading = false;
+      setStatus("This browser cannot draw the map. Try again.", true);
+      return;
+    }
+    const hideCtx = hideCtxMaybe;
 
     setStatus(t("loading"));
     {
@@ -1249,14 +1252,16 @@
       dl.hidden = false;
       for (const row of rows) {
         const wrap = document.createElement("div");
-        wrap.title = row.label;
         const dt = document.createElement("dt");
-        const named = document.createElement("span");
-        named.className = "sr-only";
-        named.textContent = row.label;
-        dt.append(measureMark(row.kind, row.fill), named);
+        dt.append(measureMark(row.kind, row.fill));
         const dd = document.createElement("dd");
-        dd.textContent = row.value;
+        const named = document.createElement("span");
+        named.className = "measure-label";
+        named.textContent = row.label;
+        const value = document.createElement("span");
+        value.className = "measure-value";
+        value.textContent = row.value;
+        dd.append(named, value);
         wrap.append(dt, dd);
         dl.append(wrap);
       }
@@ -1605,7 +1610,21 @@
             : t("hintHover");
       }
       const legend = document.getElementById("overlay-legend");
-      if (legend) legend.hidden = !overlay;
+      const legendCompare = document.getElementById("legend-compare");
+      const legendRestore = document.getElementById("legend-restore");
+      const showRestore = state.projections.mercator && state.compareMode === "off";
+      if (legend) legend.hidden = !(overlay || showRestore);
+      if (legendCompare) legendCompare.hidden = !overlay;
+      if (legendRestore) legendRestore.hidden = !showRestore;
+      const mercatorToggle = document.getElementById("mercator-toggle");
+      if (mercatorToggle) {
+        mercatorToggle.setAttribute(
+          "aria-label",
+          showRestore
+            ? "How Mercator stretches countries (outlines hidden)"
+            : "How Mercator stretches countries"
+        );
+      }
       document.querySelectorAll<HTMLElement>("[data-compare]").forEach((node) => {
         const on = node.dataset.compare === state.compareMode;
         node.classList.toggle("is-active", on);
@@ -1622,6 +1641,16 @@
           : t("stageAriaPlain")
       );
     }
+
+    document.getElementById("legend-restore")?.addEventListener("click", () => {
+      state.compareMode = "always";
+      hideGhostsKey = "";
+      syncProjectionUI();
+      bake(currentTransform);
+      drawOverlay();
+      track("compare_mode", { mode: "always" });
+      syncLocation("replace");
+    });
 
     document.querySelectorAll<HTMLElement>("[data-compare]").forEach((button) => {
       button.addEventListener("click", () => {
@@ -1957,9 +1986,10 @@
   });
 
   document.querySelector(".skip-link")?.addEventListener("click", (event) => {
-    if (!isCompactView()) return;
     event.preventDefault();
-    openSearch();
+    closeSheets();
+    closeSearch();
+    requireElement("atlas-stage").focus();
   });
   document.getElementById("search-toggle")?.addEventListener("pointerdown", (event) => {
     event.stopPropagation();

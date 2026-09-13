@@ -182,7 +182,7 @@
     </script>
   </head>
   <body>
-    <a class="skip-link" href="#search" data-i18n="skipToSearch">Skip to search</a>
+    <a class="skip-link" href="#atlas-stage" data-i18n="skipToSearch">Skip to map</a>
     <header class="topbar">
       <a class="brand" id="brand-home" href="./" aria-label="Equal Earth home" data-i18n-aria="brandHome">
         <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true">
@@ -334,9 +334,14 @@
         </div>
         <div class="map-chrome bottom-left">
           <div class="panel overlay-legend" id="overlay-legend">
-            <p class="legend-lead" data-i18n="legendLead">Filled countries are true size. Outlines are how they look on Mercator.</p>
-            <span><span class="swatch swatch-ee" aria-hidden="true"></span> <span data-i18n="legendEqualEarth">This map: Equal Earth</span></span>
-            <span><span class="swatch swatch-merc" aria-hidden="true"></span> <span data-i18n="legendMercator">Looks this size on Mercator</span></span>
+            <div id="legend-compare">
+              <p class="legend-lead" data-i18n="legendLead">Filled countries are true size. Outlines are how they look on Mercator.</p>
+              <span><span class="swatch swatch-ee" aria-hidden="true"></span> <span data-i18n="legendEqualEarth">This map: Equal Earth</span></span>
+              <span><span class="swatch swatch-merc" aria-hidden="true"></span> <span data-i18n="legendMercator">Looks this size on Mercator</span></span>
+            </div>
+            <button type="button" class="legend-restore" id="legend-restore" hidden>
+              True size only. Show Mercator outlines
+            </button>
           </div>
         </div>
         <div class="map-chrome right">
@@ -375,6 +380,9 @@
 
     <dialog id="about" aria-labelledby="about-title">
       <div class="about-card">
+        <button type="button" class="info-close" id="about-close" aria-label="Close about" data-i18n-aria="close">
+          <svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" /></svg>
+        </button>
         <h2 id="about-title" tabindex="-1" data-i18n="aboutTitle">An interactive Equal Earth projection atlas</h2>
         <div class="about-body">
           <p data-i18n="aboutP1">
@@ -459,7 +467,6 @@
           </p>
           <p class="fine about-version" id="about-version">Version …</p>
         </div>
-        <button type="button" id="about-close" data-i18n="close">Close</button>
       </div>
     </dialog>
 

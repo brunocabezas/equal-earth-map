@@ -252,7 +252,6 @@ html, body {
 .seg-btn,
 .zoom-stack button,
 .center-stack button,
-#about-close,
 .sheet-close,
 .info-close,
 .compare-btn,
@@ -382,6 +381,10 @@ html, body {
 
 .bar-action.search-toggle {
   display: none;
+}
+
+.bar-action .icon {
+  flex-shrink: 0;
 }
 
 main {
@@ -552,7 +555,8 @@ legend {
   display: none;
 }
 
-.overlay-legend > span {
+.overlay-legend > span,
+#legend-compare > span {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -607,6 +611,12 @@ legend {
   font-weight: 550;
 }
 
+#legend-compare {
+  display: flex;
+  flex-direction: column;
+  gap: inherit;
+}
+
 .legend-lead {
   margin: 0;
   max-width: 28ch;
@@ -616,12 +626,45 @@ legend {
   line-height: 1.35;
 }
 
-.overlay-legend[hidden],
-#info-measures[hidden] {
+@media (prefers-reduced-motion: no-preference) {
+  .legend-lead {
+    animation: legend-lead-in 160ms ease;
+  }
+}
+
+@keyframes legend-lead-in {
+  from { opacity: 0.85; }
+  to { opacity: 1; }
+}
+
+.legend-restore {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--ink);
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: 550;
+  line-height: 1.35;
+  text-align: left;
+  max-width: 28ch;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.legend-restore:hover {
+  color: var(--accent-text);
+}
+
+.legend-restore[hidden],
+#legend-compare[hidden] {
   display: none;
 }
 
-#atlas-view:has(#atlas-controls.is-open) .overlay-legend {
+.overlay-legend[hidden],
+#info-measures[hidden] {
   display: none;
 }
 
@@ -648,14 +691,26 @@ legend {
 }
 
 #info-measures dd {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
   margin: 0;
   min-width: 0;
   color: var(--ink);
+}
+
+.measure-label {
+  color: var(--ink-soft);
+  font-size: var(--type-meta);
+  font-weight: 450;
+  line-height: 1.3;
+}
+
+.measure-value {
   font-size: var(--type-meta);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   overflow-wrap: anywhere;
-  white-space: nowrap;
 }
 
 .segmented {
@@ -1236,6 +1291,7 @@ body:has(#about[open]) .map-chrome {
 
 .about-card {
   display: flex;
+  position: relative;
   flex-direction: column;
   width: min(560px, 100%);
   max-height: min(80vh, calc(100svh - 24px));
@@ -1256,6 +1312,7 @@ body:has(#about[open]) .map-chrome {
 .about-card h2 {
   flex-shrink: 0;
   margin: 0 0 12px;
+  padding-right: 36px;
   font-family: var(--serif);
   font-size: 1.5rem;
   font-weight: 600;
@@ -1358,22 +1415,8 @@ body:has(#about[open]) .map-chrome {
 }
 
 #about-close {
-  flex-shrink: 0;
-  align-self: start;
-  margin-top: 8px;
-  border: 0;
-  border-radius: 999px;
-  min-height: var(--control);
-  padding: 0 16px;
-  background: var(--ink);
-  color: var(--cream);
-  font-size: var(--type-ui);
-  font-weight: 550;
-  transition: background 160ms ease;
-}
-
-#about-close:hover {
-  background: var(--night-deep);
+  top: 12px;
+  right: 12px;
 }
 
 .page-missing {
@@ -1710,11 +1753,19 @@ body:has(#about[open]) .map-chrome {
     width: max-content;
     min-width: min-content;
     max-width: none;
-    gap: 6px;
-    padding: 10px 14px;
+    gap: 4px;
+    padding: 8px 12px;
+    font-size: var(--type-meta);
   }
 
-  .overlay-legend > span {
+  .legend-lead,
+  .legend-restore {
+    max-width: none;
+    font-size: inherit;
+  }
+
+  .overlay-legend > span,
+  #legend-compare > span {
     white-space: nowrap;
   }
 
@@ -1779,8 +1830,14 @@ body:has(#about[open]) .map-chrome {
   .sheet-close {
     min-width: 44px;
     min-height: 44px;
-    width: 44px;
     height: 44px;
+  }
+
+  .icon-btn,
+  .zoom-stack button,
+  .info-close,
+  .sheet-close {
+    width: 44px;
   }
 
   .center-stack button {

@@ -97,6 +97,7 @@ interface MeasureRow {
   kind: MeasureKind;
   label: string;
   value: string;
+  fill?: string;
 }
 
 interface CountryCacheItem {

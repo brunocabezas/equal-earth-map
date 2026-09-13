@@ -1660,6 +1660,7 @@
         "aria-label",
         overlay
           ? (state.compareMode === "always"
+          ? (state.compareMode === "always"
             ? t("stageAriaAlways")
             : inspectOnTap()
               ? t("stageAriaTap")

@@ -83,6 +83,22 @@
   --type-brand: 1.25rem;
 }
 
+html[lang="ar"] {
+  --sans: "Segoe UI", "Tahoma", "Geeza Pro", "Noto Naskh Arabic", sans-serif;
+  --serif: "Georgia", "Times New Roman", "Noto Naskh Arabic", serif;
+}
+
+html[lang="zh-Hans"],
+html[lang="zh"] {
+  --sans: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+  --serif: "Songti SC", "STSong", "Noto Serif SC", serif;
+}
+
+html[lang="ru"] {
+  --sans: "Segoe UI", "Source Sans 3", sans-serif;
+  --serif: "Iowan Old Style", "Georgia", "Source Serif 4", serif;
+}
+
 * { box-sizing: border-box; }
 
 html, body {
@@ -252,7 +268,7 @@ html, body {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  margin-left: auto;
+  margin-inline-start: auto;
   position: relative;
   min-width: 0;
   flex: 1 1 auto;
@@ -440,7 +456,7 @@ main {
 }
 
 .status-refresh {
-  margin-left: 8px;
+  margin-inline-start: 8px;
   border: 0;
   border-radius: 999px;
   min-height: var(--control);
@@ -463,23 +479,23 @@ main {
   z-index: 3;
 }
 
-.map-chrome.left { left: var(--space-4); }
+.map-chrome.left { inset-inline-start: var(--space-4); }
 
-.map-chrome.right { right: var(--space-4); left: auto; }
+.map-chrome.right { inset-inline-end: var(--space-4); inset-inline-start: auto; }
 
 .map-chrome.bottom-left {
   top: auto;
   bottom: var(--space-4);
-  left: var(--space-4);
-  right: auto;
+  inset-inline-start: var(--space-4);
+  inset-inline-end: auto;
   max-width: min(360px, calc(100% - 32px));
 }
 
 .map-chrome.bottom-right {
   top: auto;
   bottom: var(--space-4);
-  right: var(--space-4);
-  left: auto;
+  inset-inline-end: var(--space-4);
+  inset-inline-start: auto;
   max-width: none;
 }
 
@@ -694,7 +710,7 @@ legend {
   color: var(--ink);
   font-size: var(--type-ui);
   font-weight: 550;
-  text-align: left;
+  text-align: start;
   transition: background 160ms ease, color 160ms ease;
 }
 
@@ -752,7 +768,7 @@ legend {
   display: none;
   position: absolute;
   top: calc(100% + 8px);
-  right: 0;
+  inset-inline-end: 0;
   width: min(300px, calc(100vw - 24px));
   height: max-content;
   z-index: 6;
@@ -763,17 +779,21 @@ legend {
 }
 
 .sheet-menu {
-  left: 0;
-  right: auto;
+  inset-inline-start: 0;
+  inset-inline-end: auto;
   width: min(13.5rem, calc(100vw - 24px));
   min-width: 0;
   height: auto;
   overflow: visible;
 }
 
+#lang-menu {
+  width: min(14.5rem, calc(100vw - 24px));
+}
+
 .bar-menu-end .sheet {
-  left: auto;
-  right: 0;
+  inset-inline-start: auto;
+  inset-inline-end: 0;
 }
 
 .sheet .panel {
@@ -832,14 +852,14 @@ legend {
   overflow: auto;
   overscroll-behavior: contain;
   scrollbar-color: rgba(5, 74, 82, 0.35) transparent;
-  padding-right: 36px;
+  padding-inline-end: 36px;
 }
 
 .info-close {
   display: grid;
   position: absolute;
   top: 6px;
-  right: 6px;
+  inset-inline-end: 6px;
   width: 36px;
   height: 36px;
   place-items: center;
@@ -862,7 +882,8 @@ legend {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 0 10px 0 12px;
+  padding-inline: 12px 10px;
+  padding-block: 0;
   border-radius: var(--radius);
   background: var(--field);
 }
@@ -942,7 +963,7 @@ legend {
   padding: 8px 10px;
   background: transparent;
   color: inherit;
-  text-align: left;
+  text-align: start;
   cursor: pointer;
   font: inherit;
   overflow-wrap: anywhere;
@@ -1380,7 +1401,7 @@ body:has(#about[open]) .map-chrome {
   .bar-end {
     display: flex;
     flex-wrap: wrap;
-    margin-left: auto;
+    margin-inline-start: auto;
     min-width: 0;
     flex: 1 1 auto;
     justify-content: flex-end;
@@ -1402,8 +1423,7 @@ body:has(#about[open]) .map-chrome {
   }
 
   .map-chrome.left {
-    left: 8px;
-    right: 8px;
+    inset-inline: 8px;
     top: 8px;
     bottom: auto;
     overflow: visible;
@@ -1411,8 +1431,8 @@ body:has(#about[open]) .map-chrome {
 
   .map-chrome.bottom-left {
     top: auto;
-    left: 8px;
-    right: auto;
+    inset-inline-start: 8px;
+    inset-inline-end: auto;
     width: max-content;
     bottom: max(8px, env(safe-area-inset-bottom));
     max-width: calc(100% - 72px);
@@ -1421,7 +1441,7 @@ body:has(#about[open]) .map-chrome {
   .map-chrome.right {
     top: auto;
     bottom: max(8px, env(safe-area-inset-bottom));
-    right: 8px;
+    inset-inline-end: 8px;
     z-index: 5;
   }
 
@@ -1465,6 +1485,10 @@ body:has(#about[open]) .map-chrome {
 
   .sheet-menu {
     width: min(13.5rem, calc(100vw - 24px));
+  }
+
+  #lang-menu {
+    width: min(14.5rem, calc(100vw - 24px));
   }
 
   #atlas-controls {
@@ -1559,13 +1583,13 @@ body:has(#about[open]) .map-chrome {
   }
 
   .info-panel h2 {
-    padding-right: 4px;
+    padding-inline-end: 4px;
     font-size: 1.05rem;
   }
 
   .info-close {
     top: 4px;
-    right: 4px;
+    inset-inline-end: 4px;
     width: 36px;
     height: 36px;
   }
@@ -1622,6 +1646,13 @@ body:has(#about[open]) .map-chrome {
     padding: 0;
     justify-content: center;
   }
+  .lang-toggle {
+    width: auto;
+    min-width: var(--control);
+    padding: 0 8px;
+  }
+  .lang-toggle .label-short { display: inline; }
+  .lang-toggle .chevron { display: none; }
 }
 
 @media (max-width: 720px) and (max-height: 500px) {

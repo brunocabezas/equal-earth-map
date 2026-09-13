@@ -66,7 +66,6 @@
     graticule: cssToken("--graticule", "rgba(237, 246, 249, 0.35)")
   };
 
-  const HOME_TITLE = document.title;
   const state: AtlasState = {
     projections: {
       equalEarth: true,
@@ -76,13 +75,17 @@
     layers: defaultAtlasLayers(),
     compareMode: defaultAtlasCompareMode(),
     selected: null,
-    about: false
+    about: false,
+    lang: "en"
   };
   const bootUrl = parseAtlasUrl(location.search);
   state.center = bootUrl.center;
   state.layers = { ...bootUrl.layers };
   state.compareMode = bootUrl.compareMode;
   state.about = bootUrl.about;
+  state.lang = resolveAtlasLocale(bootUrl.lang);
+  if (state.lang !== currentAtlasLocale()) applyAtlasLocale(state.lang);
+  persistAtlasLocale(state.lang);
 
   let applyingUrl = false;
 
@@ -113,7 +116,7 @@
   }
 
   function applyDocumentTitle() {
-    document.title = state.selected ? `${state.selected} — Equal Earth Map` : HOME_TITLE;
+    document.title = state.selected ? t("selectedTitle", { name: state.selected }) : t("metaTitle");
   }
 
   function syncLocation(mode: "push" | "replace") {
@@ -123,6 +126,10 @@
     if (`${location.pathname}${location.search}${location.hash}` === next) return;
     if (mode === "push") history.pushState(null, "", next);
     else history.replaceState(null, "", next);
+  }
+
+  if (!bootUrl.lang && state.lang !== defaultAtlasLocale()) {
+    syncLocation("replace");
   }
 
   syncSettingsChrome();
@@ -140,14 +147,20 @@
 
   function atlasHomeHref(): string {
     const host = location.hostname;
-    if (host === "localhost" || host === "127.0.0.1") {
-      return `${location.origin}/`;
-    }
-    return (window.EQUAL_EARTH_SITE && window.EQUAL_EARTH_SITE.siteUrl) || "https://trueearthmap.com/";
+    const origin = host === "localhost" || host === "127.0.0.1"
+      ? `${location.origin}/`
+      : (window.EQUAL_EARTH_SITE && window.EQUAL_EARTH_SITE.siteUrl) || "https://trueearthmap.com/";
+    if (state.lang === defaultAtlasLocale()) return origin;
+    const url = new URL(origin);
+    url.searchParams.set("lang", state.lang);
+    return url.toString();
   }
 
   const brandHome = document.getElementById("brand-home");
-  if (brandHome instanceof HTMLAnchorElement) brandHome.href = atlasHomeHref();
+  function refreshBrandHome() {
+    if (brandHome instanceof HTMLAnchorElement) brandHome.href = atlasHomeHref();
+  }
+  refreshBrandHome();
 
   function openAboutDialog() {
     if (about.open) return;
@@ -213,9 +226,9 @@
 
   function formatPop(n: number) {
     if (!n) return "";
-    if (n >= 1e6) return `${(n / 1e6).toFixed(n >= 1e7 ? 0 : 1)} million`;
-    if (n >= 1e3) return `${Math.round(n / 1e3)} thousand`;
-    return String(n);
+    if (n >= 1e6) return t("popMillion", { n: (n / 1e6).toFixed(n >= 1e7 ? 0 : 1) });
+    if (n >= 1e3) return t("popThousand", { n: Math.round(n / 1e3) });
+    return formatAtlasNumber(n);
   }
 
   function km2(feature: CountryFeature) {
@@ -225,7 +238,7 @@
   function formatAreaKm2(area: number, { approx = false }: { approx?: boolean } = {}) {
     if (!Number.isFinite(area) || area <= 0) return "—";
     const rounded = Math.round(area);
-    const text = `${rounded.toLocaleString()} km²`;
+    const text = `${formatAtlasNumber(rounded)} km²`;
     return approx ? `~${text}` : text;
   }
 
@@ -238,8 +251,8 @@
 
   function formatInflation(ratio: number | null | undefined) {
     if (ratio == null || !Number.isFinite(ratio) || ratio <= 0) return null;
-    if (ratio > 1) return `${formatFactor(ratio)}× larger in Mercator`;
-    if (ratio < 1) return `${formatFactor(1 / ratio)}× smaller in Mercator`;
+    if (ratio > 1) return t("largerMercator", { n: formatFactor(ratio) });
+    if (ratio < 1) return t("smallerMercator", { n: formatFactor(1 / ratio) });
     return "1.00×";
   }
 
@@ -372,6 +385,7 @@
     const searchInput = requireElement<HTMLInputElement>("search");
     const results = requireElement("search-results");
     const searchEmpty = requireElement("search-empty");
+    let lastCity: Place | null = null;
 
     const status = document.getElementById("atlas-status");
     const setStatus = (message: string, isError = false) => {
@@ -391,14 +405,14 @@
       const retry = document.createElement("button");
       retry.type = "button";
       retry.className = "status-refresh";
-      retry.textContent = "Try again";
+      retry.textContent = t("tryAgain");
       retry.addEventListener("click", () => {
         void initAtlas();
       });
       status.append(" ", retry);
     };
 
-    setStatus("Loading Natural Earth data…");
+    setStatus(t("loading"));
     {
       const w = stage.clientWidth || atlasView.clientWidth;
       const h = stage.clientHeight || atlasView.clientHeight;
@@ -427,12 +441,12 @@
       countriesTopo = await countriesPreviewPromise;
     } catch {
       atlasLoading = false;
-      setStatus("Could not load map data. Try again.", true);
+      setStatus(t("loadError"), true);
       return;
     }
     if (!countriesTopo || !countriesTopo.objects.countries) {
       atlasLoading = false;
-      setStatus("Could not load map data. Try again.", true);
+      setStatus(t("loadError"), true);
       return;
     }
     atlasReady = true;
@@ -1172,6 +1186,7 @@
     function hidePlace() {
       const hadSelection = state.selected !== null;
       state.selected = null;
+      lastCity = null;
       info.hidden = true;
       const measures = document.getElementById("info-measures");
       if (measures) {
@@ -1267,29 +1282,29 @@
         meta.textContent = "";
         area.textContent = "";
       } else if (comparing && hasOutline) {
-        meta.textContent = "The outline is Mercator’s apparent size — muted at rest, full coral when you point at it.";
-        area.textContent = "The outline is this country scaled to how large it looks on Mercator.";
+        meta.textContent = t("outlineMuted");
+        area.textContent = t("outlineScaled");
       } else if (comparing) {
-        meta.textContent = "Mercator barely changes this country’s size.";
-        area.textContent = "Near the equator the two projections agree closely on size, so there is no extra outline.";
+        meta.textContent = t("equatorBarely");
+        area.textContent = t("equatorNoOutline");
       } else {
-        meta.textContent = "Equal Earth keeps relative area true.";
+        meta.textContent = t("equalEarthTrue");
         const inflationNote = formatInflation(stats.ratio);
         area.textContent = inflationNote
-          ? `This land would appear ${inflationNote} than its true size.`
-          : "Near the equator Mercator and Equal Earth agree on size.";
+          ? t("wouldAppear", { note: inflationNote })
+          : t("equatorAgree");
       }
 
       const rows: MeasureRow[] = [{
         kind: "true",
-        label: "True area",
+        label: t("trueArea"),
         value: formatAreaKm2(stats.trueKm2),
         fill: colorFor(feature.properties.name)
       }];
       const inflation = formatInflation(stats.ratio);
       if (inflation && stats.ratio) {
-        rows.push({ kind: "mercator", label: "Looks this size on Mercator", value: formatAreaKm2(stats.trueKm2 * stats.ratio, { approx: true }) });
-        rows.push({ kind: "ratio", label: "Difference", value: inflation });
+        rows.push({ kind: "mercator", label: t("looksMercator"), value: formatAreaKm2(stats.trueKm2 * stats.ratio, { approx: true }) });
+        rows.push({ kind: "ratio", label: t("difference"), value: inflation });
       }
       renderMeasures(rows);
     }
@@ -1304,7 +1319,8 @@
     function showPlace(place: Place, focusInfo = false) {
       const hadSelection = state.selected !== null;
       state.selected = null;
-      const kind = place.capital ? "Capital" : "City";
+      lastCity = place;
+      const kind = place.capital ? t("capital") : t("city");
       info.classList.add("is-city");
       info.classList.remove("is-country");
       requireElement("info-title").textContent = place.name;
@@ -1323,6 +1339,7 @@
     function selectCountry(feature: CountryFeature, focusInfo = false) {
       const changed = state.selected !== feature.properties.name;
       state.selected = feature.properties.name;
+      lastCity = null;
       updateCountryInfo(feature);
       bake(currentTransform);
       zoomToFeature(feature);
@@ -1343,6 +1360,8 @@
       state.compareMode = view.compareMode;
       state.center = view.center;
       state.about = view.about;
+      state.lang = view.lang ?? defaultAtlasLocale();
+      if (state.lang !== currentAtlasLocale()) applyAtlasLocale(state.lang);
       Object.assign(state.layers, view.layers);
       syncSettingsChrome();
       syncProjectionUI();
@@ -1426,7 +1445,7 @@
         searchInput.setAttribute("aria-expanded", "false");
         searchInput.removeAttribute("aria-activedescendant");
         searchEmpty.hidden = false;
-        searchEmpty.textContent = `No places match “${query.trim()}”`;
+        searchEmpty.textContent = t("searchEmpty", { query: query.trim() });
         return;
       }
       results.hidden = false;
@@ -1442,8 +1461,8 @@
         const name = document.createTextNode(hit.name);
         const meta = document.createElement("small");
         meta.textContent = hit.kind === "country"
-          ? "Country"
-          : `${hit.country || "City"}${hit.capital ? " · capital" : ""}`;
+          ? t("searchKindCountry")
+          : `${hit.country || t("city")}${hit.capital ? ` · ${t("cityMetaCapital")}` : ""}`;
         button.append(name, meta);
         button.addEventListener("click", () => {
           hideSearchResults();
@@ -1569,10 +1588,10 @@
       const hint = document.getElementById("proj-hint");
       if (hint) {
         hint.textContent = state.compareMode === "always"
-          ? "Outlines show how large countries look on Mercator."
+          ? t("hintAlways")
           : inspectOnTap()
-            ? "Tap a country to see Mercator’s apparent size."
-            : "Point at a country to see Mercator’s apparent size.";
+            ? t("hintTap")
+            : t("hintHover");
       }
       const legend = document.getElementById("overlay-legend");
       if (legend) legend.hidden = !overlay;
@@ -1585,11 +1604,11 @@
         "aria-label",
         overlay
           ? (state.compareMode === "always"
-            ? "Equal Earth map with Mercator size outlines. Arrow keys pan, Enter selects the country in the center, plus and minus zoom, Escape clears the selection."
+            ? t("stageAriaAlways")
             : inspectOnTap()
-              ? "Equal Earth map. Tap a country for Mercator size. Arrow keys pan, Enter selects the country in the center, plus and minus zoom, Escape clears the selection."
-              : "Equal Earth map. Hover a country for Mercator size. Arrow keys pan, Enter selects the country in the center, plus and minus zoom, Escape clears the selection.")
-          : "Equal Earth world map. Arrow keys pan, Enter selects the country in the center, plus and minus zoom, Escape clears the selection."
+              ? t("stageAriaTap")
+              : t("stageAriaHover"))
+          : t("stageAriaPlain")
       );
     }
 
@@ -1667,6 +1686,13 @@
 
     atlas = { resize: () => layout(), dismissSelection };
     syncProjectionUI();
+    onAtlasLocaleChange(() => {
+      syncProjectionUI();
+      const feature = selectedFeature();
+      if (feature) updateCountryInfo(feature);
+      else if (lastCity && !info.hidden) showPlace(lastCity);
+      if (searchInput.value) search(searchInput.value);
+    });
     layout({ reset: true });
     applyingUrl = true;
     try {
@@ -1801,6 +1827,7 @@
       document.getElementById("search-toggle"),
       document.getElementById("search-panel"),
       document.getElementById("about-open"),
+      document.getElementById("lang-toggle"),
       document.querySelector("main"),
       document.querySelector("footer"),
       document.getElementById("about")
@@ -1844,36 +1871,63 @@
         document.body.classList.add("sheet-open");
         setSheetInert(true);
       }
-      sheet.querySelector<HTMLElement>(".sheet-close, [data-compare]")?.focus();
+      sheet.querySelector<HTMLElement>(".sheet-close, [data-compare], [data-lang]")?.focus();
     }
   }
 
-  requireElement("mercator-menu").addEventListener("keydown", (event) => {
-    const items = [...requireElement("mercator-menu").querySelectorAll<HTMLElement>("[role='menuitemradio']")];
-    if (!items.length) return;
-    const current = document.activeElement instanceof HTMLElement ? items.indexOf(document.activeElement) : -1;
-    const nextIndex = (from: number, offset: number) => {
-      if (from < 0) return offset > 0 ? 0 : items.length - 1;
-      return (from + offset + items.length) % items.length;
-    };
-    if (event.key === "ArrowDown" || event.key === "ArrowRight") {
-      items[nextIndex(current, 1)]?.focus();
-      event.preventDefault();
-    } else if (event.key === "ArrowUp" || event.key === "ArrowLeft") {
-      items[nextIndex(current, -1)]?.focus();
-      event.preventDefault();
-    } else if (event.key === "Home") {
-      items[0]?.focus();
-      event.preventDefault();
-    } else if (event.key === "End") {
-      items[items.length - 1]?.focus();
-      event.preventDefault();
-    }
-  });
+  function bindRadioMenu(menuId: string) {
+    requireElement(menuId).addEventListener("keydown", (event) => {
+      const items = [...requireElement(menuId).querySelectorAll<HTMLElement>("[role='menuitemradio']")];
+      if (!items.length) return;
+      const current = document.activeElement instanceof HTMLElement ? items.indexOf(document.activeElement) : -1;
+      const nextIndex = (from: number, offset: number) => {
+        if (from < 0) return offset > 0 ? 0 : items.length - 1;
+        return (from + offset + items.length) % items.length;
+      };
+      const rtl = document.documentElement.dir === "rtl";
+      const nextKey = rtl ? "ArrowLeft" : "ArrowRight";
+      const prevKey = rtl ? "ArrowRight" : "ArrowLeft";
+      if (event.key === "ArrowDown" || event.key === nextKey) {
+        items[nextIndex(current, 1)]?.focus();
+        event.preventDefault();
+      } else if (event.key === "ArrowUp" || event.key === prevKey) {
+        items[nextIndex(current, -1)]?.focus();
+        event.preventDefault();
+      } else if (event.key === "Home") {
+        items[0]?.focus();
+        event.preventDefault();
+      } else if (event.key === "End") {
+        items[items.length - 1]?.focus();
+        event.preventDefault();
+      }
+    });
+  }
+
+  bindRadioMenu("mercator-menu");
+  bindRadioMenu("lang-menu");
 
   requireElement("mercator-toggle").addEventListener("click", (event) => {
     event.stopPropagation();
     toggleSheet("mercator-menu", { modal: false });
+  });
+  requireElement("lang-toggle").addEventListener("click", (event) => {
+    event.stopPropagation();
+    toggleSheet("lang-menu", { modal: false });
+  });
+  document.querySelectorAll<HTMLElement>("[data-lang]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const next = button.dataset.lang;
+      if (!isAtlasLocale(next) || next === state.lang) {
+        closeSheets(true);
+        return;
+      }
+      state.lang = next;
+      applyAtlasLocale(next);
+      track("language", { lang: next });
+      refreshBrandHome();
+      syncLocation("push");
+      closeSheets(true);
+    });
   });
   requireElement("atlas-controls-toggle").addEventListener("click", (event) => {
     event.stopPropagation();
@@ -1938,7 +1992,7 @@
     const sha = version?.commit;
     const short = version?.short || (sha ? sha.slice(0, 7) : "");
     if (!sha || short === "local") {
-      el.textContent = "Version local";
+      el.textContent = t("versionLocal");
       return;
     }
     const date = version?.builtAt ? String(version.builtAt).slice(0, 10) : "";
@@ -1949,7 +2003,7 @@
     link.rel = "noopener noreferrer";
     link.tabIndex = -1;
     link.textContent = short;
-    el.replaceChildren("Version ", link, date ? ` · ${date}` : "");
+    el.replaceChildren(`${t("versionLabel")} `, link, date ? ` · ${date}` : "");
   }
 
   document.getElementById("about-open")?.addEventListener("click", () => {
@@ -1968,6 +2022,11 @@
     syncLocation("replace");
   });
   renderAboutVersion();
+  onAtlasLocaleChange(() => {
+    refreshBrandHome();
+    applyDocumentTitle();
+    renderAboutVersion();
+  });
 
   window.addEventListener("keydown", (event) => {
     const sheet = document.querySelector<HTMLElement>(".sheet.is-open");

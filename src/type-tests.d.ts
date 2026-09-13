@@ -1,6 +1,9 @@
 type _SearchHit = AssertEqual<SearchHit["kind"], "country" | "city">;
 type _Layers = AssertEqual<keyof LayerFlags, LayerName>;
-type _Analytics = AssertEqual<keyof AnalyticsEvents, "download_map" | "select_country" | "projection" | "compare_mode">;
+type _Analytics = AssertEqual<keyof AnalyticsEvents, "download_map" | "select_country" | "projection" | "compare_mode" | "language">;
 type _UrlView = AssertEqual<AtlasUrlView["compareMode"], CompareMode>;
 type _AboutUrl = AssertEqual<AtlasUrlView["about"], boolean>;
 type _CenterName = AssertEqual<AtlasCenterName, "africa" | "americas" | "pacific">;
+type _Locale = AssertEqual<AtlasLocaleId, "en" | "es" | "fr" | "pt" | "ar" | "zh" | "ru">;
+type _UrlLang = AssertEqual<AtlasUrlView["lang"], AtlasLocaleId | null>;
+type _StateLang = AssertEqual<AtlasState["lang"], AtlasLocaleId>;

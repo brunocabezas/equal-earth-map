@@ -1,9 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
     <loc>https://trueearthmap.com/</loc>
     <lastmod>2026-09-13</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://trueearthmap.com/" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://trueearthmap.com/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://trueearthmap.com/?lang=es" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://trueearthmap.com/?lang=fr" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://trueearthmap.com/?lang=pt" />
+    <xhtml:link rel="alternate" hreflang="ar" href="https://trueearthmap.com/?lang=ar" />
+    <xhtml:link rel="alternate" hreflang="zh-Hans" href="https://trueearthmap.com/?lang=zh" />
+    <xhtml:link rel="alternate" hreflang="ru" href="https://trueearthmap.com/?lang=ru" />
   </url>
 </urlset>

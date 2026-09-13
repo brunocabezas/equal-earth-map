@@ -4,6 +4,7 @@ type CompareMode = "hover" | "always";
 type ZoomAction = "in" | "out" | "home";
 type LayerName = "countries" | "lakes" | "rivers" | "cities" | "labels" | "graticule";
 type AtlasCenterName = "africa" | "americas" | "pacific";
+type AtlasLocaleId = "en" | "es" | "fr" | "pt" | "ar" | "zh" | "ru";
 
 type LayerFlags = { [K in LayerName]: boolean };
 type ProjectionFlags = { [K in ProjectionName]: boolean };
@@ -15,6 +16,7 @@ interface AtlasState {
   compareMode: CompareMode;
   selected: string | null;
   about: boolean;
+  lang: AtlasLocaleId;
 }
 
 interface AtlasUrlView {
@@ -23,6 +25,126 @@ interface AtlasUrlView {
   center: number;
   layers: LayerFlags;
   about: boolean;
+  lang: AtlasLocaleId | null;
+}
+
+interface AtlasLocaleMeta {
+  id: AtlasLocaleId;
+  bcp47: string;
+  ogLocale: string;
+  dir: "ltr" | "rtl";
+  nativeName: string;
+  shortLabel: string;
+}
+
+interface AtlasFaqItem {
+  name: string;
+  text: string;
+}
+
+interface AtlasMessages {
+  metaTitle: string;
+  metaDescription: string;
+  ogImageAlt: string;
+  selectedTitle: string;
+  jsonLdAppDescription: string;
+  jsonLdKeywords: string;
+  skipToSearch: string;
+  brandHome: string;
+  tagline: string;
+  language: string;
+  languageMenu: string;
+  mercatorSize: string;
+  mercatorShort: string;
+  mercatorMenu: string;
+  compareAlways: string;
+  compareHover: string;
+  compareTap: string;
+  hintAlways: string;
+  hintHover: string;
+  hintTap: string;
+  search: string;
+  searchCountryOrCity: string;
+  searchPlaceholder: string;
+  searchResults: string;
+  searchEmpty: string;
+  layers: string;
+  closeLayers: string;
+  mapLayers: string;
+  layerCountries: string;
+  layerLakes: string;
+  layerRivers: string;
+  layerCities: string;
+  layerLabels: string;
+  layerGraticule: string;
+  about: string;
+  atlasView: string;
+  loading: string;
+  loadError: string;
+  tryAgain: string;
+  clearSelection: string;
+  zoomIn: string;
+  zoomOut: string;
+  resetView: string;
+  mapCenter: string;
+  centerAfrica: string;
+  centerAmericas: string;
+  centerPacific: string;
+  centerAfricaTitle: string;
+  centerAmericasTitle: string;
+  centerPacificTitle: string;
+  legendEqualEarth: string;
+  legendEqualEarthShort: string;
+  legendMercator: string;
+  legendMercatorShort: string;
+  attribFull: string;
+  attribShort: string;
+  close: string;
+  politicalMap: string;
+  physicalMap: string;
+  aboutTitle: string;
+  aboutP1: string;
+  aboutP2: string;
+  aboutP3: string;
+  aboutP4: string;
+  aboutVote: string;
+  voteInFavor: string;
+  voteAgainst: string;
+  voteAbstained: string;
+  voteAgainstWho: string;
+  voteAbstainedWho: string;
+  aboutP5: string;
+  aboutVoteRecord: string;
+  aboutVoteLink: string;
+  aboutP6: string;
+  aboutP7: string;
+  aboutCredit: string;
+  versionLocal: string;
+  versionLabel: string;
+  outlineMuted: string;
+  outlineScaled: string;
+  equatorBarely: string;
+  equatorNoOutline: string;
+  equalEarthTrue: string;
+  wouldAppear: string;
+  equatorAgree: string;
+  trueArea: string;
+  looksMercator: string;
+  difference: string;
+  largerMercator: string;
+  smallerMercator: string;
+  capital: string;
+  city: string;
+  country: string;
+  cityMetaCapital: string;
+  popMillion: string;
+  popThousand: string;
+  stageAriaAlways: string;
+  stageAriaTap: string;
+  stageAriaHover: string;
+  stageAriaPlain: string;
+  searchKindCountry: string;
+  faq: AtlasFaqItem[];
 }
 
 interface SiteConfig {
@@ -132,6 +254,7 @@ type AnalyticsEvents = {
   select_country: { name: string };
   projection: { equalEarth: boolean; mercator: boolean };
   compare_mode: { mode: CompareMode };
+  language: { lang: AtlasLocaleId };
 };
 
 type DeepReadonly<T> = {

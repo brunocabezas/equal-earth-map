@@ -51,18 +51,6 @@ typography:
     fontWeight: 600
     lineHeight: 1.2
     letterSpacing: "-0.02em"
-  headline:
-    fontFamily: "Source Serif 4, Iowan Old Style, Georgia, serif"
-    fontSize: "1.5rem"
-    fontWeight: 600
-    lineHeight: 1.2
-    letterSpacing: "-0.02em"
-  title:
-    fontFamily: "Source Serif 4, Iowan Old Style, Georgia, serif"
-    fontSize: "1.375rem"
-    fontWeight: 600
-    lineHeight: 1.2
-    letterSpacing: "-0.02em"
   body:
     fontFamily: "Source Sans 3, Segoe UI, sans-serif"
     fontSize: "1rem"

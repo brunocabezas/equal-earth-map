@@ -254,12 +254,18 @@
               <fieldset class="layer-set">
                 <legend class="sr-only" data-i18n="mapLayers">Map layers</legend>
                 <label class="check"><input type="checkbox" data-layer="countries" checked /> <span data-i18n="layerCountries">Countries</span></label>
-                <label class="check"><input type="checkbox" data-layer="lakes" checked /> <span data-i18n="layerLakes">Lakes</span></label>
-                <label class="check"><input type="checkbox" data-layer="rivers" checked /> <span data-i18n="layerRivers">Rivers</span></label>
                 <label class="check"><input type="checkbox" data-layer="cities" checked /> <span data-i18n="layerCities">Cities</span></label>
                 <label class="check"><input type="checkbox" data-layer="labels" checked /> <span data-i18n="layerLabels">Labels</span></label>
-                <label class="check"><input type="checkbox" data-layer="graticule" checked /> <span data-i18n="layerGraticule">Graticule</span></label>
               </fieldset>
+              <details class="layer-more">
+                <summary>More</summary>
+                <fieldset class="layer-set">
+                  <legend class="sr-only">More map layers</legend>
+                  <label class="check"><input type="checkbox" data-layer="lakes" checked /> <span data-i18n="layerLakes">Lakes</span></label>
+                  <label class="check"><input type="checkbox" data-layer="rivers" checked /> <span data-i18n="layerRivers">Rivers</span></label>
+                  <label class="check"><input type="checkbox" data-layer="graticule" checked /> <span data-i18n="layerGraticule">Lat/long grid</span></label>
+                </fieldset>
+              </details>
               <div class="center-in-layers" role="group" aria-label="Map center">
                 <button type="button" class="is-active" data-center="0">Africa</button>
                 <button type="button" data-center="-90">Americas</button>

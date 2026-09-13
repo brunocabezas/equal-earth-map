@@ -87,7 +87,7 @@ function parseAtlasUrl(search: string): AtlasUrlView {
   if (off) {
     for (const token of off.split(",")) {
       const name = token.trim();
-      if (isAtlasLayerName(name)) layers[name] = false;
+      if (isAtlasLayerName(name) && name !== "countries") layers[name] = false;
     }
   }
   const compare = params.get("compare");

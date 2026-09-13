@@ -791,6 +791,26 @@ legend {
   grid-column: 1 / -1;
 }
 
+.layer-more {
+  margin-top: 8px;
+}
+
+.layer-more summary {
+  cursor: pointer;
+  color: var(--ink-soft);
+  font-size: var(--type-meta);
+  font-weight: 550;
+  list-style: none;
+}
+
+.layer-more summary::-webkit-details-marker {
+  display: none;
+}
+
+.layer-more .layer-set {
+  margin-top: 4px;
+}
+
 .sheet {
   display: none;
   position: absolute;

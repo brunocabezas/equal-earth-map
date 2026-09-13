@@ -1713,6 +1713,10 @@
       input.addEventListener("change", () => {
         const layer = input.dataset.layer;
         if (!isLayerName(layer)) return;
+        if (layer === "countries" && !input.checked) {
+          input.checked = true;
+          return;
+        }
         state.layers[layer] = input.checked;
         bake(currentTransform);
         drawOverlay();

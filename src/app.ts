@@ -36,27 +36,35 @@
     "#e8d0c4", "#dcc8bc", "#c9d8d2", "#e4ddd4",
     "#ffd8cc", "#d0ddd8", "#ecd4c8"
   ] as const;
+  function cssToken(name: string, fallback: string) {
+    const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    return value || fallback;
+  }
+
   const OVERLAY_HOVER_MIN_FACTOR = 1.5;
   const OVERLAY_DIM_ALPHA = 0.5;
   const MAP = {
-    ocean: "#b9d2df",
-    lake: "#8fb8cc",
-    river: "#6a9bb0",
-    sphere: "#7f9aa8",
-    countryStroke: "rgba(5,74,82,0.28)",
-    hover: "#054a52",
-    hoverFill: "rgba(5,74,82,0.07)",
-    selected: "#032f34",
-    mercFill: "rgba(194,97,72,0.5)",
-    mercStroke: "#c26148",
-    mercMuteFill: "rgba(194,97,72,0.22)",
-    mercMuteStroke: "rgba(194,97,72,0.62)",
-    capital: "#e29578",
-    city: "#032f34",
-    label: "#054a52",
-    labelHalo: "rgba(237,246,249,0.9)",
-    graticule: "rgba(237,246,249,0.35)"
-  } as const satisfies DeepReadonly<Record<string, string>>;
+    ocean: cssToken("--ocean", "#b9d2df"),
+    lake: cssToken("--lake", "#8fb8cc"),
+    river: cssToken("--ocean-deep", "#6a9bb0"),
+    sphere: cssToken("--sphere", "#7f9aa8"),
+    countryStroke: cssToken("--country-stroke", "rgba(5, 74, 82, 0.28)"),
+    hover: cssToken("--ink", "#054a52"),
+    hoverFill: cssToken("--hover-fill", "rgba(5, 74, 82, 0.07)"),
+    selected: cssToken("--night-deep", "#032f34"),
+    mercFill: cssToken("--merc-fill", "rgba(194, 97, 72, 0.5)"),
+    mercStroke: cssToken("--accent", "#c26148"),
+    mercMuteFill: cssToken("--merc-mute-fill", "rgba(194, 97, 72, 0.22)"),
+    mercMuteStroke: cssToken("--merc-mute-stroke", "rgba(194, 97, 72, 0.62)"),
+    mercHatch: cssToken("--merc-hatch", "rgba(194, 97, 72, 0.42)"),
+    mercHatchMute: cssToken("--merc-hatch-mute", "rgba(194, 97, 72, 0.24)"),
+    capital: cssToken("--accent-bright", "#e29578"),
+    city: cssToken("--night-deep", "#032f34"),
+    cityHalo: cssToken("--city-halo", "#edf6f9"),
+    label: cssToken("--ink", "#054a52"),
+    labelHalo: cssToken("--label-halo", "rgba(237, 246, 249, 0.9)"),
+    graticule: cssToken("--graticule", "rgba(237, 246, 249, 0.35)")
+  };
 
   const HOME_TITLE = document.title;
   const state: AtlasState = {
@@ -123,7 +131,7 @@
 
   let atlasReady = false;
   let atlasLoading = false;
-  let atlas: { resize: () => void } | null = null;
+  let atlas: { resize: () => void; dismissSelection: () => boolean } | null = null;
 
   const atlasView = requireElement("atlas-view");
   const about = requireElement<HTMLDialogElement>("about");
@@ -309,6 +317,10 @@
     if (atlasLoading) return;
     atlasLoading = true;
 
+    const countriesPreviewPromise = d3.json<CountriesTopology>("data/countries-preview.json");
+    const countriesPromise = d3.json<CountriesTopology>("data/countries-50m.json");
+    const placesPromise = d3.json<Place[]>("data/places.json");
+
     const stage = requireElement("atlas-stage");
     const mapCanvas = requireElement<HTMLCanvasElement>("atlas-map");
     const overlayCanvas = requireElement<HTMLCanvasElement>("atlas-overlay");
@@ -331,6 +343,7 @@
     const info = requireElement("place-info");
     const searchInput = requireElement<HTMLInputElement>("search");
     const results = requireElement("search-results");
+    const searchEmpty = requireElement("search-empty");
 
     const status = document.getElementById("atlas-status");
     const setStatus = (message: string, isError = false) => {
@@ -358,23 +371,38 @@
     };
 
     setStatus("Loading Natural Earth data…");
+    {
+      const w = stage.clientWidth || atlasView.clientWidth;
+      const h = stage.clientHeight || atlasView.clientHeight;
+      if (w > 0 && h > 0) {
+        const d = Math.min(window.devicePixelRatio || 1, 2);
+        mapCanvas.width = Math.round(w * d);
+        mapCanvas.height = Math.round(h * d);
+        mapCanvas.style.width = `${w}px`;
+        mapCanvas.style.height = `${h}px`;
+        mapCtx.setTransform(d, 0, 0, d, 0, 0);
+        mapCtx.fillStyle = MAP.ocean;
+        mapCtx.fillRect(0, 0, w, h);
+        const outline = d3.geoPath(makeProjection(baseProjectionName(), w, h))({ type: "Sphere" });
+        if (outline) {
+          const sphere = new Path2D(outline);
+          mapCtx.fill(sphere);
+          mapCtx.strokeStyle = MAP.sphere;
+          mapCtx.lineWidth = 1;
+          mapCtx.stroke(sphere);
+        }
+      }
+    }
+
     let countriesTopo: CountriesTopology | undefined;
-    let lakesGeo: LakeCollection | undefined;
-    let riversGeo: RiverCollection | undefined;
-    let places: Place[] | undefined;
     try {
-      [countriesTopo, lakesGeo, riversGeo, places] = await Promise.all([
-        d3.json<CountriesTopology>("data/countries-50m.json"),
-        d3.json<LakeCollection>("data/lakes-50m.geojson"),
-        d3.json<RiverCollection>("data/rivers-50m.geojson"),
-        d3.json<Place[]>("data/places.json")
-      ]);
+      countriesTopo = await countriesPreviewPromise;
     } catch {
       atlasLoading = false;
       setStatus("Could not load map data. Try again.", true);
       return;
     }
-    if (!countriesTopo || !lakesGeo || !riversGeo || !isPlaceList(places) || !countriesTopo.objects.countries) {
+    if (!countriesTopo || !countriesTopo.objects.countries) {
       atlasLoading = false;
       setStatus("Could not load map data. Try again.", true);
       return;
@@ -382,11 +410,11 @@
     atlasReady = true;
     setStatus("");
 
-    const countries = topojson.feature(countriesTopo, countriesTopo.objects.countries) as CountryCollection;
-    const lakes = lakesGeo.features.filter((d: LakeFeature) => d.properties.scalerank <= 2);
-    const rivers = riversGeo.features.filter((d: RiverFeature) => d.properties.featurecla !== "Lake Centerline");
-    const placeList = places;
-    const citySource = placeList.filter((place) => place.capital || place.rank <= 3 || place.pop >= 1e6);
+    let countries = topojson.feature(countriesTopo, countriesTopo.objects.countries) as CountryCollection;
+    let lakes: LakeFeature[] = [];
+    let rivers: RiverFeature[] = [];
+    let placeList: Place[] = [];
+    let citySource: Place[] = [];
     const graticule = d3.geoGraticule10();
 
     let width = 0;
@@ -415,7 +443,8 @@
     let graticulePath: Path2D | null;
     let interacting = false;
     const sizeIndex = new Map<string, SizeStats>();
-    {
+    function fillSizeIndex() {
+      sizeIndex.clear();
       const pair = makeMeasurePair();
       const eePath = d3.geoPath(pair.ee);
       const mercPath = d3.geoPath(pair.merc);
@@ -430,6 +459,7 @@
         });
       }
     }
+    fillSizeIndex();
 
     const zoom = d3.zoom<HTMLElement, unknown>()
       .scaleExtent([0.8, 28])
@@ -771,7 +801,7 @@
       tile.height = size;
       const ink = tile.getContext("2d");
       if (!ink) return null;
-      ink.strokeStyle = muted ? "rgba(194,97,72,0.24)" : "rgba(194,97,72,0.42)";
+      ink.strokeStyle = muted ? MAP.mercHatchMute : MAP.mercHatch;
       ink.lineWidth = 0.9;
       ink.lineCap = "square";
       ink.beginPath();
@@ -985,7 +1015,7 @@
           overCtx.fillStyle = place.capital ? MAP.capital : MAP.city;
           overCtx.arc(x, y, place.capital ? 3.2 : 2.1, 0, Math.PI * 2);
           overCtx.fill();
-          overCtx.strokeStyle = "#fff";
+          overCtx.strokeStyle = MAP.cityHalo;
           overCtx.lineWidth = 1;
           overCtx.stroke();
         }
@@ -1125,6 +1155,18 @@
       if (hadSelection) syncLocation("push");
     }
 
+    function dismissSelection() {
+      const hadInfo = !info.hidden;
+      const hadSelected = state.selected !== null;
+      const hadHover = hoverName !== null;
+      if (!hadInfo && !hadSelected && !hadHover) return false;
+      hoverName = null;
+      hideTip();
+      hidePlace();
+      drawOverlay();
+      return true;
+    }
+
     function measureMark(kind: MeasureKind, fill?: string) {
       if (kind === "true" || kind === "mercator") {
         const mark = document.createElement("span");
@@ -1232,6 +1274,8 @@
     }
 
     function showPlace(place: Place, focusInfo = false) {
+      const hadSelection = state.selected !== null;
+      state.selected = null;
       const kind = place.capital ? "Capital" : "City";
       info.classList.add("is-city");
       info.classList.remove("is-country");
@@ -1240,6 +1284,11 @@
       renderMeasures([]);
       requireElement("info-area").textContent = "";
       syncOverlayLegendFocus();
+      if (hadSelection) {
+        bake(currentTransform);
+        drawOverlay();
+        if (!applyingUrl) syncLocation("push");
+      }
       revealPlace(focusInfo);
     }
 
@@ -1315,11 +1364,19 @@
       );
     }
 
+    function hideSearchResults() {
+      results.hidden = true;
+      results.replaceChildren();
+      searchEmpty.hidden = true;
+      searchEmpty.textContent = "";
+      searchInput.setAttribute("aria-expanded", "false");
+      searchInput.removeAttribute("aria-activedescendant");
+    }
+
     function search(query: string) {
       const q = query.trim().toLowerCase();
       if (q.length < 1) {
-        results.hidden = true;
-        results.replaceChildren();
+        hideSearchResults();
         return;
       }
       const countryHits: CountryHit[] = countries.features
@@ -1332,19 +1389,26 @@
         .map((d) => ({ kind: "city", ...d }));
       const hits: SearchHit[] = [...countryHits, ...cityHits].slice(0, 8);
       results.replaceChildren();
-      results.hidden = false;
+      searchEmpty.hidden = true;
+      searchEmpty.textContent = "";
       if (hits.length === 0) {
-        const empty = document.createElement("li");
-        empty.className = "search-empty";
-        empty.setAttribute("role", "status");
-        empty.textContent = `No places match “${query.trim()}”`;
-        results.append(empty);
+        results.hidden = true;
+        searchInput.setAttribute("aria-expanded", "false");
+        searchInput.removeAttribute("aria-activedescendant");
+        searchEmpty.hidden = false;
+        searchEmpty.textContent = `No places match “${query.trim()}”`;
         return;
       }
-      hits.forEach((hit) => {
+      results.hidden = false;
+      searchInput.setAttribute("aria-expanded", "true");
+      hits.forEach((hit, index) => {
         const item = document.createElement("li");
+        item.setAttribute("role", "presentation");
         const button = document.createElement("button");
         button.type = "button";
+        button.id = `search-opt-${index}`;
+        button.setAttribute("role", "option");
+        button.setAttribute("aria-selected", "false");
         const name = document.createTextNode(hit.name);
         const meta = document.createElement("small");
         meta.textContent = hit.kind === "country"
@@ -1352,10 +1416,10 @@
           : `${hit.country || "City"}${hit.capital ? " · capital" : ""}`;
         button.append(name, meta);
         button.addEventListener("click", () => {
-          results.hidden = true;
-          results.replaceChildren();
+          hideSearchResults();
           searchInput.value = hit.name;
           closeSheets();
+          closeSearch();
           if (hit.kind === "country") selectCountry(hit.feature, true);
           else {
             const xy = projection([hit.lon, hit.lat]);
@@ -1364,6 +1428,13 @@
               zoomToPoint(xy[0], xy[1], 8);
             }
           }
+        });
+        button.addEventListener("focus", () => {
+          results.querySelectorAll<HTMLElement>("[role='option']").forEach((node) => {
+            node.classList.toggle("is-active", node === button);
+            node.setAttribute("aria-selected", String(node === button));
+          });
+          searchInput.setAttribute("aria-activedescendant", button.id);
         });
         item.append(button);
         results.append(item);
@@ -1422,10 +1493,30 @@
         return;
       }
       if (event.key !== "Escape") return;
-      results.hidden = true;
-      results.replaceChildren();
-      if (searchInput.value) searchInput.value = "";
-      else searchInput.blur();
+      if (!results.hidden) {
+        hideSearchResults();
+        event.preventDefault();
+        event.stopPropagation();
+        return;
+      }
+      if (searchInput.value) {
+        searchInput.value = "";
+        event.preventDefault();
+        event.stopPropagation();
+        return;
+      }
+      if (document.getElementById("search-panel")?.classList.contains("is-open")) {
+        closeSearch(true);
+        event.preventDefault();
+        event.stopPropagation();
+        return;
+      }
+      if (dismissSelection()) {
+        event.preventDefault();
+        event.stopPropagation();
+        return;
+      }
+      searchInput.blur();
       event.stopPropagation();
     });
     results.addEventListener("keydown", (event) => {
@@ -1464,11 +1555,11 @@
         "aria-label",
         overlay
           ? (state.compareMode === "always"
-            ? "Equal Earth map with Mercator size outlines. Arrow keys pan, Enter selects the country in the center, plus and minus zoom."
+            ? "Equal Earth map with Mercator size outlines. Arrow keys pan, Enter selects the country in the center, plus and minus zoom, Escape clears the selection."
             : inspectOnTap()
-              ? "Equal Earth map. Tap a country for Mercator size. Arrow keys pan, Enter selects the country in the center, plus and minus zoom."
-              : "Equal Earth map. Hover a country for Mercator size. Arrow keys pan, Enter selects the country in the center, plus and minus zoom.")
-          : "Equal Earth world map. Arrow keys pan, Enter selects the country in the center, plus and minus zoom."
+              ? "Equal Earth map. Tap a country for Mercator size. Arrow keys pan, Enter selects the country in the center, plus and minus zoom, Escape clears the selection."
+              : "Equal Earth map. Hover a country for Mercator size. Arrow keys pan, Enter selects the country in the center, plus and minus zoom, Escape clears the selection.")
+          : "Equal Earth world map. Arrow keys pan, Enter selects the country in the center, plus and minus zoom, Escape clears the selection."
       );
     }
 
@@ -1528,9 +1619,9 @@
 
     requireElement("info-close").addEventListener("click", (event) => {
       event.stopPropagation();
-      hidePlace();
-      drawOverlay();
-      searchInput.focus();
+      dismissSelection();
+      if (searchInput.offsetParent) searchInput.focus();
+      else stage.focus();
     });
 
     window.addEventListener("resize", onViewportChange);
@@ -1541,9 +1632,10 @@
     function onViewportChange() {
       layout();
       syncProjectionUI();
+      if (!isCompactView()) closeSearch();
     }
 
-    atlas = { resize: () => layout() };
+    atlas = { resize: () => layout(), dismissSelection };
     syncProjectionUI();
     layout({ reset: true });
     applyingUrl = true;
@@ -1566,18 +1658,140 @@
     if (document.fonts && document.fonts.ready) {
       document.fonts.ready.then(() => drawOverlay());
     }
+
+    async function loadWater() {
+      try {
+        const [lakesGeo, riversGeo] = await Promise.all([
+          d3.json<LakeCollection>("data/lakes-50m.geojson"),
+          d3.json<RiverCollection>("data/rivers-50m.geojson")
+        ]);
+        if (!lakesGeo || !riversGeo) return;
+        lakes = lakesGeo.features.filter((d: LakeFeature) => d.properties.scalerank <= 2);
+        rivers = riversGeo.features.filter((d: RiverFeature) => d.properties.featurecla !== "Lake Centerline");
+        rebuildPaths();
+        bake(currentTransform);
+        drawOverlay();
+      } catch {
+        // Countries already painted; lakes and rivers stay empty.
+      }
+    }
+
+    void loadWater();
+    void countriesPromise.then((full) => {
+      if (!full?.objects.countries) return;
+      countries = topojson.feature(full, full.objects.countries) as CountryCollection;
+      fillSizeIndex();
+      rebuildPaths();
+      bake(currentTransform);
+      drawOverlay();
+      if (!state.selected) return;
+      const selected = featureByName(state.selected);
+      if (selected) updateCountryInfo(selected);
+    }).catch(() => {
+      // Preview land is already on screen.
+    });
+    void placesPromise.then((loaded) => {
+      if (!isPlaceList(loaded)) return;
+      placeList = loaded;
+      citySource = placeList.filter((place) => place.capital || place.rank <= 3 || place.pop >= 1e6);
+      drawOverlay();
+    }).catch(() => {
+      // Countries already painted; city dots and city search stay empty.
+    });
     atlasLoading = false;
   }
 
   let sheetFocusReturn: HTMLElement | null = null;
 
+  const searchPanelHome = document.createComment("search-panel-home");
+  requireElement("search-panel").before(searchPanelHome);
+  let searchToggleLock = false;
+
+  function dockSearchPanel() {
+    const panel = requireElement("search-panel");
+    if (searchPanelHome.nextSibling !== panel) searchPanelHome.after(panel);
+    panel.style.removeProperty("top");
+  }
+
+  function hideSearchChrome() {
+    const results = document.getElementById("search-results");
+    const empty = document.getElementById("search-empty");
+    if (results) {
+      results.hidden = true;
+      results.replaceChildren();
+    }
+    if (empty) {
+      empty.hidden = true;
+      empty.textContent = "";
+    }
+    document.getElementById("search")?.setAttribute("aria-expanded", "false");
+    document.getElementById("search")?.removeAttribute("aria-activedescendant");
+  }
+
+  function closeSearch(restoreFocus = false) {
+    const panel = document.getElementById("search-panel");
+    const toggle = document.getElementById("search-toggle");
+    const wasOpen = Boolean(panel?.classList.contains("is-open"));
+    panel?.classList.remove("is-open");
+    dockSearchPanel();
+    toggle?.setAttribute("aria-expanded", "false");
+    document.body.classList.remove("search-open");
+    hideSearchChrome();
+    if (!wasOpen) return;
+    if (restoreFocus && toggle instanceof HTMLElement) toggle.focus();
+  }
+
+  function openSearch() {
+    closeSheets();
+    const panel = requireElement("search-panel");
+    const toggle = document.getElementById("search-toggle");
+    const input = requireElement<HTMLInputElement>("search");
+    const bar = document.querySelector(".topbar");
+    panel.classList.add("is-open");
+    toggle?.setAttribute("aria-expanded", "true");
+    if (isCompactView()) {
+      document.body.classList.add("search-open");
+      document.body.append(panel);
+      if (bar instanceof HTMLElement) {
+        panel.style.top = `${Math.round(bar.getBoundingClientRect().bottom + 8)}px`;
+      }
+      searchToggleLock = true;
+      window.setTimeout(() => {
+        searchToggleLock = false;
+      }, 400);
+    }
+    input.focus();
+  }
+
+  function sheetInertTargets() {
+    return [
+      document.querySelector(".skip-link"),
+      document.querySelector(".brand"),
+      document.querySelector(".bar-menu:not(.bar-menu-end)"),
+      document.getElementById("search-toggle"),
+      document.getElementById("search-panel"),
+      document.getElementById("about-open"),
+      document.querySelector("main"),
+      document.querySelector("footer"),
+      document.getElementById("about")
+    ];
+  }
+
+  function setSheetInert(on: boolean) {
+    for (const node of sheetInertTargets()) {
+      if (node instanceof HTMLElement) node.inert = on;
+    }
+  }
+
   function closeSheets(restoreFocus = false) {
     const wasOpen = Boolean(document.querySelector(".sheet.is-open"));
     document.querySelectorAll(".sheet.is-open").forEach((sheet) => sheet.classList.remove("is-open"));
     document.querySelectorAll("[aria-expanded='true'][aria-controls]").forEach((toggle) => {
+      if (toggle.id === "search-toggle" || toggle.id === "search") return;
       toggle.setAttribute("aria-expanded", "false");
     });
     document.body.classList.remove("sheet-open");
+    setSheetInert(false);
     if (restoreFocus && wasOpen && sheetFocusReturn) {
       sheetFocusReturn.focus();
       sheetFocusReturn = null;
@@ -1590,17 +1804,42 @@
     const open = !sheet.classList.contains("is-open");
     closeSheets();
     if (open) {
-      const results = document.getElementById("search-results");
-      if (results) results.hidden = true;
+      closeSearch();
       sheet.classList.add("is-open");
       if (button instanceof HTMLElement) {
         button.setAttribute("aria-expanded", "true");
         sheetFocusReturn = button;
       }
-      if (modal) document.body.classList.add("sheet-open");
+      if (modal) {
+        document.body.classList.add("sheet-open");
+        setSheetInert(true);
+      }
       sheet.querySelector<HTMLElement>(".sheet-close, [data-compare]")?.focus();
     }
   }
+
+  requireElement("mercator-menu").addEventListener("keydown", (event) => {
+    const items = [...requireElement("mercator-menu").querySelectorAll<HTMLElement>("[role='menuitemradio']")];
+    if (!items.length) return;
+    const current = document.activeElement instanceof HTMLElement ? items.indexOf(document.activeElement) : -1;
+    const nextIndex = (from: number, offset: number) => {
+      if (from < 0) return offset > 0 ? 0 : items.length - 1;
+      return (from + offset + items.length) % items.length;
+    };
+    if (event.key === "ArrowDown" || event.key === "ArrowRight") {
+      items[nextIndex(current, 1)]?.focus();
+      event.preventDefault();
+    } else if (event.key === "ArrowUp" || event.key === "ArrowLeft") {
+      items[nextIndex(current, -1)]?.focus();
+      event.preventDefault();
+    } else if (event.key === "Home") {
+      items[0]?.focus();
+      event.preventDefault();
+    } else if (event.key === "End") {
+      items[items.length - 1]?.focus();
+      event.preventDefault();
+    }
+  });
 
   requireElement("mercator-toggle").addEventListener("click", (event) => {
     event.stopPropagation();
@@ -1613,14 +1852,37 @@
   document.querySelectorAll(".sheet-close").forEach((button) => {
     button.addEventListener("click", () => closeSheets(true));
   });
-  requireElement("sheet-backdrop").addEventListener("click", () => closeSheets(true));
+  requireElement("sheet-backdrop").addEventListener("click", () => {
+    closeSheets(true);
+    closeSearch(true);
+  });
+
+  document.querySelector(".skip-link")?.addEventListener("click", (event) => {
+    if (!isCompactView()) return;
+    event.preventDefault();
+    openSearch();
+  });
+  document.getElementById("search-toggle")?.addEventListener("pointerdown", (event) => {
+    event.stopPropagation();
+  });
+  document.getElementById("search-toggle")?.addEventListener("click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (searchToggleLock) return;
+    const panel = requireElement("search-panel");
+    if (panel.classList.contains("is-open")) closeSearch(true);
+    else openSearch();
+  });
 
   document.addEventListener("pointerdown", (event) => {
     const target = event.target;
     if (!(target instanceof Node)) return;
     const searchPanel = document.querySelector(".search-panel");
-    const results = document.getElementById("search-results");
-    if (results && searchPanel && !searchPanel.contains(target)) results.hidden = true;
+    const searchToggle = document.getElementById("search-toggle");
+    if (searchPanel && !searchPanel.contains(target) && !(searchToggle instanceof Node && searchToggle.contains(target))) {
+      hideSearchChrome();
+      closeSearch();
+    }
     const sheet = document.querySelector(".sheet.is-open");
     if (!sheet) return;
     const toggle = document.querySelector(`[aria-controls="${sheet.id}"]`);
@@ -1701,13 +1963,29 @@
     if (event.target instanceof HTMLElement && event.target.matches("input, textarea")) return;
     const zoomRoot = document.getElementById("atlas-zoom");
     if (!zoomRoot) return;
-    if (event.key === "+" || event.key === "=") zoomRoot.querySelector<HTMLElement>("[data-zoom=in]")?.click();
-    if (event.key === "-" || event.key === "_") zoomRoot.querySelector<HTMLElement>("[data-zoom=out]")?.click();
-    if (event.key === "0") zoomRoot.querySelector<HTMLElement>("[data-zoom=home]")?.click();
+    const mapKeysBlocked = about.open
+      || Boolean(document.querySelector(".sheet.is-open"))
+      || Boolean(document.getElementById("search-panel")?.classList.contains("is-open"))
+      || Boolean(document.getElementById("search-results") && !document.getElementById("search-results")?.hidden);
+    if (!mapKeysBlocked) {
+      if (event.key === "+" || event.key === "=") zoomRoot.querySelector<HTMLElement>("[data-zoom=in]")?.click();
+      if (event.key === "-" || event.key === "_") zoomRoot.querySelector<HTMLElement>("[data-zoom=out]")?.click();
+      if (event.key === "0") zoomRoot.querySelector<HTMLElement>("[data-zoom=home]")?.click();
+    }
     if (event.key === "Escape") {
       const results = document.getElementById("search-results");
-      if (results && !results.hidden) {
-        results.hidden = true;
+      const empty = document.getElementById("search-empty");
+      if ((results && !results.hidden) || (empty && !empty.hidden)) {
+        hideSearchChrome();
+        const active = document.activeElement;
+        if (active instanceof HTMLElement && results?.contains(active)) {
+          document.getElementById("search")?.focus();
+        }
+        event.preventDefault();
+        return;
+      }
+      if (document.getElementById("search-panel")?.classList.contains("is-open")) {
+        closeSearch(true);
         event.preventDefault();
         return;
       }
@@ -1716,7 +1994,15 @@
         event.preventDefault();
         return;
       }
-      about.close();
+      if (about.open) {
+        about.close();
+        event.preventDefault();
+        return;
+      }
+      if (atlas?.dismissSelection()) {
+        document.getElementById("atlas-stage")?.focus();
+        event.preventDefault();
+      }
     }
   });
 

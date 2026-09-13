@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-09-10T22:50:00.000Z",
+  "generatedAt": "2026-09-13T17:03:00.000Z",
   "title": "Design System: Equal Earth Map",
   "extensions": {
     "colorMeta": {
@@ -22,6 +22,18 @@
         "canonical": "#a84c38",
         "tonalRamp": ["#5c241c", "#7f3428", "#a84c38", "#c26148", "#e29578", "#ffddd2", "#ffe8de", "#fff6f2"]
       },
+      "merc-hatch": {
+        "role": "primary",
+        "displayName": "Mercator hatch",
+        "canonical": "rgba(194, 97, 72, 0.42)",
+        "tonalRamp": ["#5c241c", "#7f3428", "#a84c38", "#c26148", "#e29578", "#ffddd2", "#ffe8de", "#fff6f2"]
+      },
+      "merc-hatch-mute": {
+        "role": "primary",
+        "displayName": "Mercator hatch mute",
+        "canonical": "rgba(194, 97, 72, 0.24)",
+        "tonalRamp": ["#5c241c", "#7f3428", "#a84c38", "#c26148", "#e29578", "#ffddd2", "#ffe8de", "#fff6f2"]
+      },
       "ocean": {
         "role": "secondary",
         "displayName": "Globe ocean",
@@ -33,6 +45,12 @@
         "displayName": "Ocean deep",
         "canonical": "#6a9bb0",
         "tonalRamp": ["#3d5e6c", "#6a8a98", "#6a9bb0", "#7f9aa8", "#8fb8cc", "#b9d2df", "#cfe0e8", "#f4f8fa"]
+      },
+      "lake": {
+        "role": "secondary",
+        "displayName": "Lake",
+        "canonical": "#8fb8cc",
+        "tonalRamp": ["#3d5e6c", "#6a8a98", "#6a9bb0", "#8fb8cc", "#b9d2df", "#cfe0e8", "#e4eef2", "#f4f8fa"]
       },
       "ink": {
         "role": "neutral",
@@ -62,6 +80,12 @@
         "role": "neutral",
         "displayName": "Ice soft",
         "canonical": "#d4e8ea",
+        "tonalRamp": ["#032f34", "#054a52", "#4d7378", "#83c5be", "#b8ddd9", "#d4e8ea", "#edf6f9", "#f8fcfd"]
+      },
+      "city-halo": {
+        "role": "neutral",
+        "displayName": "City halo",
+        "canonical": "#edf6f9",
         "tonalRamp": ["#032f34", "#054a52", "#4d7378", "#83c5be", "#b8ddd9", "#d4e8ea", "#edf6f9", "#f8fcfd"]
       },
       "paper": {
@@ -109,8 +133,10 @@
     },
     "typographyMeta": {
       "display": { "displayName": "Display", "purpose": "Product name in the night bar." },
+      "display-compact": { "displayName": "Display compact", "purpose": "Product name in the night bar on ≤720px." },
       "headline": { "displayName": "Headline", "purpose": "About and 404 titles." },
       "title": { "displayName": "Title", "purpose": "Selected place name on a legend card." },
+      "title-compact": { "displayName": "Title compact", "purpose": "Selected place name on narrow viewports." },
       "body": { "displayName": "Body", "purpose": "UI copy and About prose." },
       "label": { "displayName": "Label", "purpose": "Buttons, legends, checks." },
       "meta": { "displayName": "Meta", "purpose": "Footer, fieldset legends, result kinds." },
@@ -128,11 +154,17 @@
         "name": "ease-standard",
         "value": "160ms ease",
         "purpose": "Color and background state changes on controls."
+      },
+      {
+        "name": "reduce",
+        "value": "transition: none",
+        "purpose": "Honor prefers-reduced-motion on chrome hovers; map zoom is already duration 0."
       }
     ],
     "breakpoints": [
       { "name": "narrow", "value": "1100px" },
-      { "name": "compact", "value": "720px" }
+      { "name": "compact", "value": "720px" },
+      { "name": "tight", "value": "360px" }
     ]
   },
   "components": [
@@ -156,16 +188,16 @@
       "name": "Mode Pill",
       "kind": "nav",
       "refersTo": "mode-btn-active",
-      "description": "Projection and center choices on the night bar.",
-      "html": "<div class=\"ds-mode\"><button class=\"ds-mode-btn ds-mode-btn-active\" type=\"button\">Equal Earth</button><button class=\"ds-mode-btn ds-mode-btn-active\" type=\"button\">Mercator</button></div>",
-      "css": ".ds-mode { display: flex; padding: 3px; border-radius: 999px; background: rgba(237, 246, 249, 0.08); } .ds-mode-btn { border: 0; border-radius: 999px; min-height: 36px; padding: 0 14px; background: transparent; color: #d4e8ea; font-family: 'Source Sans 3', 'Segoe UI', sans-serif; font-size: 0.875rem; font-weight: 550; cursor: pointer; transition: background 160ms ease, color 160ms ease; } .ds-mode-btn:hover { color: #edf6f9; background: rgba(237, 246, 249, 0.08); } .ds-mode-btn-active, .ds-mode-btn-active:hover { background: #edf6f9; color: #054a52; } .ds-mode-btn:focus-visible { outline: 2px solid #c26148; outline-offset: 2px; }"
+      "description": "Mercator size menu trigger on the night bar. Cream fill only while the menu is open.",
+      "html": "<div class=\"ds-mode\"><button class=\"ds-mode-btn\" type=\"button\">Mercator size</button><button class=\"ds-mode-btn ds-mode-btn-active\" type=\"button\" aria-expanded=\"true\">Mercator size</button></div>",
+      "css": ".ds-mode { display: flex; gap: 8px; padding: 3px; border-radius: 999px; background: color-mix(in srgb, #edf6f9 8%, transparent); } .ds-mode-btn { border: 0; border-radius: 999px; min-height: 36px; padding: 0 14px; background: transparent; color: #d4e8ea; font-family: 'Source Sans 3', 'Segoe UI', sans-serif; font-size: 0.875rem; font-weight: 550; cursor: pointer; transition: background 160ms ease, color 160ms ease; } .ds-mode-btn:hover { color: #edf6f9; background: color-mix(in srgb, #edf6f9 8%, transparent); } .ds-mode-btn-active, .ds-mode-btn-active:hover { background: #edf6f9; color: #054a52; } .ds-mode-btn:focus-visible { outline: 2px solid #c26148; outline-offset: 2px; }"
     },
     {
       "name": "Search Field",
       "kind": "input",
       "refersTo": "input-search",
-      "description": "Place search well on a legend card.",
-      "html": "<label class=\"ds-search\"><svg class=\"ds-search-icon\" viewBox=\"0 0 16 16\" aria-hidden=\"true\"><circle cx=\"7\" cy=\"7\" r=\"4.25\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\"/><path d=\"M10.2 10.2 13.5 13.5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\"/></svg><input class=\"ds-search-input\" type=\"search\" placeholder=\"Ghana, Tokyo…\" /></label>",
+      "description": "Place search well. Desktop: in the night bar. Compact: ice overlay under the search icon.",
+      "html": "<label class=\"ds-search\"><svg class=\"ds-search-icon\" viewBox=\"0 0 16 16\" aria-hidden=\"true\"><circle cx=\"7\" cy=\"7\" r=\"4.25\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\"/><path d=\"M10.2 10.2 13.5 13.5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\"/></svg><input class=\"ds-search-input\" type=\"search\" placeholder=\"Greenland, Africa…\" /></label>",
       "css": ".ds-search { display: flex; align-items: center; gap: 8px; padding: 0 10px 0 12px; border-radius: 8px; background: #ffffff; } .ds-search-icon { width: 16px; height: 16px; color: #4d7378; flex-shrink: 0; } .ds-search-input { width: 100%; min-height: 36px; border: 0; padding: 0; background: transparent; color: #054a52; caret-color: #c26148; font-family: 'Source Sans 3', 'Segoe UI', sans-serif; font-size: 16px; outline: none; } .ds-search-input::placeholder { color: #4d7378; opacity: 1; } .ds-search:focus-within { box-shadow: 0 0 0 2px #c26148; } .ds-search:focus-within .ds-search-icon { color: #054a52; }"
     },
     {
@@ -188,9 +220,9 @@
       "name": "Icon Button",
       "kind": "button",
       "refersTo": "button-icon",
-      "description": "Layers and About on night chrome.",
-      "html": "<button class=\"ds-icon-btn\" type=\"button\" aria-label=\"Layers\"><svg viewBox=\"0 0 16 16\" width=\"16\" height=\"16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\"><path d=\"M2.5 4.5h11M4 8h8M5.5 11.5h5\"/></svg></button>",
-      "css": ".ds-icon-btn { display: grid; place-items: center; width: 36px; height: 36px; border: 1px solid rgba(237, 246, 249, 0.22); border-radius: 999px; background: transparent; color: #edf6f9; cursor: pointer; transition: background 160ms ease, border-color 160ms ease, color 160ms ease; } .ds-icon-btn:hover { background: rgba(237, 246, 249, 0.1); border-color: rgba(237, 246, 249, 0.4); } .ds-icon-btn[aria-expanded=\"true\"], .ds-icon-btn.is-active { background: #edf6f9; border-color: #edf6f9; color: #054a52; } .ds-icon-btn:focus-visible { outline: 2px solid #c26148; outline-offset: 2px; }"
+      "description": "Layers, About, and compact Search on night chrome.",
+      "html": "<button class=\"ds-icon-btn\" type=\"button\" aria-label=\"Search\"><svg viewBox=\"0 0 16 16\" width=\"16\" height=\"16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\"><circle cx=\"7\" cy=\"7\" r=\"4.25\"/><path d=\"M10.2 10.2 13.5 13.5\"/></svg></button>",
+      "css": ".ds-icon-btn { display: grid; place-items: center; width: 36px; height: 36px; border: 1px solid color-mix(in srgb, #edf6f9 22%, transparent); border-radius: 999px; background: transparent; color: #edf6f9; cursor: pointer; transition: background 160ms ease, border-color 160ms ease, color 160ms ease; } .ds-icon-btn:hover { background: color-mix(in srgb, #edf6f9 10%, transparent); border-color: color-mix(in srgb, #edf6f9 40%, transparent); } .ds-icon-btn[aria-expanded=\"true\"], .ds-icon-btn.is-active { background: #edf6f9; border-color: #edf6f9; color: #054a52; } .ds-icon-btn:focus-visible { outline: 2px solid #c26148; outline-offset: 2px; }"
     }
   ],
   "narrative": {
@@ -207,9 +239,9 @@
     "rules": [
       { "name": "The One Warm Mark Rule", "body": "Coral appears as a mark, never as a page background or a row of filled buttons.", "section": "colors" },
       { "name": "The No-Cool-Gray Rule", "body": "Secondary text on night is ice-tinted. Secondary text on paper is ink-tinted teal. Do not use neutral gray.", "section": "colors" },
+      { "name": "The Ice-on-Night Rule", "body": "Ice cards set ink type themselves. Never inherit cream from night chrome.", "section": "colors" },
       { "name": "The Serif-for-Places Rule", "body": "Source Serif 4 is for the product name and geographic titles. Controls, legends, and data stay sans.", "section": "typography" },
-      { "name": "The Offset-Not-Halo Rule", "body": "Shadows have y-offset and blur. Do not use a zero-offset colored glow.", "section": "elevation" },
-      { "name": "The Ice-on-Night Rule", "body": "Ice cards set ink type themselves. Never inherit cream from night chrome.", "section": "colors" }
+      { "name": "The Offset-Not-Halo Rule", "body": "Shadows have y-offset and blur. Do not use a zero-offset colored glow.", "section": "elevation" }
     ],
     "dos": [
       "Do keep Equal Earth as the visual home of the globe; Mercator is a comparison state, not a restyle of the chrome.",

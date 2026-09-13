@@ -18,11 +18,21 @@ colors:
   ocean: "#b9d2df"
   ocean-deep: "#6a9bb0"
   stage: "#b9d2df"
+  lake: "#8fb8cc"
   line: "rgba(5, 74, 82, 0.14)"
+  merc-hatch: "rgba(194, 97, 72, 0.42)"
+  merc-hatch-mute: "rgba(194, 97, 72, 0.24)"
+  city-halo: "#edf6f9"
 typography:
   display:
     fontFamily: "Source Serif 4, Iowan Old Style, Georgia, serif"
     fontSize: "1.25rem"
+    fontWeight: 600
+    lineHeight: 1.15
+    letterSpacing: "-0.02em"
+  display-compact:
+    fontFamily: "Source Serif 4, Iowan Old Style, Georgia, serif"
+    fontSize: "1.125rem"
     fontWeight: 600
     lineHeight: 1.15
     letterSpacing: "-0.02em"
@@ -35,6 +45,12 @@ typography:
   title:
     fontFamily: "Source Serif 4, Iowan Old Style, Georgia, serif"
     fontSize: "1.375rem"
+    fontWeight: 600
+    lineHeight: 1.2
+    letterSpacing: "-0.02em"
+  title-compact:
+    fontFamily: "Source Serif 4, Iowan Old Style, Georgia, serif"
+    fontSize: "1.05rem"
     fontWeight: 600
     lineHeight: 1.2
     letterSpacing: "-0.02em"
@@ -63,6 +79,7 @@ typography:
     lineHeight: 1.35
     letterSpacing: "normal"
 rounded:
+  xs: "2px"
   md: "8px"
   lg: "12px"
   dialog: "16px"
@@ -154,14 +171,14 @@ Density is Operate-mode: compact, scannable, one task at a time. Personality liv
 Night and ice do the structure. Coral is the only warm UI accent. Ocean and peach belong to the globe, not to buttons. Chrome and ice come from [Coolors 006d77 · 83c5be · edf6f9 · ffddd2 · e29578](https://coolors.co/006d77-83c5be-edf6f9-ffddd2-e29578). The globe water stays the previous light blue (`#b9d2df`), not the Coolors tiffany. Coral is darkened to `#c26148` so focus rings meet 3:1 on ice.
 
 ### Primary
-- **Chart coral** (`colors.accent`): Focus rings, search caret, checkbox accent, text selection wash. Bright coral (`colors.accent-bright`) for capital dots on the globe. Text coral (`colors.accent-text`) for links on ice so they meet 4.5:1. Not a fill for large surfaces.
+- **Chart coral** (`colors.accent`): Focus rings, search caret, checkbox accent, text selection wash. Bright coral (`colors.accent-bright`) for capital dots on the globe. Text coral (`colors.accent-text`) for links on ice so they meet 4.5:1. Mercator hatch on the globe and legend uses washed coral (`merc-hatch` / `merc-hatch-mute`). City dots get an ice halo (`city-halo`). Not a fill for large surfaces.
 
 ### Secondary
-- **Globe ocean** (`colors.ocean`): Equal Earth water fill, the previous light blue. Stage (`colors.stage`) matches it so the empty canvas is the same water.
+- **Globe ocean** (`colors.ocean`): Equal Earth water fill, the previous light blue. Stage (`colors.stage`) matches it so the empty canvas is the same water. Lakes (`colors.lake`) are a slightly deeper blue on that ocean.
 
 ### Neutral
 - **Skobeloff** (`colors.night`) and **well teal** (`colors.night-deep`): Top bar and footer.
-- **Ice** (`colors.cream`) and **ice-soft** (`colors.cream-soft`): Type and active pills on night.
+- **Ice** (`colors.cream`) and **ice-soft** (`colors.cream-soft`): Type and active pills on night. Night-bar hover and borders mix this ice onto skobeloff; text selection mixes coral.
 - **Ink** (`colors.ink`) and **teal mute** (`colors.ink-soft`): Type on paper. Mute is teal, not gray.
 - **Legend panel** (`colors.panel`), **paper** (`colors.paper`), **field** (`colors.field`): Cards and inputs. Field hover uses unbleached silk (`colors.field-hover`).
 - **Hairline** (`colors.line`): Borders on paper.
@@ -183,6 +200,7 @@ Night and ice do the structure. Coral is the only warm UI accent. Ocean and peac
 - **Display** (600, 1.25rem, 1.15): Product name in the night bar.
 - **Headline** (600, 1.5rem, 1.2): About and 404 titles.
 - **Title** (600, 1.375rem, 1.2): Selected place name on a legend card. 1.05rem on narrow viewports.
+- **Display compact** (600, 1.125rem): Product name in the night bar on ≤720px.
 - **Body** (450, 1rem, 1.45): About prose, max ~62ch.
 - **Label** (550, 0.875rem): Buttons, legends, checks.
 - **Meta** (450–650, 0.75rem): Footer, fieldset legends, search result kinds.
@@ -191,7 +209,7 @@ Night and ice do the structure. Coral is the only warm UI accent. Ocean and peac
 
 ## Layout
 
-Full-viewport app shell: night top bar (min-height 64px, 48px on small screens) with a thin-line globe mark beside the serif name. A single Mercator size menu sits in the right cluster before search on desktop (Equal Earth is always the globe). Always / On hover live in that menu. Layers and About follow as labeled ice pills (icon-only on ≤720px). Flex-grown map, night footer (short credit on compact). Mercator size overlays are not clipped to the Equal Earth oval, so they can spill into the ocean around the globe, but they stay under the night bars, menus, and place cards. Place cards sit top-left on desktop (`16px`). On compact they also pin top-left (`8px`) so the zoomed country stays in view. The overlay legend sits bottom-left on compact (swatch label shortens to Mercator) and stays visible while a place card is open. Equal Earth’s swatch is a stripe of country fills; Mercator’s swatch is the coral hatch overlay. Zoom stack top-right on desktop, bottom-right on viewports ≤720px. Map centering (Africa / Americas / Pacific) is an ice pill cluster floating bottom-right on wider viewports; it hides on ≤720px so the globe can use the full stage. Layers open as a compact ice popover under the Layers pill (X to close). On compact, that popover and the Mercator size menu center under the night bar so they stay inside the viewport. Mercator size opens a compact ice menu under its pill for Always / On hover. Wall maps download from About, not the toolbar. Ice cards always set ink type so they stay readable when nested in night chrome. The place card scrolls inside the remaining map height so size numbers stay above the footer. Spacing scale is 4 / 8 / 12 / 16 / 24. Breakpoints: ≤1100px hides the tagline and shortens the Mercator control label; ≤720px drops search so the night bar stays one row (name, Mercator, Layers, About), hides Africa / Americas / Pacific, and centers the Mercator and Layers menus under the bar. Under 360px the name hides so only the globe mark remains beside the controls; short landscape does the same. Tall viewports scale Equal Earth up so the oval fills more of the stage.
+Full-viewport app shell: night top bar (min-height 64px, 48px on small screens) with a thin-line globe mark beside the serif name. A single Mercator size menu sits in the right cluster before search on desktop (Equal Earth is always the globe). Always / On hover live in that menu. Layers and About follow as labeled ice pills (icon-only on ≤720px). Flex-grown map, night footer (short credit on compact). The Equal Earth oval paints as soon as the stage is sized; a light country layer fills in first, then the 1:50 million coasts, then cities. Mercator size overlays are not clipped to the Equal Earth oval, so they can spill into the ocean around the globe, but they stay under the night bars, menus, and place cards. Place cards sit top-left on desktop (`16px`). On compact they also pin top-left (`8px`) so the zoomed country stays in view. The overlay legend sits bottom-left on compact (swatch label shortens to Mercator) and stays visible while a place card is open. Equal Earth’s swatch is a stripe of country fills; Mercator’s swatch is the coral hatch overlay. Zoom stack top-right on desktop, bottom-right on viewports ≤720px. Map centering (Africa / Americas / Pacific) is an ice pill cluster floating bottom-right on wider viewports; it hides on ≤720px so the globe can use the full stage. Layers open as a compact ice popover under the Layers pill (X to close). On compact, that popover and the Mercator size menu center under the night bar so they stay inside the viewport. Mercator size opens a compact ice menu under its pill for Always / On hover. Wall maps download from About, not the toolbar. Ice cards always set ink type so they stay readable when nested in night chrome. The place card scrolls inside the remaining map height so size numbers stay above the footer. Spacing scale is 4 / 8 / 12 / 16 / 24. Breakpoints: ≤1100px hides the tagline and shortens the Mercator control label; ≤720px turns search into an icon that opens an ice field under the bar (name, Mercator, Search, Layers, About stay one row when they fit, and wrap under the mark if type is enlarged or the viewport is too tight), hides Africa / Americas / Pacific, and centers the Mercator, Search, and Layers menus under the bar. Under 360px the name hides and Mercator becomes a chevron pill so only the globe mark remains beside the controls; short landscape does the same. Tall viewports scale Equal Earth up so the oval fills more of the stage.
 
 ## Elevation & Depth
 
@@ -212,9 +230,9 @@ Pills (`999px`) for projection, center, and segmented choices. Fields `8px`. Leg
 - **Shape:** Full pill, min-height 36px, label type.
 - **Primary (dialog Close):** Ink fill, ice type, hover well teal.
 - **Icon (layers, About):** Cream-stroke pill on night with a visible label; icon-only 36×36 on compact. Active layers invert to cream fill and ink.
-- **Mode pill:** Transparent until active, then cream fill and ink type. Mercator size is a menu in the night bar (Always / On hover), not a second home projection.
+- **Mode pill:** Transparent until the menu is open, then cream fill and ink type. Mercator size is a menu in the night bar (Always / On hover), not a second home projection.
 - **Segmented:** Field fill; active is ink fill and cream type; hover field-hover.
-- **Dismiss X:** 36×36 transparent circle on ice, teal-mute stroke, ink on hover. Accessible name only; no visible Close label.
+- **Dismiss X:** 36×36 transparent circle on ice, teal-mute stroke, ink on hover. 44×44 on coarse pointers. Accessible name only; no visible Close label.
 - **Hover / Focus:** 160ms ease color/background. Focus-visible is a 2px coral ring, 2px offset.
 
 ### Cards / Containers
@@ -230,25 +248,28 @@ Pills (`999px`) for projection, center, and segmented choices. Fields `8px`. Leg
 - **Placeholder:** Teal mute at full opacity.
 
 ### Navigation
-Night bar, cream brand serif, thin-line globe mark, Mercator size menu before the ice search well, then labeled Layers and About pills. On ≤1100px the tagline hides and Mercator shortens to the word Mercator. On ≤720px search hides so the bar stays one row, and both menus center under the bar. Under 360px the serif name hides and the globe mark stands alone. Wall-map downloads live in About as ice pills.
+Night bar, cream brand serif, thin-line globe mark, Mercator size menu before the ice search well, then labeled Layers and About pills. On ≤1100px the tagline hides and Mercator shortens to the word Mercator. On ≤720px search becomes an icon-only pill; the field opens as an ice overlay under the bar, and Mercator, Search, and Layers menus center under the bar. The compact bar wraps onto a second row if the controls cannot fit. Under 360px the serif name hides and Mercator is chevron-only so the globe mark stands beside the icons. Wall-map downloads live in About as ice pills.
 
 ### About overlay
 Full-viewport layer (`100svh`), ice card centered. Title and Close stay pinned; only the prose column scrolls. Opening focuses the title without scrolling so the heading stays on screen. Map chrome hides while it is open.
 
 ### Layers popover
-Ice card hugging content, two-column layer checks, X to close. Absolute under the Layers pill on desktop; centered under the night bar on compact so the card stays in view.
+Ice card hugging content, two-column layer checks, X to close. Absolute under the Layers pill on desktop; centered under the night bar on compact so the card stays in view. While it is open, the rest of the atlas is inert so keyboard and assistive tech stay in the card.
 
 ### Mercator size menu
-Ice card under the Mercator size pill with Always / On hover. On compact and hover-less pointers that control is On tap: tap a country to zoom, open the place card, and keep Mercator’s outline. Selecting a country keeps its outline at full strength and greys the others. Not a bottom sheet; it stays a dropdown on compact, centered under the night bar.
+Ice card under the Mercator size pill with Always / On hover as a menu, and a short note under that menu (not inside it). On compact and hover-less pointers that control is On tap: tap a country to zoom, open the place card, and keep Mercator’s outline. Selecting a country keeps its outline at full strength and greys the others. Not a bottom sheet; it stays a dropdown on compact, centered under the night bar.
+
+### Compact search
+On desktop the night bar has only the ice search field, not a separate Search button. On ≤720px that field hides and a search icon sits between Mercator and Layers; it opens the same ice field as a layer above the map. Escape and tapping the dimmed map close it.
 
 ### Zoom stack
 42×42 (40×40 on small screens) paper buttons in a 12px cluster with hairline dividers.
 
 ### Center cluster
-Horizontal ice pill of Africa / Americas / Pacific, inset padding, legend-lift shadow, ink fill on the active cell. Floats bottom-right on the map on viewports wider than 720px. Hidden on compact.
+Horizontal ice pill of Africa / Americas / Pacific, inset padding, legend-lift shadow, ink fill on the active cell. Floats bottom-right on the map on viewports wider than 720px. Hidden on compact. 44px tall on coarse pointers.
 
 ### Checks
-16px native checkbox, coral accent, 32px row.
+16px native checkbox, coral accent, 32px row (44px on coarse pointers).
 
 ## Do's and Don'ts
 

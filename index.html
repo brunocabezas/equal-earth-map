@@ -39,7 +39,7 @@
     <meta name="twitter:image" content="https://trueearthmap.com/og-image.jpg" />
     <link rel="stylesheet" href="styles.css" />
     <link rel="preload" href="vendor/d3.min.js" as="script" />
-    <link rel="preload" href="data/countries-50m.json" as="fetch" crossorigin />
+    <link rel="preload" href="data/countries-preview.json" as="fetch" crossorigin />
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
@@ -117,33 +117,42 @@
       <div class="bar-end">
         <div class="bar-menu">
           <div class="bar-seg">
-            <button type="button" class="bar-btn is-active" id="mercator-toggle" aria-expanded="false" aria-controls="mercator-menu" aria-haspopup="menu">
+            <button type="button" class="bar-btn" id="mercator-toggle" aria-label="Mercator size" aria-expanded="false" aria-controls="mercator-menu" aria-haspopup="menu">
               <span class="label-full">Mercator size</span>
               <span class="label-short">Mercator</span>
               <svg class="icon chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6.25 8 10.25 12 6.25" /></svg>
             </button>
           </div>
-          <div class="sheet sheet-menu" id="mercator-menu" role="menu" aria-label="When to show Mercator size">
+          <div class="sheet sheet-menu" id="mercator-menu">
             <div class="panel">
-              <button type="button" class="menu-item is-active" role="menuitemradio" data-compare="always" aria-checked="true">Always</button>
-              <button type="button" class="menu-item" role="menuitemradio" data-compare="hover" aria-checked="false">
-                <span class="compare-hover">On hover</span>
-                <span class="compare-tap">On tap</span>
-              </button>
+              <div role="menu" aria-label="When to show Mercator size">
+                <button type="button" class="menu-item is-active" role="menuitemradio" data-compare="always" aria-checked="true">Always</button>
+                <button type="button" class="menu-item" role="menuitemradio" data-compare="hover" aria-checked="false">
+                  <span class="compare-hover">On hover</span>
+                  <span class="compare-tap">On tap</span>
+                </button>
+              </div>
               <p class="panel-note" id="proj-hint">Outlines show how large countries look on Mercator.</p>
             </div>
           </div>
         </div>
-        <div class="search-panel">
+        <button type="button" class="bar-action search-toggle" id="search-toggle" aria-label="Search" aria-expanded="false" aria-controls="search-panel">
+          <svg class="icon" viewBox="0 0 16 16" aria-hidden="true">
+            <circle cx="7" cy="7" r="4.25" />
+            <path d="M10.2 10.2 13.5 13.5" />
+          </svg>
+        </button>
+        <div class="search-panel" id="search-panel">
           <label class="search-field" for="search">
             <svg class="icon search-icon" viewBox="0 0 16 16" aria-hidden="true">
               <circle cx="7" cy="7" r="4.25" />
               <path d="M10.2 10.2 13.5 13.5" />
             </svg>
             <span class="sr-only">Search a country or city</span>
-            <input id="search" type="search" placeholder="Greenland, Africa…" autocomplete="off" enterkeyhint="search" maxlength="80" />
+            <input id="search" type="search" placeholder="Greenland, Africa…" autocomplete="off" enterkeyhint="search" maxlength="80" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="search-results" aria-haspopup="listbox" />
           </label>
-          <ul id="search-results" hidden aria-label="Search results"></ul>
+          <ul id="search-results" hidden role="listbox" aria-label="Search results"></ul>
+          <p id="search-empty" class="search-empty" hidden role="status"></p>
         </div>
         <div class="bar-menu bar-menu-end">
           <button type="button" class="bar-action" id="atlas-controls-toggle" aria-label="Layers" aria-expanded="false" aria-controls="atlas-controls" aria-haspopup="dialog">
@@ -184,7 +193,7 @@
 
     <main>
       <section id="atlas-view" class="view is-visible" aria-label="Interactive Equal Earth atlas">
-        <div id="atlas-stage" tabindex="0" aria-label="Interactive Equal Earth map. Search for a country, or focus the map: arrow keys pan, Enter selects the country in the center, plus and minus zoom.">
+        <div id="atlas-stage" tabindex="0" aria-label="Interactive Equal Earth map. Search for a country, or focus the map: arrow keys pan, Enter selects the country in the center, plus and minus zoom, Escape clears the selection.">
           <canvas id="atlas-map" aria-hidden="true"></canvas>
           <canvas id="atlas-overlay" aria-hidden="true"></canvas>
         </div>

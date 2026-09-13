@@ -239,7 +239,6 @@ html, body {
 }
 
 .label-short,
-.legend-short,
 .compare-tap { display: none; }
 
 @media (max-width: 720px), (hover: none) {
@@ -754,10 +753,24 @@ legend {
   flex-shrink: 0;
 }
 
+.check input:disabled {
+  opacity: 1;
+  accent-color: var(--accent);
+}
+
+.check:has(input:disabled) {
+  cursor: default;
+  color: var(--ink);
+}
+
 .layer-set {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 0 12px;
+}
+
+.layer-main .check:first-child {
+  grid-column: 1 / -1;
 }
 
 .layer-set legend {
@@ -769,11 +782,25 @@ legend {
 }
 
 .layer-more summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
   cursor: pointer;
   color: var(--ink-soft);
   font-size: var(--type-meta);
   font-weight: 550;
   list-style: none;
+}
+
+.layer-more summary .chevron {
+  width: 12px;
+  height: 12px;
+  transition: transform 160ms ease;
+}
+
+.layer-more[open] summary .chevron {
+  transform: rotate(180deg);
 }
 
 .layer-more summary::-webkit-details-marker {
@@ -801,7 +828,7 @@ legend {
 .sheet-menu {
   inset-inline-start: 0;
   inset-inline-end: auto;
-  width: min(13.5rem, calc(100vw - 24px));
+  width: min(15rem, calc(100vw - 24px));
   min-width: 0;
   height: auto;
   overflow: visible;
@@ -1082,7 +1109,7 @@ legend {
   color: var(--cream);
 }
 
-.center-in-layers {
+.center-in-layers-block {
   display: none;
 }
 
@@ -1507,7 +1534,7 @@ body:has(#about[open]) .map-chrome {
   }
 
   .sheet-menu {
-    width: min(13.5rem, calc(100vw - 24px));
+    width: min(15rem, calc(100vw - 24px));
   }
 
   #lang-menu {
@@ -1542,11 +1569,22 @@ body:has(#about[open]) .map-chrome {
     gap: 0 8px;
   }
 
+  .center-in-layers-block {
+    display: block;
+    margin-top: 10px;
+  }
+
+  .center-in-layers-label {
+    margin: 0 0 6px;
+    color: var(--ink-soft);
+    font-size: var(--type-meta);
+    font-weight: 550;
+  }
+
   .center-in-layers {
     display: flex;
     flex-wrap: wrap;
     gap: 3px;
-    margin-top: 10px;
     padding: 3px;
     border: 1px solid var(--line);
     border-radius: 999px;
@@ -1758,7 +1796,9 @@ body:has(#about[open]) .map-chrome {
   .compare-btn,
   .sheet-toggle,
   .sheet-close,
-  .info-close {
+  .info-close,
+  .layer-more summary,
+  .layer-more summary .chevron {
     transition: none;
   }
 }

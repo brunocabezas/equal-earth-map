@@ -251,14 +251,20 @@
                   <svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" /></svg>
                 </button>
               </div>
-              <fieldset class="layer-set">
+              <fieldset class="layer-set layer-main">
                 <legend class="sr-only" data-i18n="mapLayers">Map layers</legend>
-                <label class="check"><input type="checkbox" data-layer="countries" checked /> <span data-i18n="layerCountries">Countries</span></label>
+                <label class="check" title="Land stays on so the globe has countries">
+                  <input type="checkbox" data-layer="countries" checked disabled />
+                  <span data-i18n="layerCountries">Countries</span>
+                </label>
                 <label class="check"><input type="checkbox" data-layer="cities" checked /> <span data-i18n="layerCities">Cities</span></label>
                 <label class="check"><input type="checkbox" data-layer="labels" checked /> <span data-i18n="layerLabels">Labels</span></label>
               </fieldset>
               <details class="layer-more">
-                <summary>More</summary>
+                <summary>
+                  More layers
+                  <svg class="icon chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6.25 8 10.25 12 6.25" /></svg>
+                </summary>
                 <fieldset class="layer-set">
                   <legend class="sr-only">More map layers</legend>
                   <label class="check"><input type="checkbox" data-layer="lakes" checked /> <span data-i18n="layerLakes">Lakes</span></label>
@@ -266,10 +272,13 @@
                   <label class="check"><input type="checkbox" data-layer="graticule" checked /> <span data-i18n="layerGraticule">Lat/long grid</span></label>
                 </fieldset>
               </details>
-              <div class="center-in-layers" role="group" aria-label="Map center">
-                <button type="button" class="is-active" data-center="0">Africa</button>
-                <button type="button" data-center="-90">Americas</button>
-                <button type="button" data-center="150">Pacific</button>
+              <div class="center-in-layers-block">
+                <p class="center-in-layers-label" id="layers-center-label">Center map</p>
+                <div class="center-in-layers" role="group" aria-labelledby="layers-center-label">
+                  <button type="button" class="is-active" data-center="0">Africa</button>
+                  <button type="button" data-center="-90">Americas</button>
+                  <button type="button" data-center="150">Pacific</button>
+                </div>
               </div>
             </div>
           </div>
@@ -324,8 +333,8 @@
         </div>
         <div class="map-chrome bottom-left">
           <div class="panel overlay-legend" id="overlay-legend">
-            <span><span class="swatch swatch-ee" aria-hidden="true"></span> <span class="legend-full" data-i18n="legendEqualEarth">This map: Equal Earth</span><span class="legend-short" data-i18n="legendEqualEarthShort">Equal Earth</span></span>
-            <span><span class="swatch swatch-merc" aria-hidden="true"></span> <span class="legend-full" data-i18n="legendMercator">Looks this size on Mercator</span><span class="legend-short" data-i18n="legendMercatorShort">Mercator</span></span>
+            <span><span class="swatch swatch-ee" aria-hidden="true"></span> <span data-i18n="legendEqualEarth">This map: Equal Earth</span></span>
+            <span><span class="swatch swatch-merc" aria-hidden="true"></span> <span data-i18n="legendMercator">Looks this size on Mercator</span></span>
           </div>
         </div>
         <div class="map-chrome right">

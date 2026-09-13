@@ -186,6 +186,10 @@ html, body {
   color: var(--cream);
 }
 
+.topbar:has(.sheet.is-open) {
+  z-index: 9;
+}
+
 .brand {
   display: flex;
   flex-direction: row;
@@ -641,28 +645,44 @@ legend {
   to { opacity: 1; }
 }
 
-.legend-restore {
-  border: 0;
+.legend-off {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.legend-status {
   margin: 0;
-  padding: 0;
-  background: transparent;
+  color: var(--ink-soft);
+  font-weight: 450;
+  line-height: 1.35;
+}
+
+.legend-restore {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--line);
+  margin: 0;
+  padding: 6px 12px;
+  border-radius: 999px;
+  max-width: 100%;
+  background: var(--field);
   color: var(--ink);
   font-family: inherit;
   font-size: inherit;
   font-weight: 550;
-  line-height: 1.35;
-  text-align: left;
-  max-width: 28ch;
-  text-decoration: underline;
-  text-underline-offset: 2px;
+  line-height: 1.3;
+  text-align: start;
+  white-space: normal;
   cursor: pointer;
 }
 
 .legend-restore:hover {
-  color: var(--accent-text);
+  background: var(--field-hover);
 }
 
-.legend-restore[hidden],
+.legend-off[hidden],
 #legend-compare[hidden] {
   display: none;
 }
@@ -673,48 +693,56 @@ legend {
 }
 
 #info-measures {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
   margin: 8px 0 0;
   padding: 0;
+  width: 100%;
 }
 
 #info-measures > div {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 22px;
-  padding: 3px 0;
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr);
+  column-gap: 8px;
+  align-items: start;
 }
 
 #info-measures dt {
   display: grid;
   place-items: center;
-  flex-shrink: 0;
   width: 16px;
-  margin: 0;
+  margin-top: 2px;
   color: var(--ink-soft);
 }
 
 #info-measures dd {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: 8px;
+  align-items: baseline;
   margin: 0;
   min-width: 0;
   color: var(--ink);
 }
 
 .measure-label {
+  min-width: 0;
   color: var(--ink-soft);
   font-size: var(--type-meta);
   font-weight: 450;
   line-height: 1.3;
+  overflow-wrap: break-word;
+  hyphens: none;
 }
 
 .measure-value {
   font-size: var(--type-meta);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
-  overflow-wrap: anywhere;
+  line-height: 1.3;
+  text-align: end;
+  white-space: nowrap;
 }
 
 .segmented {
@@ -1590,11 +1618,20 @@ body:has(#about[open]) .map-chrome {
   }
 
   .sheet-menu {
+    inset-inline-start: 0;
+    inset-inline-end: 0;
     width: min(15rem, calc(100vw - 24px));
+    margin-inline: auto;
   }
 
   #lang-menu {
     width: min(14.5rem, calc(100vw - 24px));
+  }
+
+  .bar-menu-end .sheet {
+    inset-inline-start: 0;
+    inset-inline-end: 0;
+    margin-inline: auto;
   }
 
   #atlas-controls {
@@ -1671,10 +1708,13 @@ body:has(#about[open]) .map-chrome {
   }
 
   body.sheet-open .map-chrome.right,
-  body.sheet-open .map-chrome.bottom-left,
-  body.search-open .map-chrome.right,
-  body.search-open .map-chrome.bottom-left {
+  body.search-open .map-chrome.right {
     visibility: hidden;
+  }
+
+  body.sheet-open .map-chrome.bottom-left,
+  body.search-open .map-chrome.bottom-left {
+    z-index: 8;
   }
 
   .sheet-close {
@@ -1716,8 +1756,8 @@ body:has(#about[open]) .map-chrome {
     right: auto;
     bottom: auto;
     width: max-content;
-    max-width: min(280px, calc(100% - 72px));
-    padding: 8px 40px 8px 10px;
+    max-width: min(268px, calc(100% - 56px));
+    padding: 8px 10px 10px;
     border-radius: var(--radius-lg);
     overflow: visible;
     z-index: 4;
@@ -1730,7 +1770,7 @@ body:has(#about[open]) .map-chrome {
   }
 
   .info-panel h2 {
-    padding-inline-end: 4px;
+    padding-inline-end: 32px;
     font-size: 1.05rem;
   }
 
@@ -1744,10 +1784,6 @@ body:has(#about[open]) .map-chrome {
   .info-panel.is-city #info-meta {
     margin-top: 4px;
     font-size: var(--type-meta);
-  }
-
-  #info-measures {
-    margin-top: 6px;
   }
 
   .overlay-legend:not([hidden]) {
@@ -1771,6 +1807,7 @@ body:has(#about[open]) .map-chrome {
   }
 
   .legend-lead,
+  .legend-off,
   .legend-restore {
     max-width: 100%;
     font-size: inherit;

@@ -238,7 +238,7 @@
   function formatAreaKm2(area: number, { approx = false }: { approx?: boolean } = {}) {
     if (!Number.isFinite(area) || area <= 0) return "—";
     const rounded = Math.round(area);
-    const text = `${formatAtlasNumber(rounded)} km²`;
+    const text = `${formatAtlasNumber(rounded)}\u00a0km²`;
     return approx ? `~${text}` : text;
   }
 
@@ -254,6 +254,13 @@
     if (ratio > 1) return t("largerMercator", { n: formatFactor(ratio) });
     if (ratio < 1) return t("smallerMercator", { n: formatFactor(1 / ratio) });
     return "1.00×";
+  }
+
+  function inflationMeasure(ratio: number | null | undefined) {
+    if (ratio == null || !Number.isFinite(ratio) || ratio <= 0) return null;
+    if (ratio > 1) return { label: t("largerMercatorLabel"), value: `${formatFactor(ratio)}×` };
+    if (ratio < 1) return { label: t("smallerMercatorLabel"), value: `${formatFactor(1 / ratio)}×` };
+    return { label: t("difference"), value: "1.00×" };
   }
 
   function equatorAnchor(projection: GeoProjection, lon0: number) {
@@ -401,7 +408,7 @@
     const overCtxMaybe = overlayCanvas.getContext("2d");
     if (!mapCtxMaybe || !overCtxMaybe) {
       atlasLoading = false;
-      setStatus("This browser cannot draw the map. Try again.", true);
+      setStatus(t("canvasFail"), true);
       return;
     }
     const mapCtx = mapCtxMaybe;
@@ -410,7 +417,7 @@
     const hideCtxMaybe = hideCanvas.getContext("2d", { willReadFrequently: true });
     if (!hideCtxMaybe) {
       atlasLoading = false;
-      setStatus("This browser cannot draw the map. Try again.", true);
+      setStatus(t("canvasFail"), true);
       return;
     }
     const hideCtx = hideCtxMaybe;
@@ -1260,7 +1267,10 @@
         named.textContent = row.label;
         const value = document.createElement("span");
         value.className = "measure-value";
-        value.textContent = row.value;
+        const figure = document.createElement("span");
+        figure.dir = "ltr";
+        figure.textContent = row.value;
+        value.append(figure);
         dd.append(named, value);
         wrap.append(dt, dd);
         dl.append(wrap);
@@ -1281,19 +1291,21 @@
       const comparing = overlayMode();
       const hasOutline = apparentScaleFor(feature.properties.name) > 0;
       const compact = isCompactView();
+      const inflation = formatInflation(stats.ratio);
       const meta = requireElement("info-meta");
       const area = requireElement("info-area");
       if (compact) {
         meta.textContent = "";
-        if (comparing && hasOutline) {
-          area.textContent = "The outline is how large this looks on Mercator.";
+        if (inflation && stats.ratio) {
+          area.textContent = "";
+        } else if (comparing && hasOutline) {
+          area.textContent = t("compactOutline");
         } else if (comparing) {
-          area.textContent = "Mercator barely changes this country’s size.";
+          area.textContent = t("equatorBarely");
         } else {
-          const inflationNote = formatInflation(stats.ratio);
-          area.textContent = inflationNote
-            ? `This land would appear ${inflationNote} than its true size.`
-            : "Near the equator Mercator and Equal Earth agree on size.";
+          area.textContent = inflation
+            ? t("wouldAppear", { note: inflation })
+            : t("equatorAgree");
         }
       } else if (comparing && hasOutline) {
         meta.textContent = t("outlineMuted");
@@ -1315,10 +1327,18 @@
         value: formatAreaKm2(stats.trueKm2),
         fill: colorFor(feature.properties.name)
       }];
-      const inflation = formatInflation(stats.ratio);
-      if (inflation && stats.ratio) {
-        rows.push({ kind: "mercator", label: t("looksMercator"), value: formatAreaKm2(stats.trueKm2 * stats.ratio, { approx: true }) });
-        rows.push({ kind: "ratio", label: t("difference"), value: inflation });
+      const measure = inflationMeasure(stats.ratio);
+      if (measure && stats.ratio) {
+        rows.push({
+          kind: "mercator",
+          label: t("looksMercator"),
+          value: formatAreaKm2(stats.trueKm2 * stats.ratio, { approx: true })
+        });
+        rows.push({
+          kind: "ratio",
+          label: measure.label,
+          value: measure.value
+        });
       }
       renderMeasures(rows);
     }
@@ -1371,6 +1391,7 @@
 
     function applyUrlView(view: AtlasUrlView) {
       const centerChanged = view.center !== state.center;
+      const compareChanged = view.compareMode !== state.compareMode;
       state.compareMode = view.compareMode;
       state.center = view.center;
       state.about = view.about;
@@ -1386,6 +1407,7 @@
       applyingUrl = true;
       try {
         if (centerChanged) layout({ reset: true });
+        else if (compareChanged) rebuildPaths();
         if (feature) selectCountry(feature);
         else hidePlace();
         if (!feature) drawOverlay();
@@ -1604,7 +1626,7 @@
         hint.textContent = state.compareMode === "always"
           ? t("hintAlways")
           : state.compareMode === "off"
-            ? "Equal Earth only. Mercator outlines are hidden."
+            ? t("hintOff")
           : inspectOnTap()
             ? t("hintTap")
             : t("hintHover");
@@ -1621,8 +1643,8 @@
         mercatorToggle.setAttribute(
           "aria-label",
           showRestore
-            ? "How Mercator stretches countries (outlines hidden)"
-            : "How Mercator stretches countries"
+            ? t("mercatorAriaHidden")
+            : t("mercatorAria")
         );
       }
       document.querySelectorAll<HTMLElement>("[data-compare]").forEach((node) => {
@@ -1642,29 +1664,29 @@
       );
     }
 
-    document.getElementById("legend-restore")?.addEventListener("click", () => {
-      state.compareMode = "always";
+    function applyCompareMode(mode: CompareMode) {
+      if (mode === state.compareMode) return;
+      state.compareMode = mode;
       hideGhostsKey = "";
+      rebuildPaths();
       syncProjectionUI();
+      const feature = selectedFeature();
+      if (feature) updateCountryInfo(feature);
       bake(currentTransform);
       drawOverlay();
-      track("compare_mode", { mode: "always" });
+      track("compare_mode", { mode });
       syncLocation("replace");
+    }
+
+    requireElement("legend-restore-action").addEventListener("click", () => {
+      applyCompareMode("always");
     });
 
     document.querySelectorAll<HTMLElement>("[data-compare]").forEach((button) => {
       button.addEventListener("click", () => {
         const mode = button.dataset.compare;
         if (!isCompareMode(mode)) return;
-        if (mode !== state.compareMode) {
-          state.compareMode = mode;
-          hideGhostsKey = "";
-          syncProjectionUI();
-          bake(currentTransform);
-          drawOverlay();
-          track("compare_mode", { mode });
-          syncLocation("replace");
-        }
+        applyCompareMode(mode);
         closeSheets(true);
       });
     });
@@ -1878,9 +1900,11 @@
     ];
   }
 
-  function setSheetInert(on: boolean) {
+  function setSheetInert(on: boolean, live?: HTMLElement) {
     for (const node of sheetInertTargets()) {
-      if (node instanceof HTMLElement) node.inert = on;
+      if (!(node instanceof HTMLElement)) continue;
+      if (live && (node === live || node.contains(live))) continue;
+      node.inert = on;
     }
   }
 
@@ -1913,7 +1937,7 @@
       }
       if (modal) {
         document.body.classList.add("sheet-open");
-        setSheetInert(true);
+        setSheetInert(true, sheet);
       }
       sheet.querySelector<HTMLElement>(".sheet-close, [data-compare], [data-lang]")?.focus();
     }
@@ -1950,13 +1974,19 @@
   bindRadioMenu("mercator-menu");
   bindRadioMenu("lang-menu");
 
+  requireElement("mercator-toggle").addEventListener("pointerdown", (event) => {
+    event.stopPropagation();
+  });
   requireElement("mercator-toggle").addEventListener("click", (event) => {
     event.stopPropagation();
-    toggleSheet("mercator-menu", { modal: false });
+    toggleSheet("mercator-menu", { modal: isCompactView() });
+  });
+  requireElement("lang-toggle").addEventListener("pointerdown", (event) => {
+    event.stopPropagation();
   });
   requireElement("lang-toggle").addEventListener("click", (event) => {
     event.stopPropagation();
-    toggleSheet("lang-menu", { modal: false });
+    toggleSheet("lang-menu", { modal: isCompactView() });
   });
   document.querySelectorAll<HTMLElement>("[data-lang]").forEach((button) => {
     button.addEventListener("click", () => {

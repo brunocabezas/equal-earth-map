@@ -56,8 +56,11 @@
     mercStroke: cssToken("--accent", "#c26148"),
     mercMuteFill: cssToken("--merc-mute-fill", "rgba(194, 97, 72, 0.22)"),
     mercMuteStroke: cssToken("--merc-mute-stroke", "rgba(194, 97, 72, 0.62)"),
+    mercHatch: cssToken("--merc-hatch", "rgba(194, 97, 72, 0.42)"),
+    mercHatchMute: cssToken("--merc-hatch-mute", "rgba(194, 97, 72, 0.24)"),
     capital: cssToken("--accent-bright", "#e29578"),
     city: cssToken("--night-deep", "#032f34"),
+    cityHalo: cssToken("--city-halo", "#edf6f9"),
     label: cssToken("--ink", "#054a52"),
     labelHalo: cssToken("--label-halo", "rgba(237, 246, 249, 0.9)"),
     graticule: cssToken("--graticule", "rgba(237, 246, 249, 0.35)")
@@ -794,7 +797,7 @@
       tile.height = size;
       const ink = tile.getContext("2d");
       if (!ink) return null;
-      ink.strokeStyle = muted ? "rgba(194,97,72,0.24)" : "rgba(194,97,72,0.42)";
+      ink.strokeStyle = muted ? MAP.mercHatchMute : MAP.mercHatch;
       ink.lineWidth = 0.9;
       ink.lineCap = "square";
       ink.beginPath();
@@ -1008,7 +1011,7 @@
           overCtx.fillStyle = place.capital ? MAP.capital : MAP.city;
           overCtx.arc(x, y, place.capital ? 3.2 : 2.1, 0, Math.PI * 2);
           overCtx.fill();
-          overCtx.strokeStyle = "#fff";
+          overCtx.strokeStyle = MAP.cityHalo;
           overCtx.lineWidth = 1;
           overCtx.stroke();
         }

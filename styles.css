@@ -59,6 +59,9 @@
   --merc-fill: rgba(194, 97, 72, 0.5);
   --merc-mute-fill: rgba(194, 97, 72, 0.22);
   --merc-mute-stroke: rgba(194, 97, 72, 0.62);
+  --merc-hatch: rgba(194, 97, 72, 0.42);
+  --merc-hatch-mute: rgba(194, 97, 72, 0.24);
+  --city-halo: #edf6f9;
   --label-halo: rgba(237, 246, 249, 0.9);
   --graticule: rgba(237, 246, 249, 0.35);
   --shadow: 0 8px 22px rgba(3, 47, 52, 0.18);
@@ -569,9 +572,9 @@ legend {
   background-image: repeating-linear-gradient(
     -45deg,
     transparent 0 3px,
-    rgba(194, 97, 72, 0.42) 3px 3.8px
+    var(--merc-hatch) 3px 3.8px
   );
-  border: 1.5px solid #c26148;
+  border: 1.5px solid var(--accent);
 }
 
 .overlay-legend {

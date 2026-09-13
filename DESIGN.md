@@ -20,6 +20,9 @@ colors:
   stage: "#b9d2df"
   lake: "#8fb8cc"
   line: "rgba(5, 74, 82, 0.14)"
+  merc-hatch: "rgba(194, 97, 72, 0.42)"
+  merc-hatch-mute: "rgba(194, 97, 72, 0.24)"
+  city-halo: "#edf6f9"
 typography:
   display:
     fontFamily: "Source Serif 4, Iowan Old Style, Georgia, serif"
@@ -168,7 +171,7 @@ Density is Operate-mode: compact, scannable, one task at a time. Personality liv
 Night and ice do the structure. Coral is the only warm UI accent. Ocean and peach belong to the globe, not to buttons. Chrome and ice come from [Coolors 006d77 · 83c5be · edf6f9 · ffddd2 · e29578](https://coolors.co/006d77-83c5be-edf6f9-ffddd2-e29578). The globe water stays the previous light blue (`#b9d2df`), not the Coolors tiffany. Coral is darkened to `#c26148` so focus rings meet 3:1 on ice.
 
 ### Primary
-- **Chart coral** (`colors.accent`): Focus rings, search caret, checkbox accent, text selection wash. Bright coral (`colors.accent-bright`) for capital dots on the globe. Text coral (`colors.accent-text`) for links on ice so they meet 4.5:1. Not a fill for large surfaces.
+- **Chart coral** (`colors.accent`): Focus rings, search caret, checkbox accent, text selection wash. Bright coral (`colors.accent-bright`) for capital dots on the globe. Text coral (`colors.accent-text`) for links on ice so they meet 4.5:1. Mercator hatch on the globe and legend uses washed coral (`merc-hatch` / `merc-hatch-mute`). City dots get an ice halo (`city-halo`). Not a fill for large surfaces.
 
 ### Secondary
 - **Globe ocean** (`colors.ocean`): Equal Earth water fill, the previous light blue. Stage (`colors.stage`) matches it so the empty canvas is the same water. Lakes (`colors.lake`) are a slightly deeper blue on that ocean.

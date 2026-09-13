@@ -1465,10 +1465,6 @@ body:has(#about[open]) .map-chrome {
     padding: 0;
   }
 
-  .overlay-legend {
-    font-size: 0.7rem;
-  }
-
   .info-panel.is-country #info-meta { display: none; }
 
   .map-chrome {

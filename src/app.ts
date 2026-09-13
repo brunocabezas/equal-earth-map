@@ -442,6 +442,7 @@
         if (!event.sourceEvent) return;
         interacting = true;
         stage.classList.add("is-zooming");
+        drawOverlay();
       })
       .on("zoom", (event) => {
         currentTransform = event.transform;
@@ -482,23 +483,28 @@
 
     function applyCss(t: ZoomTransform) {
       const s = t.k / baked.k;
-      mapCanvas.style.transform = `translate(${t.x - baked.x * s}px, ${t.y - baked.y * s}px) scale(${s})`;
+      const transform = `translate(${t.x - baked.x * s}px, ${t.y - baked.y * s}px) scale(${s})`;
+      mapCanvas.style.transform = transform;
+      overlayCanvas.style.transform = transform;
     }
 
     function sizeCanvases() {
       dpr = Math.min(window.devicePixelRatio || 1, 2);
       const w = Math.round(width * dpr);
       const h = Math.round(height * dpr);
-      if (mapCanvas.width === w && mapCanvas.height === h) {
-        mapCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
-        overCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
-        return;
+      if (mapCanvas.width !== w || mapCanvas.height !== h) {
+        mapCanvas.width = w;
+        mapCanvas.height = h;
+        mapCanvas.style.width = `${width}px`;
+        mapCanvas.style.height = `${height}px`;
       }
-      for (const canvas of [mapCanvas, overlayCanvas]) {
-        canvas.width = w;
-        canvas.height = h;
-        canvas.style.width = `${width}px`;
-        canvas.style.height = `${height}px`;
+      if (overlayCanvas.width !== w || overlayCanvas.height !== h) {
+        overlayCanvas.width = w;
+        overlayCanvas.height = h;
+        overlayCanvas.style.width = `${width}px`;
+        overlayCanvas.style.height = `${height}px`;
+        overlayCanvas.style.left = "0";
+        overlayCanvas.style.top = "0";
       }
       mapCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
       overCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -717,13 +723,12 @@
       ctx: CanvasRenderingContext2D,
       item: CountryCacheItem,
       fn: (apparent: number) => void,
-      { clip = false, clipPath = null }: { clip?: boolean; clipPath?: Path2D | null } = {}
+      { clipPath = null }: { clipPath?: Path2D | null } = {}
     ) {
       const apparent = item.apparent;
       const centroid = itemCentroid(item);
       if (!apparent || !validPoint(centroid)) return 0;
       ctx.save();
-      if (clip && clipToSphere && spherePath) ctx.clip(spherePath);
       if (clipPath) ctx.clip(clipPath, "evenodd");
       ctx.translate(centroid[0], centroid[1]);
       ctx.scale(apparent, apparent);
@@ -742,11 +747,6 @@
       ctx.globalAlpha *= OVERLAY_DIM_ALPHA;
       fn();
       ctx.restore();
-    }
-
-    function apparentPaintStyle(item: CountryCacheItem, focus: string | null) {
-      const focused = Boolean(focus && item.name === focus);
-      return { muted: !focused, dimmed: Boolean(focus && !focused) };
     }
 
     function strokeApparent(
@@ -825,7 +825,6 @@
       const matrix = apparentMatrix(item);
       if (!apparent || !matrix) return false;
       ctx.save();
-      if (clipToSphere && spherePath) ctx.clip(spherePath);
       applyMercHatch(ctx, muted, zoomK, apparent);
       if (apparent > 1) {
         const ring = new Path2D();
@@ -839,7 +838,7 @@
       return withApparentTransform(ctx, item, () => {
         applyMercHatch(ctx, muted, zoomK, apparent);
         ctx.fill(item.path2d);
-      }, { clip: true }) > 0;
+      }) > 0;
     }
 
     function paintCountries(ctx: CanvasRenderingContext2D, zoomK: number) {
@@ -853,52 +852,10 @@
       }
     }
 
-    function paintCountry(ctx: CanvasRenderingContext2D, item: CountryCacheItem, zoomK: number) {
-      ctx.fillStyle = item.color;
-      ctx.fill(item.path2d);
-      ctx.strokeStyle = MAP.countryStroke;
-      ctx.lineWidth = 0.6 / zoomK;
-      ctx.stroke(item.path2d);
-    }
-
-    function drawCenteredGhost(ctx: CanvasRenderingContext2D, item: CountryCacheItem, zoomK: number) {
-      if (!item.apparent) return;
-      paintCountry(ctx, item, zoomK);
-      drawApparentFill(ctx, item, zoomK);
-      strokeApparent(ctx, item, zoomK);
-    }
-
-    function coverOutsideSphere(t: ZoomTransform) {
-      if (!clipToSphere || !spherePath) return;
-      const outside = new Path2D();
-      outside.rect(0, 0, width, height);
-      outside.addPath(spherePath, { a: t.k, b: 0, c: 0, d: t.k, e: t.x, f: t.y });
-      mapCtx.fillStyle = MAP.ocean;
-      mapCtx.fill(outside, "evenodd");
-      mapCtx.save();
-      mapCtx.translate(t.x, t.y);
-      mapCtx.scale(t.k, t.k);
-      mapCtx.strokeStyle = MAP.sphere;
-      mapCtx.lineWidth = 1 / t.k;
-      mapCtx.stroke(spherePath);
-      mapCtx.restore();
-    }
-
-    function clipOverlayToSphere(t: ZoomTransform) {
-      if (!clipToSphere || !spherePath) return;
-      overCtx.save();
-      overCtx.globalCompositeOperation = "destination-in";
-      overCtx.translate(t.x, t.y);
-      overCtx.scale(t.k, t.k);
-      overCtx.fillStyle = "#fff";
-      overCtx.fill(spherePath);
-      overCtx.restore();
-      overCtx.globalCompositeOperation = "source-over";
-    }
-
     function bake(t: ZoomTransform) {
       baked = t;
       mapCanvas.style.transform = "none";
+      overlayCanvas.style.transform = "none";
       mapCtx.fillStyle = MAP.ocean;
       mapCtx.fillRect(0, 0, width, height);
       mapCtx.save();
@@ -916,24 +873,9 @@
         mapCtx.lineWidth = 0.7 / t.k;
         mapCtx.stroke(graticulePath);
       }
-      const ghosts = apparentItemsToBake();
-      const always = state.compareMode === "always" && ghosts.length > 0;
-      const focus = always ? state.selected : null;
       paintCountries(mapCtx, t.k);
       drawWater(mapCtx, t.k);
-      if (always) {
-        for (const item of ghosts) {
-          const { muted, dimmed } = apparentPaintStyle(item, focus);
-          withOverlayDim(mapCtx, dimmed, () => {
-            drawApparentFill(mapCtx, item, t.k, { muted });
-            strokeApparent(mapCtx, item, t.k, { muted });
-          });
-        }
-      } else {
-        for (const item of ghosts) drawCenteredGhost(mapCtx, item, t.k);
-      }
       mapCtx.restore();
-      if (ghosts.length) coverOutsideSphere(t);
     }
 
     function scheduleOverlay() {
@@ -980,8 +922,31 @@
       }
     }
 
+    function drawSizeOverlays(t: ZoomTransform) {
+      if (!overlayMode() || !state.layers.countries) return;
+      if (state.compareMode === "always") {
+        for (const item of overlayGhosts) {
+          const selected = item.name === state.selected;
+          const hovering = item.name === hoverName;
+          const muted = !selected && !hovering;
+          const dimmed = Boolean(state.selected) && !selected;
+          withOverlayDim(overCtx, dimmed, () => {
+            drawApparentFill(overCtx, item, t.k, { muted });
+            strokeApparent(overCtx, item, t.k, { muted });
+          });
+        }
+        return;
+      }
+      for (const item of overlayFocusItems()) {
+        if (!item.apparent) continue;
+        drawApparentFill(overCtx, item, t.k);
+        strokeApparent(overCtx, item, t.k);
+      }
+    }
+
     function drawOverlay() {
       syncOverlayLegendFocus();
+      overCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
       overCtx.clearRect(0, 0, width, height);
       const t = currentTransform;
       overCtx.save();
@@ -989,13 +954,6 @@
       overCtx.scale(t.k, t.k);
       for (const item of overlayFocusItems()) {
         const hovering = hoverName === item.name;
-        const selected = state.selected === item.name;
-        if (state.compareMode === "hover" && (inspectOnTap() || !selected)) {
-          drawApparentFill(overCtx, item, t.k);
-        }
-        if (state.compareMode === "always" && hovering && !selected) {
-          drawApparentFill(overCtx, item, t.k);
-        }
         overCtx.fillStyle = item.color;
         overCtx.fill(item.path2d);
         if (hovering) {
@@ -1006,14 +964,10 @@
         overCtx.lineWidth = (hovering ? 1.85 : 1.7) / t.k;
         overCtx.stroke(item.path2d);
         drawWater(overCtx, t.k, item.path2d);
-        if (overlayMode()) {
-          drawApparentFill(overCtx, item, t.k);
-          strokeApparent(overCtx, item, t.k);
-        }
       }
+      drawSizeOverlays(t);
       overCtx.restore();
-      clipOverlayToSphere(t);
-      if (!state.layers.cities && !state.layers.labels) return;
+      if (interacting || (!state.layers.cities && !state.layers.labels)) return;
       const compact = isCompactView();
       const hideGhostsNow = currentHideGhosts();
       overCtx.save();

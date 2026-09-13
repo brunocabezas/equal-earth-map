@@ -396,7 +396,7 @@ main {
 }
 
 #atlas-stage.is-zooming #atlas-overlay {
-  opacity: 0;
+  will-change: transform;
 }
 
 .atlas-status {

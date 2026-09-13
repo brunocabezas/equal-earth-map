@@ -604,13 +604,22 @@
       };
     }
 
+    function overlayFocusItems() {
+      const items: CountryCacheItem[] = [];
+      const seen = new Set<string>();
+      for (const name of [state.selected, hoverName]) {
+        if (!name || seen.has(name)) continue;
+        seen.add(name);
+        const item = countryByName.get(name);
+        if (item) items.push(item);
+      }
+      return items;
+    }
+
     function activeGhosts() {
       if (!overlayMode() || !state.layers.countries) return [];
       if (state.compareMode === "always") return apparentItemsToBake();
-      const name = hoverName || state.selected;
-      if (!name) return [];
-      const item = countryByName.get(name);
-      return item && item.apparent > 0 ? [item] : [];
+      return overlayFocusItems().filter((item) => item.apparent > 0);
     }
 
     function rebuildHideMask(ghosts: OverlayGhost[]) {
@@ -641,7 +650,7 @@
 
     function currentHideGhosts() {
       const key = overlayMode() && state.layers.countries
-        ? (state.compareMode === "always" ? "always" : `h:${hoverName || state.selected || ""}`)
+        ? (state.compareMode === "always" ? "always" : `h:${hoverName || ""}:${state.selected || ""}`)
         : "";
       if (key === hideGhostsKey) return hideGhosts;
       hideGhostsKey = key;
@@ -915,32 +924,29 @@
     function drawOverlay() {
       overCtx.clearRect(0, 0, width, height);
       const t = currentTransform;
-      const highlight = hoverName || state.selected;
       overCtx.save();
       overCtx.translate(t.x, t.y);
       overCtx.scale(t.k, t.k);
-      if (highlight) {
-        const item = countryByName.get(highlight);
-        if (item && state.compareMode === "hover" && (inspectOnTap() || item.name !== state.selected)) {
+      for (const item of overlayFocusItems()) {
+        const hovering = hoverName === item.name;
+        const selected = state.selected === item.name;
+        if (state.compareMode === "hover" && (inspectOnTap() || !selected)) {
           drawApparentFill(overCtx, item, t.k);
         }
-        if (item && state.compareMode === "always" && hoverName === item.name && item.name !== state.selected) {
+        if (state.compareMode === "always" && hovering && !selected) {
           drawApparentFill(overCtx, item, t.k);
         }
-        if (item) {
-          const hovering = hoverName === item.name;
-          overCtx.fillStyle = item.color;
+        overCtx.fillStyle = item.color;
+        overCtx.fill(item.path2d);
+        if (hovering) {
+          overCtx.fillStyle = MAP.hoverFill;
           overCtx.fill(item.path2d);
-          if (hovering) {
-            overCtx.fillStyle = MAP.hoverFill;
-            overCtx.fill(item.path2d);
-          }
-          overCtx.strokeStyle = hovering ? MAP.hover : MAP.selected;
-          overCtx.lineWidth = (hovering ? 1.85 : 1.7) / t.k;
-          overCtx.stroke(item.path2d);
-          drawWater(overCtx, t.k, item.path2d);
-          if (overlayMode()) strokeApparent(overCtx, item, t.k);
         }
+        overCtx.strokeStyle = hovering ? MAP.hover : MAP.selected;
+        overCtx.lineWidth = (hovering ? 1.85 : 1.7) / t.k;
+        overCtx.stroke(item.path2d);
+        drawWater(overCtx, t.k, item.path2d);
+        if (overlayMode()) strokeApparent(overCtx, item, t.k);
       }
       overCtx.restore();
       clipOverlayToSphere(t);

@@ -594,16 +594,26 @@ legend {
 
 .overlay-legend {
   display: inline-flex;
+  flex-direction: column;
   flex-wrap: wrap;
   align-self: start;
   width: max-content;
   min-width: min-content;
-  max-width: 100%;
-  gap: 8px 14px;
-  padding: 8px 12px;
+  max-width: min(22rem, 100%);
+  gap: 8px;
+  padding: 10px 14px;
   color: var(--ink);
-  font-size: var(--type-meta);
+  font-size: var(--type-ui);
   font-weight: 550;
+}
+
+.legend-lead {
+  margin: 0;
+  max-width: 28ch;
+  color: var(--ink);
+  font-size: var(--type-ui);
+  font-weight: 550;
+  line-height: 1.35;
 }
 
 .overlay-legend[hidden],
@@ -1702,7 +1712,7 @@ body:has(#about[open]) .map-chrome {
     min-width: min-content;
     max-width: none;
     gap: 6px;
-    padding: 8px 12px;
+    padding: 10px 14px;
   }
 
   .overlay-legend > span {

@@ -123,7 +123,7 @@
 
   let atlasReady = false;
   let atlasLoading = false;
-  let atlas: { resize: () => void } | null = null;
+  let atlas: { resize: () => void; dismissSelection: () => boolean } | null = null;
 
   const atlasView = requireElement("atlas-view");
   const about = requireElement<HTMLDialogElement>("about");
@@ -1125,6 +1125,18 @@
       if (hadSelection) syncLocation("push");
     }
 
+    function dismissSelection() {
+      const hadInfo = !info.hidden;
+      const hadSelected = state.selected !== null;
+      const hadHover = hoverName !== null;
+      if (!hadInfo && !hadSelected && !hadHover) return false;
+      hoverName = null;
+      hideTip();
+      hidePlace();
+      drawOverlay();
+      return true;
+    }
+
     function measureMark(kind: MeasureKind, fill?: string) {
       if (kind === "true" || kind === "mercator") {
         const mark = document.createElement("span");
@@ -1422,10 +1434,25 @@
         return;
       }
       if (event.key !== "Escape") return;
-      results.hidden = true;
-      results.replaceChildren();
-      if (searchInput.value) searchInput.value = "";
-      else searchInput.blur();
+      if (!results.hidden) {
+        results.hidden = true;
+        results.replaceChildren();
+        event.preventDefault();
+        event.stopPropagation();
+        return;
+      }
+      if (searchInput.value) {
+        searchInput.value = "";
+        event.preventDefault();
+        event.stopPropagation();
+        return;
+      }
+      if (dismissSelection()) {
+        event.preventDefault();
+        event.stopPropagation();
+        return;
+      }
+      searchInput.blur();
       event.stopPropagation();
     });
     results.addEventListener("keydown", (event) => {
@@ -1464,11 +1491,11 @@
         "aria-label",
         overlay
           ? (state.compareMode === "always"
-            ? "Equal Earth map with Mercator size outlines. Arrow keys pan, Enter selects the country in the center, plus and minus zoom."
+            ? "Equal Earth map with Mercator size outlines. Arrow keys pan, Enter selects the country in the center, plus and minus zoom, Escape clears the selection."
             : inspectOnTap()
-              ? "Equal Earth map. Tap a country for Mercator size. Arrow keys pan, Enter selects the country in the center, plus and minus zoom."
-              : "Equal Earth map. Hover a country for Mercator size. Arrow keys pan, Enter selects the country in the center, plus and minus zoom.")
-          : "Equal Earth world map. Arrow keys pan, Enter selects the country in the center, plus and minus zoom."
+              ? "Equal Earth map. Tap a country for Mercator size. Arrow keys pan, Enter selects the country in the center, plus and minus zoom, Escape clears the selection."
+              : "Equal Earth map. Hover a country for Mercator size. Arrow keys pan, Enter selects the country in the center, plus and minus zoom, Escape clears the selection.")
+          : "Equal Earth world map. Arrow keys pan, Enter selects the country in the center, plus and minus zoom, Escape clears the selection."
       );
     }
 
@@ -1528,9 +1555,9 @@
 
     requireElement("info-close").addEventListener("click", (event) => {
       event.stopPropagation();
-      hidePlace();
-      drawOverlay();
-      searchInput.focus();
+      dismissSelection();
+      if (searchInput.offsetParent) searchInput.focus();
+      else stage.focus();
     });
 
     window.addEventListener("resize", onViewportChange);
@@ -1543,7 +1570,7 @@
       syncProjectionUI();
     }
 
-    atlas = { resize: () => layout() };
+    atlas = { resize: () => layout(), dismissSelection };
     syncProjectionUI();
     layout({ reset: true });
     applyingUrl = true;
@@ -1708,6 +1735,10 @@
       const results = document.getElementById("search-results");
       if (results && !results.hidden) {
         results.hidden = true;
+        const active = document.activeElement;
+        if (active instanceof HTMLElement && results.contains(active)) {
+          document.getElementById("search")?.focus();
+        }
         event.preventDefault();
         return;
       }
@@ -1716,7 +1747,15 @@
         event.preventDefault();
         return;
       }
-      about.close();
+      if (about.open) {
+        about.close();
+        event.preventDefault();
+        return;
+      }
+      if (atlas?.dismissSelection()) {
+        document.getElementById("atlas-stage")?.focus();
+        event.preventDefault();
+      }
     }
   });
 

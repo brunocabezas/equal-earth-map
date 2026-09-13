@@ -1649,11 +1649,22 @@
 
   let sheetFocusReturn: HTMLElement | null = null;
 
+  const searchPanelHome = document.createComment("search-panel-home");
+  requireElement("search-panel").before(searchPanelHome);
+  let searchToggleLock = false;
+
+  function dockSearchPanel() {
+    const panel = requireElement("search-panel");
+    if (searchPanelHome.nextSibling !== panel) searchPanelHome.after(panel);
+    panel.style.removeProperty("top");
+  }
+
   function closeSearch(restoreFocus = false) {
     const panel = document.getElementById("search-panel");
     const toggle = document.getElementById("search-toggle");
-    if (!panel?.classList.contains("is-open")) return;
-    panel.classList.remove("is-open");
+    const wasOpen = Boolean(panel?.classList.contains("is-open"));
+    panel?.classList.remove("is-open");
+    dockSearchPanel();
     toggle?.setAttribute("aria-expanded", "false");
     document.body.classList.remove("search-open");
     const results = document.getElementById("search-results");
@@ -1663,6 +1674,7 @@
     }
     document.getElementById("search")?.setAttribute("aria-expanded", "false");
     document.getElementById("search")?.removeAttribute("aria-activedescendant");
+    if (!wasOpen) return;
     if (restoreFocus && toggle instanceof HTMLElement) toggle.focus();
   }
 
@@ -1670,12 +1682,22 @@
     closeSheets();
     const panel = requireElement("search-panel");
     const toggle = document.getElementById("search-toggle");
+    const input = requireElement<HTMLInputElement>("search");
+    const bar = document.querySelector(".topbar");
+    panel.classList.add("is-open");
+    toggle?.setAttribute("aria-expanded", "true");
     if (isCompactView()) {
-      panel.classList.add("is-open");
-      toggle?.setAttribute("aria-expanded", "true");
       document.body.classList.add("search-open");
+      document.body.append(panel);
+      if (bar instanceof HTMLElement) {
+        panel.style.top = `${Math.round(bar.getBoundingClientRect().bottom + 8)}px`;
+      }
+      searchToggleLock = true;
+      window.setTimeout(() => {
+        searchToggleLock = false;
+      }, 400);
     }
-    requireElement<HTMLInputElement>("search").focus();
+    input.focus();
   }
 
   function closeSheets(restoreFocus = false) {
@@ -1753,8 +1775,13 @@
     event.preventDefault();
     openSearch();
   });
-  document.getElementById("search-toggle")?.addEventListener("click", (event) => {
+  document.getElementById("search-toggle")?.addEventListener("pointerdown", (event) => {
     event.stopPropagation();
+  });
+  document.getElementById("search-toggle")?.addEventListener("click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (searchToggleLock) return;
     const panel = requireElement("search-panel");
     if (panel.classList.contains("is-open")) closeSearch(true);
     else openSearch();

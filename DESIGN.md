@@ -257,7 +257,7 @@ Ice card hugging content, two-column layer checks, X to close. Absolute under th
 Ice card under the Mercator size pill with Always / On hover. On compact and hover-less pointers that control is On tap: tap a country to zoom, open the place card, and keep Mercator’s outline. Selecting a country keeps its outline at full strength and greys the others. Not a bottom sheet; it stays a dropdown on compact, centered under the night bar.
 
 ### Compact search
-On ≤720px a labeled Search pill (icon-only) sits between Mercator and Layers. It opens an ice search field under the night bar, with the same results list as desktop. Escape and tapping the dimmed map close it.
+On desktop the night bar has only the ice search field, not a separate Search button. On ≤720px that field hides and a search icon sits between Mercator and Layers; it opens the same ice field as a layer above the map. Escape and tapping the dimmed map close it.
 
 ### Zoom stack
 42×42 (40×40 on small screens) paper buttons in a 12px cluster with hairline dividers.

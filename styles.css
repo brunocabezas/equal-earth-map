@@ -1187,6 +1187,53 @@ body:has(#about[open]) .map-chrome {
   line-height: 1.55;
 }
 
+.about-body a:not(.about-download) {
+  color: var(--accent-text);
+  text-underline-offset: 2px;
+}
+
+.about-body a:not(.about-download):hover {
+  color: var(--ink);
+}
+
+.about-vote {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+  margin: 0 0 12px;
+  padding: 12px 0;
+  border-block: 1px solid var(--line);
+}
+
+.about-vote > div {
+  flex: 1 1 4.5rem;
+}
+
+.about-vote dt {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: var(--type-meta);
+  font-weight: 450;
+  line-height: 1.35;
+}
+
+.about-vote dd {
+  margin: 0;
+  color: var(--ink);
+  font-size: 1rem;
+  font-weight: 550;
+  line-height: 1.3;
+  font-variant-numeric: tabular-nums;
+}
+
+.about-vote-who {
+  display: block;
+  margin-top: 2px;
+  color: var(--ink-soft);
+  font-size: var(--type-meta);
+  font-weight: 450;
+}
+
 .about-downloads {
   display: flex;
   flex-wrap: wrap;

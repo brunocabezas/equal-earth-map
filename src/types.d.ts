@@ -14,6 +14,7 @@ interface AtlasState {
   layers: LayerFlags;
   compareMode: CompareMode;
   selected: string | null;
+  about: boolean;
 }
 
 interface AtlasUrlView {
@@ -21,6 +22,7 @@ interface AtlasUrlView {
   compareMode: CompareMode;
   center: number;
   layers: LayerFlags;
+  about: boolean;
 }
 
 interface SiteConfig {

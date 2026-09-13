@@ -75,12 +75,14 @@
     center: defaultAtlasCenter(),
     layers: defaultAtlasLayers(),
     compareMode: defaultAtlasCompareMode(),
-    selected: null
+    selected: null,
+    about: false
   };
   const bootUrl = parseAtlasUrl(location.search);
   state.center = bootUrl.center;
   state.layers = { ...bootUrl.layers };
   state.compareMode = bootUrl.compareMode;
+  state.about = bootUrl.about;
 
   let applyingUrl = false;
 
@@ -135,6 +137,21 @@
 
   const atlasView = requireElement("atlas-view");
   const about = requireElement<HTMLDialogElement>("about");
+
+  function openAboutDialog() {
+    if (about.open) return;
+    about.showModal();
+    const body = about.querySelector(".about-body");
+    if (body instanceof HTMLElement) body.scrollTop = 0;
+    requireElement("about-title").focus({ preventScroll: true });
+  }
+
+  function syncAboutDialog() {
+    if (state.about) openAboutDialog();
+    else if (about.open) about.close();
+  }
+
+  if (state.about) openAboutDialog();
 
   function isCompactView() {
     return window.matchMedia("(max-width: 720px)").matches;
@@ -1314,6 +1331,7 @@
       const centerChanged = view.center !== state.center;
       state.compareMode = view.compareMode;
       state.center = view.center;
+      state.about = view.about;
       Object.assign(state.layers, view.layers);
       syncSettingsChrome();
       syncProjectionUI();
@@ -1327,6 +1345,7 @@
         if (feature) selectCountry(feature);
         else hidePlace();
         if (!feature) drawOverlay();
+        syncAboutDialog();
       } finally {
         applyingUrl = false;
       }
@@ -1923,14 +1942,19 @@
   }
 
   document.getElementById("about-open")?.addEventListener("click", () => {
-    about.showModal();
-    const body = about.querySelector(".about-body");
-    if (body instanceof HTMLElement) body.scrollTop = 0;
-    requireElement("about-title").focus({ preventScroll: true });
+    state.about = true;
+    openAboutDialog();
+    syncLocation("push");
   });
   requireElement("about-close").addEventListener("click", () => about.close());
   about.addEventListener("click", (event) => {
     if (event.target === about) about.close();
+  });
+  about.addEventListener("close", () => {
+    if (applyingUrl) return;
+    if (!state.about) return;
+    state.about = false;
+    syncLocation("replace");
   });
   renderAboutVersion();
 

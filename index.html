@@ -88,6 +88,14 @@
               },
               {
                 "@type": "Question",
+                "name": "Did the United Nations replace the world map?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "No. In September 2026 the UN General Assembly adopted Correct the Map, a request to use equal-area maps such as Equal Earth when country size is compared. The vote was 164 in favor, 1 against (United States), and 6 abstentions (Estonia, Georgia, Lithuania, Moldova, Serbia, and Ukraine). The resolution does not ban Mercator or set borders."
+                }
+              },
+              {
+                "@type": "Question",
                 "name": "What data does this atlas use?",
                 "acceptedAnswer": {
                   "@type": "Answer",
@@ -111,7 +119,7 @@
         </svg>
         <div class="brand-copy">
           <h1>Equal Earth</h1>
-          <p>Countries at their true relative sizes</p>
+          <p>Interactive atlas, not Mercator</p>
         </div>
       </div>
       <div class="bar-end">
@@ -211,7 +219,7 @@
         </div>
         <div class="map-chrome bottom-left">
           <div class="panel overlay-legend" id="overlay-legend">
-            <span><span class="swatch swatch-ee" aria-hidden="true"></span> Equal Earth</span>
+            <span><span class="swatch swatch-ee" aria-hidden="true"></span> <span class="legend-full">This map: Equal Earth</span><span class="legend-short">Equal Earth</span></span>
             <span><span class="swatch swatch-merc" aria-hidden="true"></span> <span class="legend-full">Looks this size on Mercator</span><span class="legend-short">Mercator</span></span>
           </div>
         </div>
@@ -251,19 +259,57 @@
 
     <dialog id="about" aria-labelledby="about-title">
       <div class="about-card">
-        <h2 id="about-title" tabindex="-1">Why this map looks different</h2>
+        <h2 id="about-title" tabindex="-1">An interactive Equal Earth atlas</h2>
         <div class="about-body">
           <p>
-            Most web maps use Mercator, which inflates countries near the poles. Greenland looks
-            similar in size to Africa there, though Africa is about 14 times larger. Equal Earth is
-            an equal-area projection: landmasses keep their true relative sizes, with more familiar
-            continent shapes than Gall–Peters. Muted outlines show how large those countries look on
-            Mercator; they turn coral when you point at one. Click one for the numbers.
+            This is an interactive atlas. You can pan, zoom, and search. The map uses Equal Earth, not
+            Mercator.
           </p>
           <p>
-            The atlas redraws Natural Earth 1:50 million vectors in Equal Earth so countries, rivers,
-            lakes, and cities stay interactive as you pan and zoom. The original wall maps are
-            available as downloads:
+            Mercator is the usual web map method from 1569. It stretches land near the poles so
+            compass directions stay straight. Greenland looks similar in size to Africa on those maps.
+            Africa is about 14 times larger.
+          </p>
+          <p>
+            An equal-area projection is a flat map that keeps true relative size. No flat map can show
+            the Earth without a trade. Mercator keeps compass direction and loses size. Gall–Peters
+            keeps size and stretches continent shapes. Equal Earth keeps true size with more familiar
+            shapes.
+          </p>
+          <p>
+            In September 2026, the UN General Assembly adopted Correct the Map. The resolution is a
+            request, not a law. Togo and the African Union led the campaign. It asks schools,
+            governments, and tech companies to use equal-area maps such as Equal Earth.
+          </p>
+          <dl class="about-vote" aria-label="General Assembly vote">
+            <div>
+              <dt>In favor</dt>
+              <dd>164</dd>
+            </div>
+            <div>
+              <dt>Against</dt>
+              <dd>1 <span class="about-vote-who">United States</span></dd>
+            </div>
+            <div>
+              <dt>Abstained</dt>
+              <dd>6 <span class="about-vote-who">Estonia, Georgia, Lithuania, Moldova, Serbia, and Ukraine</span></dd>
+            </div>
+          </dl>
+          <p>
+            Ukraine and Serbia said they support true continent size. They objected to how some Equal
+            Earth political maps draw disputed land. The resolution does not set borders.
+          </p>
+          <p class="fine">
+            Recorded vote on 4 September 2026.
+            <a href="https://news.un.org/en/story/2026/09/1168284" target="_blank" rel="noopener noreferrer">UN News report on the vote</a>.
+          </p>
+          <p>
+            Muted outlines show how large those countries look on Mercator. The outlines turn coral
+            when you point at one. Click a country for the numbers.
+          </p>
+          <p>
+            The globe is Natural Earth 1:50 million vectors drawn in Equal Earth. The original wall
+            maps are available as downloads:
           </p>
           <div class="about-downloads">
             <a
@@ -293,7 +339,7 @@
           </div>
           <p class="fine">
             Political map: Tom Patterson, public domain. Physical map: BMZ German edition based on
-            Equal Earth / Natural Earth. No cookies are used for visit counts.
+            Equal Earth / Natural Earth. This site does not use cookies for visit counts.
           </p>
           <p class="fine about-version" id="about-version">Version …</p>
         </div>

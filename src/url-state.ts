@@ -72,6 +72,10 @@ function matchPlaceName(names: Iterable<string>, raw: string): string | null {
   return fallback;
 }
 
+function atlasAboutOpen(params: URLSearchParams): boolean {
+  return params.get("about") === "open";
+}
+
 function parseAtlasUrl(search: string): AtlasUrlView {
   const params = new URLSearchParams(search.startsWith("?") ? search.slice(1) : search);
   const layers = defaultAtlasLayers();
@@ -91,11 +95,12 @@ function parseAtlasUrl(search: string): AtlasUrlView {
     country: params.get("country"),
     compareMode: compare && isAtlasCompareMode(compare) ? compare : defaultAtlasCompareMode(),
     center: centerLon,
-    layers
+    layers,
+    about: atlasAboutOpen(params)
   };
 }
 
-function formatAtlasSearch(state: Pick<AtlasState, "selected" | "compareMode" | "center" | "layers">): string {
+function formatAtlasSearch(state: Pick<AtlasState, "selected" | "compareMode" | "center" | "layers" | "about">): string {
   const params = new URLSearchParams();
   if (state.selected) params.set("country", slugifyPlaceName(state.selected));
   if (state.compareMode !== defaultAtlasCompareMode()) params.set("compare", state.compareMode);
@@ -103,5 +108,6 @@ function formatAtlasSearch(state: Pick<AtlasState, "selected" | "compareMode" | 
   if (center && center !== "africa") params.set("center", center);
   const off = ATLAS_LAYER_ORDER.filter((name) => !state.layers[name]);
   if (off.length) params.set("off", off.join(","));
+  if (state.about) params.set("about", "open");
   return params.toString();
 }

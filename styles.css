@@ -1435,6 +1435,12 @@ body:has(#about[open]) .map-chrome {
     flex-shrink: 0;
   }
 
+  .bar-action {
+    width: auto;
+    min-width: var(--control);
+    padding: 0 10px;
+  }
+
   .search-panel {
     display: none;
     position: fixed;
@@ -1466,13 +1472,6 @@ body:has(#about[open]) .map-chrome {
     min-width: 0;
     flex: 1 1 auto;
     justify-content: flex-end;
-  }
-
-  .action-label { display: none; }
-  .bar-action {
-    width: var(--control);
-    min-width: var(--control);
-    padding: 0;
   }
 
   .info-panel.is-country #info-meta { display: none; }
@@ -1751,6 +1750,12 @@ body:has(#about[open]) .map-chrome {
   }
   .lang-toggle .label-short { display: inline; }
   .lang-toggle .chevron { display: none; }
+  .bar-action:not(.search-toggle) .action-label { display: none; }
+  .bar-action:not(.search-toggle) {
+    width: var(--control);
+    min-width: var(--control);
+    padding: 0;
+  }
 }
 
 @media (max-width: 720px) and (max-height: 500px) {

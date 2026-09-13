@@ -44,6 +44,10 @@ function isAtlasCompareMode(value: string): value is CompareMode {
   return value === "hover" || value === "always";
 }
 
+function defaultAtlasLocale(): AtlasLocaleId {
+  return "en";
+}
+
 function slugifyPlaceName(name: string): string {
   return name
     .normalize("NFD")
@@ -91,17 +95,20 @@ function parseAtlasUrl(search: string): AtlasUrlView {
   let centerLon = defaultAtlasCenter();
   if (center && isAtlasCenterName(center)) centerLon = ATLAS_CENTER_LON[center];
   else if (center === "0" || center === "-90" || center === "150") centerLon = Number(center);
+  const lang = params.get("lang");
   return {
     country: params.get("country"),
     compareMode: compare && isAtlasCompareMode(compare) ? compare : defaultAtlasCompareMode(),
     center: centerLon,
     layers,
-    about: atlasAboutOpen(params)
+    about: atlasAboutOpen(params),
+    lang: lang && isAtlasLocale(lang) ? lang : null
   };
 }
 
-function formatAtlasSearch(state: Pick<AtlasState, "selected" | "compareMode" | "center" | "layers" | "about">): string {
+function formatAtlasSearch(state: Pick<AtlasState, "selected" | "compareMode" | "center" | "layers" | "about" | "lang">): string {
   const params = new URLSearchParams();
+  if (state.lang && state.lang !== defaultAtlasLocale()) params.set("lang", state.lang);
   if (state.selected) params.set("country", slugifyPlaceName(state.selected));
   if (state.compareMode !== defaultAtlasCompareMode()) params.set("compare", state.compareMode);
   const center = atlasCenterName(state.center);

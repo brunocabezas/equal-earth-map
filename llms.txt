@@ -4,7 +4,7 @@ https://trueearthmap.com/
 > A free interactive world atlas that uses the Equal Earth projection, an equal-area map. Countries keep their true relative sizes, unlike Mercator web maps.
 
 ## What this is
-Users can pan, zoom, and search countries and cities. Mercator size is a comparison overlay, not the home view. Political and physical Equal Earth wall maps are available as downloads. There is no account and no cookies for visit counts.
+Users can pan, zoom, and search countries and cities. Mercator size is a comparison overlay, not the home view. Political and physical Equal Earth wall maps are available as downloads. There is no account and no cookies for visit counts. The atlas UI is available in English, Spanish, French, Portuguese, Arabic, Chinese, and Russian via `?lang=`; country names on the map stay in English.
 
 ## Equal Earth projection
 Equal Earth is an equal-area pseudocylindrical map projection by Bojan Šavrič, Tom Patterson, and Bernhard Jenny (2018). It keeps true relative size with more familiar continent shapes than Gall–Peters. Africa is about 14 times larger than Greenland.
@@ -15,3 +15,9 @@ On 4 September 2026 the UN General Assembly adopted Correct the Map by 164 votes
 ## Open this atlas
 - Home: https://trueearthmap.com/
 - About: https://trueearthmap.com/?about=open
+- Spanish: https://trueearthmap.com/?lang=es
+- French: https://trueearthmap.com/?lang=fr
+- Portuguese: https://trueearthmap.com/?lang=pt
+- Arabic: https://trueearthmap.com/?lang=ar
+- Chinese: https://trueearthmap.com/?lang=zh
+- Russian: https://trueearthmap.com/?lang=ru

@@ -9,6 +9,14 @@
       content="Interactive Equal Earth projection atlas. An equal-area world map with true country sizes, unlike Mercator. Search the map and download wall maps."
     />
     <link rel="canonical" href="https://trueearthmap.com/" />
+    <link rel="alternate" hreflang="x-default" href="https://trueearthmap.com/" />
+    <link rel="alternate" hreflang="en" href="https://trueearthmap.com/" />
+    <link rel="alternate" hreflang="es" href="https://trueearthmap.com/?lang=es" />
+    <link rel="alternate" hreflang="fr" href="https://trueearthmap.com/?lang=fr" />
+    <link rel="alternate" hreflang="pt" href="https://trueearthmap.com/?lang=pt" />
+    <link rel="alternate" hreflang="ar" href="https://trueearthmap.com/?lang=ar" />
+    <link rel="alternate" hreflang="zh-Hans" href="https://trueearthmap.com/?lang=zh" />
+    <link rel="alternate" hreflang="ru" href="https://trueearthmap.com/?lang=ru" />
     <meta name="robots" content="index, follow" />
     <meta name="google-site-verification" content="Veh-jW6bby_QXCCJP9wlzjsK-h1Fbvfc5zWNtBTKSVU" />
     <meta name="author" content="Equal Earth projection atlas" />
@@ -39,6 +47,32 @@
     <meta name="twitter:image" content="https://trueearthmap.com/og-image.jpg" />
     <meta name="twitter:image:alt" content="Equal Earth projection political world map centered on the Pacific" />
     <link rel="stylesheet" href="styles.css" />
+    <script>
+      (function () {
+        var match = /(?:^|[?&])lang=([a-z]{2})(?:&|$)/.exec(location.search);
+        var id = match && /^(en|es|fr|pt|ar|zh|ru)$/.test(match[1]) ? match[1] : "";
+        if (!id) {
+          try { id = localStorage.getItem("equal-earth-lang") || ""; } catch (e) {}
+        }
+        if (!id && typeof navigator !== "undefined") {
+          var tags = navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language];
+          for (var i = 0; i < tags.length; i += 1) {
+            var tag = String(tags[i] || "").toLowerCase().replace(/_/g, "-");
+            if (tag.indexOf("zh") === 0) { id = "zh"; break; }
+            var base = tag.split("-")[0];
+            if (/^(en|es|fr|pt|ar|ru)$/.test(base)) { id = base; break; }
+          }
+        }
+        if (id === "ar") {
+          document.documentElement.lang = "ar";
+          document.documentElement.dir = "rtl";
+        } else if (id === "zh") {
+          document.documentElement.lang = "zh-Hans";
+        } else if (id && id !== "en") {
+          document.documentElement.lang = id;
+        }
+      })();
+    </script>
     <link rel="preload" href="vendor/d3.min.js" as="script" />
     <link rel="preload" href="data/countries-preview.json" as="fetch" crossorigin />
     <script type="application/ld+json">
@@ -148,9 +182,9 @@
     </script>
   </head>
   <body>
-    <a class="skip-link" href="#search">Skip to search</a>
+    <a class="skip-link" href="#search" data-i18n="skipToSearch">Skip to search</a>
     <header class="topbar">
-      <a class="brand" id="brand-home" href="./" aria-label="Equal Earth home">
+      <a class="brand" id="brand-home" href="./" aria-label="Equal Earth home" data-i18n-aria="brandHome">
         <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true">
           <circle cx="16" cy="16" r="13" />
           <ellipse cx="16" cy="16" rx="6.5" ry="13" />
@@ -158,32 +192,32 @@
         </svg>
         <div class="brand-copy">
           <h1>Equal Earth</h1>
-          <p>Equal Earth projection, not Mercator</p>
+          <p data-i18n="tagline">Equal Earth projection, not Mercator</p>
         </div>
       </a>
       <div class="bar-end">
         <div class="bar-menu">
           <div class="bar-seg">
-            <button type="button" class="bar-btn" id="mercator-toggle" aria-label="Mercator size" aria-expanded="false" aria-controls="mercator-menu" aria-haspopup="menu">
-              <span class="label-full">Mercator size</span>
-              <span class="label-short">Mercator</span>
+            <button type="button" class="bar-btn" id="mercator-toggle" aria-label="Mercator size" aria-expanded="false" aria-controls="mercator-menu" aria-haspopup="menu" data-i18n-aria="mercatorSize">
+              <span class="label-full" data-i18n="mercatorSize">Mercator size</span>
+              <span class="label-short" data-i18n="mercatorShort">Mercator</span>
               <svg class="icon chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6.25 8 10.25 12 6.25" /></svg>
             </button>
           </div>
           <div class="sheet sheet-menu" id="mercator-menu">
             <div class="panel">
-              <div role="menu" aria-label="When to show Mercator size">
-                <button type="button" class="menu-item is-active" role="menuitemradio" data-compare="always" aria-checked="true">Always</button>
+              <div role="menu" aria-label="When to show Mercator size" data-i18n-aria="mercatorMenu">
+                <button type="button" class="menu-item is-active" role="menuitemradio" data-compare="always" aria-checked="true" data-i18n="compareAlways">Always</button>
                 <button type="button" class="menu-item" role="menuitemradio" data-compare="hover" aria-checked="false">
-                  <span class="compare-hover">On hover</span>
-                  <span class="compare-tap">On tap</span>
+                  <span class="compare-hover" data-i18n="compareHover">On hover</span>
+                  <span class="compare-tap" data-i18n="compareTap">On tap</span>
                 </button>
               </div>
-              <p class="panel-note" id="proj-hint">Outlines show how large countries look on Mercator.</p>
+              <p class="panel-note" id="proj-hint" data-i18n="hintAlways">Outlines show how large countries look on Mercator.</p>
             </div>
           </div>
         </div>
-        <button type="button" class="bar-action search-toggle" id="search-toggle" aria-label="Search" aria-expanded="false" aria-controls="search-panel">
+        <button type="button" class="bar-action search-toggle" id="search-toggle" aria-label="Search" aria-expanded="false" aria-controls="search-panel" data-i18n-aria="search">
           <svg class="icon" viewBox="0 0 16 16" aria-hidden="true">
             <circle cx="7" cy="7" r="4.25" />
             <path d="M10.2 10.2 13.5 13.5" />
@@ -195,59 +229,79 @@
               <circle cx="7" cy="7" r="4.25" />
               <path d="M10.2 10.2 13.5 13.5" />
             </svg>
-            <span class="sr-only">Search a country or city</span>
-            <input id="search" type="search" placeholder="Greenland, Africa…" autocomplete="off" enterkeyhint="search" maxlength="80" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="search-results" aria-haspopup="listbox" />
+            <span class="sr-only" data-i18n="searchCountryOrCity">Search a country or city</span>
+            <input id="search" type="search" placeholder="Greenland, Africa…" autocomplete="off" enterkeyhint="search" maxlength="80" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="search-results" aria-haspopup="listbox" data-i18n-placeholder="searchPlaceholder" />
           </label>
-          <ul id="search-results" hidden role="listbox" aria-label="Search results"></ul>
+          <ul id="search-results" hidden role="listbox" aria-label="Search results" data-i18n-aria="searchResults"></ul>
           <p id="search-empty" class="search-empty" hidden role="status"></p>
         </div>
         <div class="bar-menu bar-menu-end">
-          <button type="button" class="bar-action" id="atlas-controls-toggle" aria-label="Layers" aria-expanded="false" aria-controls="atlas-controls" aria-haspopup="dialog">
+          <button type="button" class="bar-action" id="atlas-controls-toggle" aria-label="Layers" aria-expanded="false" aria-controls="atlas-controls" aria-haspopup="dialog" data-i18n-aria="layers">
             <svg class="icon" viewBox="0 0 16 16" aria-hidden="true">
               <path d="M2.5 4.5h11M4 8h8M5.5 11.5h5" />
             </svg>
-            <span class="action-label">Layers</span>
+            <span class="action-label" data-i18n="layers">Layers</span>
           </button>
           <div class="sheet" id="atlas-controls" role="dialog" aria-modal="true" aria-labelledby="atlas-controls-title">
             <div class="panel">
               <div class="sheet-head">
-                <h2 id="atlas-controls-title">Layers</h2>
-                <button type="button" class="sheet-close" aria-label="Close layers">
+                <h2 id="atlas-controls-title" data-i18n="layers">Layers</h2>
+                <button type="button" class="sheet-close" aria-label="Close layers" data-i18n-aria="closeLayers">
                   <svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" /></svg>
                 </button>
               </div>
               <fieldset class="layer-set">
-                <legend class="sr-only">Map layers</legend>
-                <label class="check"><input type="checkbox" data-layer="countries" checked /> Countries</label>
-                <label class="check"><input type="checkbox" data-layer="lakes" checked /> Lakes</label>
-                <label class="check"><input type="checkbox" data-layer="rivers" checked /> Rivers</label>
-                <label class="check"><input type="checkbox" data-layer="cities" checked /> Cities</label>
-                <label class="check"><input type="checkbox" data-layer="labels" checked /> Labels</label>
-                <label class="check"><input type="checkbox" data-layer="graticule" checked /> Graticule</label>
+                <legend class="sr-only" data-i18n="mapLayers">Map layers</legend>
+                <label class="check"><input type="checkbox" data-layer="countries" checked /> <span data-i18n="layerCountries">Countries</span></label>
+                <label class="check"><input type="checkbox" data-layer="lakes" checked /> <span data-i18n="layerLakes">Lakes</span></label>
+                <label class="check"><input type="checkbox" data-layer="rivers" checked /> <span data-i18n="layerRivers">Rivers</span></label>
+                <label class="check"><input type="checkbox" data-layer="cities" checked /> <span data-i18n="layerCities">Cities</span></label>
+                <label class="check"><input type="checkbox" data-layer="labels" checked /> <span data-i18n="layerLabels">Labels</span></label>
+                <label class="check"><input type="checkbox" data-layer="graticule" checked /> <span data-i18n="layerGraticule">Graticule</span></label>
               </fieldset>
             </div>
           </div>
         </div>
-        <button type="button" class="bar-action" id="about-open" aria-label="About">
+        <button type="button" class="bar-action" id="about-open" aria-label="About" data-i18n-aria="about">
           <svg class="icon" viewBox="0 0 16 16" aria-hidden="true">
             <circle cx="8" cy="8" r="5.25" />
             <path d="M8 7.15v3.4M8 5.4h.01" />
           </svg>
-          <span class="action-label">About</span>
+          <span class="action-label" data-i18n="about">About</span>
         </button>
+        <div class="bar-menu bar-menu-end">
+          <button type="button" class="bar-btn lang-toggle" id="lang-toggle" aria-label="Language" aria-expanded="false" aria-controls="lang-menu" aria-haspopup="menu" data-i18n-aria="language">
+            <span class="label-full" id="lang-label-full">English</span>
+            <span class="label-short" id="lang-label-short">EN</span>
+            <svg class="icon chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6.25 8 10.25 12 6.25" /></svg>
+          </button>
+          <div class="sheet sheet-menu" id="lang-menu">
+            <div class="panel">
+              <div role="menu" aria-label="Language" data-i18n-aria="languageMenu">
+                <button type="button" class="menu-item is-active" role="menuitemradio" data-lang="en" lang="en" aria-checked="true">English</button>
+                <button type="button" class="menu-item" role="menuitemradio" data-lang="es" lang="es" aria-checked="false">Español</button>
+                <button type="button" class="menu-item" role="menuitemradio" data-lang="fr" lang="fr" aria-checked="false">Français</button>
+                <button type="button" class="menu-item" role="menuitemradio" data-lang="pt" lang="pt" aria-checked="false">Português</button>
+                <button type="button" class="menu-item" role="menuitemradio" data-lang="ar" lang="ar" aria-checked="false">العربية</button>
+                <button type="button" class="menu-item" role="menuitemradio" data-lang="zh" lang="zh-Hans" aria-checked="false">中文</button>
+                <button type="button" class="menu-item" role="menuitemradio" data-lang="ru" lang="ru" aria-checked="false">Русский</button>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </header>
 
     <main>
-      <section id="atlas-view" class="view is-visible" aria-label="Interactive Equal Earth atlas">
+      <section id="atlas-view" class="view is-visible" aria-label="Interactive Equal Earth atlas" data-i18n-aria="atlasView">
         <div id="atlas-stage" tabindex="0" aria-label="Interactive Equal Earth map. Search for a country, or focus the map: arrow keys pan, Enter selects the country in the center, plus and minus zoom, Escape clears the selection.">
           <canvas id="atlas-map" aria-hidden="true"></canvas>
           <canvas id="atlas-overlay" aria-hidden="true"></canvas>
         </div>
-        <p id="atlas-status" class="atlas-status" role="status">Loading Natural Earth data…</p>
+        <p id="atlas-status" class="atlas-status" role="status" data-i18n="loading">Loading Natural Earth data…</p>
         <div class="map-chrome left">
           <div class="panel info-panel" id="place-info" hidden role="region" aria-live="polite" aria-labelledby="info-title">
-            <button type="button" class="info-close" id="info-close" aria-label="Clear selection">
+            <button type="button" class="info-close" id="info-close" aria-label="Clear selection" data-i18n-aria="clearSelection">
               <svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" /></svg>
             </button>
             <h2 id="info-title" tabindex="-1"></h2>
@@ -258,28 +312,28 @@
         </div>
         <div class="map-chrome bottom-left">
           <div class="panel overlay-legend" id="overlay-legend">
-            <span><span class="swatch swatch-ee" aria-hidden="true"></span> <span class="legend-full">This map: Equal Earth</span><span class="legend-short">Equal Earth</span></span>
-            <span><span class="swatch swatch-merc" aria-hidden="true"></span> <span class="legend-full">Looks this size on Mercator</span><span class="legend-short">Mercator</span></span>
+            <span><span class="swatch swatch-ee" aria-hidden="true"></span> <span class="legend-full" data-i18n="legendEqualEarth">This map: Equal Earth</span><span class="legend-short" data-i18n="legendEqualEarthShort">Equal Earth</span></span>
+            <span><span class="swatch swatch-merc" aria-hidden="true"></span> <span class="legend-full" data-i18n="legendMercator">Looks this size on Mercator</span><span class="legend-short" data-i18n="legendMercatorShort">Mercator</span></span>
           </div>
         </div>
         <div class="map-chrome right">
           <div class="zoom-stack" id="atlas-zoom">
-            <button type="button" data-zoom="in" aria-label="Zoom in">
+            <button type="button" data-zoom="in" aria-label="Zoom in" data-i18n-aria="zoomIn">
               <svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8h9M8 3.5v9" /></svg>
             </button>
-            <button type="button" data-zoom="out" aria-label="Zoom out">
+            <button type="button" data-zoom="out" aria-label="Zoom out" data-i18n-aria="zoomOut">
               <svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8h9" /></svg>
             </button>
-            <button type="button" data-zoom="home" aria-label="Reset view">
+            <button type="button" data-zoom="home" aria-label="Reset view" data-i18n-aria="resetView">
               <svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 6.5V3.5h3M13 6.5V3.5h-3M3 9.5v3h3M13 9.5v3h-3" /></svg>
             </button>
           </div>
         </div>
         <div class="map-chrome bottom-right">
-          <div class="center-stack" role="group" aria-label="Map center">
-            <button type="button" class="is-active" data-center="0" title="Center on Africa">Africa</button>
-            <button type="button" data-center="-90" title="Center on the Americas">Americas</button>
-            <button type="button" data-center="150" title="Center on the Pacific">Pacific</button>
+          <div class="center-stack" role="group" aria-label="Map center" data-i18n-aria="mapCenter">
+            <button type="button" class="is-active" data-center="0" title="Center on Africa" data-i18n="centerAfrica" data-i18n-title="centerAfricaTitle">Africa</button>
+            <button type="button" data-center="-90" title="Center on the Americas" data-i18n="centerAmericas" data-i18n-title="centerAmericasTitle">Americas</button>
+            <button type="button" data-center="150" title="Center on the Pacific" data-i18n="centerPacific" data-i18n-title="centerPacificTitle">Pacific</button>
           </div>
         </div>
         <div id="tooltip" class="tooltip" hidden></div>
@@ -287,66 +341,66 @@
     </main>
 
     <footer class="attrib">
-      <span class="attrib-full">
+      <span class="attrib-full" data-i18n="attribFull">
         Equal Earth projection by Šavrič, Patterson &amp; Jenny · Wall maps by Tom Patterson / BMZ ·
         Vectors from Natural Earth
       </span>
-      <span class="attrib-short">Equal Earth · Natural Earth</span>
+      <span class="attrib-short" data-i18n="attribShort">Equal Earth · Natural Earth</span>
     </footer>
 
     <div id="sheet-backdrop" class="sheet-backdrop"></div>
 
     <dialog id="about" aria-labelledby="about-title">
       <div class="about-card">
-        <h2 id="about-title" tabindex="-1">An interactive Equal Earth projection atlas</h2>
+        <h2 id="about-title" tabindex="-1" data-i18n="aboutTitle">An interactive Equal Earth projection atlas</h2>
         <div class="about-body">
-          <p>
+          <p data-i18n="aboutP1">
             This is an interactive atlas. You can pan, zoom, and search. The map uses the Equal Earth
             projection, not Mercator.
           </p>
-          <p>
+          <p data-i18n="aboutP2">
             Mercator is the usual web map method from 1569. It stretches land near the poles so
             compass directions stay straight. Greenland looks similar in size to Africa on those maps.
             Africa is about 14 times larger.
           </p>
-          <p>
+          <p data-i18n="aboutP3">
             An equal-area projection is a flat map that keeps true relative size. No flat map can show
             the Earth without a trade. Mercator keeps compass direction and loses size. Gall–Peters
             keeps size and stretches continent shapes. Equal Earth keeps true size with more familiar
             shapes.
           </p>
-          <p>
+          <p data-i18n="aboutP4">
             In September 2026, the UN General Assembly adopted Correct the Map. The resolution is a
             request, not a law. Togo and the African Union led the campaign. It asks schools,
             governments, and tech companies to use equal-area maps such as Equal Earth.
           </p>
-          <dl class="about-vote" aria-label="General Assembly vote">
+          <dl class="about-vote" aria-label="General Assembly vote" data-i18n-aria="aboutVote">
             <div>
-              <dt>In favor</dt>
+              <dt data-i18n="voteInFavor">In favor</dt>
               <dd>164</dd>
             </div>
             <div>
-              <dt>Against</dt>
-              <dd>1 <span class="about-vote-who">United States</span></dd>
+              <dt data-i18n="voteAgainst">Against</dt>
+              <dd>1 <span class="about-vote-who" data-i18n="voteAgainstWho">United States</span></dd>
             </div>
             <div>
-              <dt>Abstained</dt>
-              <dd>6 <span class="about-vote-who">Estonia, Georgia, Lithuania, Moldova, Serbia, and Ukraine</span></dd>
+              <dt data-i18n="voteAbstained">Abstained</dt>
+              <dd>6 <span class="about-vote-who" data-i18n="voteAbstainedWho">Estonia, Georgia, Lithuania, Moldova, Serbia, and Ukraine</span></dd>
             </div>
           </dl>
-          <p>
+          <p data-i18n="aboutP5">
             Ukraine and Serbia said they support true continent size. They objected to how some Equal
             Earth political maps draw disputed land. The resolution does not set borders.
           </p>
           <p class="fine">
-            Recorded vote on 4 September 2026.
-            <a href="https://news.un.org/en/story/2026/09/1168284" target="_blank" rel="noopener noreferrer">UN News report on the vote</a>.
+            <span data-i18n="aboutVoteRecord">Recorded vote on 4 September 2026.</span>
+            <a href="https://news.un.org/en/story/2026/09/1168284" target="_blank" rel="noopener noreferrer" data-i18n="aboutVoteLink">UN News report on the vote</a>.
           </p>
-          <p>
+          <p data-i18n="aboutP6">
             Muted outlines show how large those countries look on Mercator. The outlines turn coral
             when you point at one. Click a country for the numbers.
           </p>
-          <p>
+          <p data-i18n="aboutP7">
             The globe is Natural Earth 1:50 million vectors drawn in Equal Earth. The original wall
             maps are available as downloads:
           </p>
@@ -361,7 +415,7 @@
                 <rect x="2.5" y="3.5" width="11" height="9" rx="1" />
                 <path d="M2.5 8h11M8 3.5c1.7 2.2 1.7 6.8 0 9M8 3.5C6.3 5.7 6.3 10.3 8 12.5" />
               </svg>
-              Political map
+              <span data-i18n="politicalMap">Political map</span>
             </a>
             <a
               class="about-download"
@@ -373,16 +427,16 @@
                 <path d="M1.5 12.5h13" />
                 <path d="M2 12.5 5.5 6.5 8 10 11 4.5 14.5 12.5" />
               </svg>
-              Physical map
+              <span data-i18n="physicalMap">Physical map</span>
             </a>
           </div>
-          <p class="fine">
+          <p class="fine" data-i18n="aboutCredit">
             Political map: Tom Patterson, public domain. Physical map: BMZ German edition based on
             Equal Earth / Natural Earth. This site does not use cookies for visit counts.
           </p>
           <p class="fine about-version" id="about-version">Version …</p>
         </div>
-        <button type="button" id="about-close">Close</button>
+        <button type="button" id="about-close" data-i18n="close">Close</button>
       </div>
     </dialog>
 
@@ -391,6 +445,7 @@
     <script src="dist/analytics.js"></script>
     <script src="vendor/d3.min.js"></script>
     <script src="vendor/topojson.min.js"></script>
+    <script src="dist/i18n.js"></script>
     <script src="dist/url-state.js"></script>
     <script src="dist/app.js"></script>
   </body>

@@ -124,13 +124,15 @@
               <svg class="icon chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6.25 8 10.25 12 6.25" /></svg>
             </button>
           </div>
-          <div class="sheet sheet-menu" id="mercator-menu" role="menu" aria-label="When to show Mercator size">
+          <div class="sheet sheet-menu" id="mercator-menu">
             <div class="panel">
-              <button type="button" class="menu-item is-active" role="menuitemradio" data-compare="always" aria-checked="true">Always</button>
-              <button type="button" class="menu-item" role="menuitemradio" data-compare="hover" aria-checked="false">
-                <span class="compare-hover">On hover</span>
-                <span class="compare-tap">On tap</span>
-              </button>
+              <div role="menu" aria-label="When to show Mercator size">
+                <button type="button" class="menu-item is-active" role="menuitemradio" data-compare="always" aria-checked="true">Always</button>
+                <button type="button" class="menu-item" role="menuitemradio" data-compare="hover" aria-checked="false">
+                  <span class="compare-hover">On hover</span>
+                  <span class="compare-tap">On tap</span>
+                </button>
+              </div>
               <p class="panel-note" id="proj-hint">Outlines show how large countries look on Mercator.</p>
             </div>
           </div>

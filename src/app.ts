@@ -1700,6 +1700,26 @@
     input.focus();
   }
 
+  function sheetInertTargets() {
+    return [
+      document.querySelector(".skip-link"),
+      document.querySelector(".brand"),
+      document.querySelector(".bar-menu:not(.bar-menu-end)"),
+      document.getElementById("search-toggle"),
+      document.getElementById("search-panel"),
+      document.getElementById("about-open"),
+      document.querySelector("main"),
+      document.querySelector("footer"),
+      document.getElementById("about")
+    ];
+  }
+
+  function setSheetInert(on: boolean) {
+    for (const node of sheetInertTargets()) {
+      if (node instanceof HTMLElement) node.inert = on;
+    }
+  }
+
   function closeSheets(restoreFocus = false) {
     const wasOpen = Boolean(document.querySelector(".sheet.is-open"));
     document.querySelectorAll(".sheet.is-open").forEach((sheet) => sheet.classList.remove("is-open"));
@@ -1708,6 +1728,7 @@
       toggle.setAttribute("aria-expanded", "false");
     });
     document.body.classList.remove("sheet-open");
+    setSheetInert(false);
     if (restoreFocus && wasOpen && sheetFocusReturn) {
       sheetFocusReturn.focus();
       sheetFocusReturn = null;
@@ -1726,7 +1747,10 @@
         button.setAttribute("aria-expanded", "true");
         sheetFocusReturn = button;
       }
-      if (modal) document.body.classList.add("sheet-open");
+      if (modal) {
+        document.body.classList.add("sheet-open");
+        setSheetInert(true);
+      }
       sheet.querySelector<HTMLElement>(".sheet-close, [data-compare]")?.focus();
     }
   }

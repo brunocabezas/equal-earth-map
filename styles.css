@@ -675,6 +675,12 @@ legend {
   overflow: hidden;
 }
 
+.sheet-menu [role="menu"] {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
 .menu-item {
   border: 0;
   border-radius: 999px;

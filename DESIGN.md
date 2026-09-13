@@ -251,10 +251,10 @@ Night bar, cream brand serif, thin-line globe mark, Mercator size menu before th
 Full-viewport layer (`100svh`), ice card centered. Title and Close stay pinned; only the prose column scrolls. Opening focuses the title without scrolling so the heading stays on screen. Map chrome hides while it is open.
 
 ### Layers popover
-Ice card hugging content, two-column layer checks, X to close. Absolute under the Layers pill on desktop; centered under the night bar on compact so the card stays in view.
+Ice card hugging content, two-column layer checks, X to close. Absolute under the Layers pill on desktop; centered under the night bar on compact so the card stays in view. While it is open, the rest of the atlas is inert so keyboard and assistive tech stay in the card.
 
 ### Mercator size menu
-Ice card under the Mercator size pill with Always / On hover. On compact and hover-less pointers that control is On tap: tap a country to zoom, open the place card, and keep Mercator’s outline. Selecting a country keeps its outline at full strength and greys the others. Not a bottom sheet; it stays a dropdown on compact, centered under the night bar.
+Ice card under the Mercator size pill with Always / On hover as a menu, and a short note under that menu (not inside it). On compact and hover-less pointers that control is On tap: tap a country to zoom, open the place card, and keep Mercator’s outline. Selecting a country keeps its outline at full strength and greys the others. Not a bottom sheet; it stays a dropdown on compact, centered under the night bar.
 
 ### Compact search
 On desktop the night bar has only the ice search field, not a separate Search button. On ≤720px that field hides and a search icon sits between Mercator and Layers; it opens the same ice field as a layer above the map. Escape and tapping the dimmed map close it.

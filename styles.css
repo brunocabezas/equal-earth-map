@@ -921,6 +921,19 @@ legend {
   display: none;
 }
 
+#search-empty {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 6px);
+  z-index: 7;
+  margin: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--panel);
+  box-shadow: var(--shadow);
+}
+
 #search-results button {
   width: 100%;
   border: 0;

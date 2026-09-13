@@ -87,30 +87,6 @@
   if (state.lang !== currentAtlasLocale()) applyAtlasLocale(state.lang);
   persistAtlasLocale(state.lang);
 
-  const AHA_STORAGE_KEY = "ee-aha";
-  const AHA_COUNTRY = "Greenland";
-  function ahaSeen() {
-    try {
-      return localStorage.getItem(AHA_STORAGE_KEY) === "1";
-    } catch {
-      return true;
-    }
-  }
-  function markAhaSeen() {
-    try {
-      localStorage.setItem(AHA_STORAGE_KEY, "1");
-    } catch {
-      // Private mode: skip remembering; next load may show the pair again.
-    }
-  }
-  function shouldStartAha() {
-    if (ahaSeen()) return false;
-    if (bootUrl.country) return false;
-    if (bootUrl.about) return false;
-    if (bootUrl.compareMode !== defaultAtlasCompareMode()) return false;
-    return true;
-  }
-
   let applyingUrl = false;
 
   function overlayMode() {
@@ -164,7 +140,7 @@
 
   let atlasReady = false;
   let atlasLoading = false;
-  let atlas: { resize: () => void; dismissSelection: () => boolean; dismissAha: () => boolean } | null = null;
+  let atlas: { resize: () => void; dismissSelection: () => boolean } | null = null;
 
   const atlasView = requireElement("atlas-view");
   const about = requireElement<HTMLDialogElement>("about");
@@ -500,7 +476,6 @@
     let pendingPointer: { vx: number; vy: number; sx: number; sy: number } | null = null;
     let hideGhosts: OverlayGhost[] = [];
     let hideGhostsKey = "";
-    let ahaActive = shouldStartAha();
     let hideMask: Uint8ClampedArray | null = null;
     let hideMaskW = 0;
     let hideMaskH = 0;
@@ -753,9 +728,7 @@
 
     function currentHideGhosts() {
       const key = overlayMode() && state.layers.countries
-        ? (state.compareMode === "always"
-          ? (ahaActive ? "always:aha" : "always")
-          : `h:${hoverName || ""}:${state.selected || ""}`)
+        ? (state.compareMode === "always" ? "always" : `h:${hoverName || ""}:${state.selected || ""}`)
         : "";
       if (key === hideGhostsKey) return hideGhosts;
       hideGhostsKey = key;
@@ -811,15 +784,9 @@
       ctx.restore();
     }
 
-    function alwaysOverlayItems() {
-      if (!ahaActive) return overlayGhosts;
-      const item = countryByName.get(AHA_COUNTRY);
-      return item && item.apparent > 0 ? [item] : overlayGhosts;
-    }
-
     function apparentItemsToBake() {
       if (!overlayMode() || !state.layers.countries) return [];
-      if (state.compareMode === "always") return alwaysOverlayItems();
+      if (state.compareMode === "always") return overlayGhosts;
       const selectedItem = state.selected ? countryByName.get(state.selected) : undefined;
       return selectedItem && selectedItem.apparent > 0 ? [selectedItem] : [];
     }
@@ -1030,7 +997,7 @@
     function drawSizeOverlays(t: ZoomTransform) {
       if (!overlayMode() || !state.layers.countries) return;
       if (state.compareMode === "always") {
-        for (const item of alwaysOverlayItems()) {
+        for (const item of overlayGhosts) {
           const selected = item.name === state.selected;
           const hovering = item.name === hoverName;
           const muted = !selected && !hovering;
@@ -1359,7 +1326,6 @@
     }
 
     function showPlace(place: Place, focusInfo = false) {
-      const ahaEnded = endAha();
       const hadSelection = state.selected !== null;
       state.selected = null;
       lastCity = place;
@@ -1371,16 +1337,15 @@
       renderMeasures([]);
       requireElement("info-area").textContent = "";
       syncOverlayLegendFocus();
-      if (hadSelection || ahaEnded) {
+      if (hadSelection) {
         bake(currentTransform);
         drawOverlay();
-        if (hadSelection && !applyingUrl) syncLocation("push");
+        if (!applyingUrl) syncLocation("push");
       }
       revealPlace(focusInfo);
     }
 
     function selectCountry(feature: CountryFeature, focusInfo = false) {
-      if (ahaActive && feature.properties.name !== AHA_COUNTRY) endAha();
       const changed = state.selected !== feature.properties.name;
       state.selected = feature.properties.name;
       lastCity = null;
@@ -1627,27 +1592,6 @@
       }
     });
 
-    function endAha() {
-      if (!ahaActive) return false;
-      ahaActive = false;
-      markAhaSeen();
-      hideGhostsKey = "";
-      syncAhaChrome();
-      return true;
-    }
-
-    function syncAhaChrome() {
-      const note = document.getElementById("aha-note");
-      if (note) note.hidden = !(ahaActive && overlayMode() && state.compareMode === "always");
-    }
-
-    function dismissAha() {
-      if (!endAha()) return false;
-      bake(currentTransform);
-      drawOverlay();
-      return true;
-    }
-
     function syncProjectionUI() {
       const overlay = overlayMode();
       const hint = document.getElementById("proj-hint");
@@ -1677,24 +1621,20 @@
               : t("stageAriaHover"))
           : t("stageAriaPlain")
       );
-      syncAhaChrome();
     }
 
     document.querySelectorAll<HTMLElement>("[data-compare]").forEach((button) => {
       button.addEventListener("click", () => {
         const mode = button.dataset.compare;
         if (!isCompareMode(mode)) return;
-        const ahaEnded = endAha();
-        if (mode !== state.compareMode || ahaEnded) {
-          if (mode !== state.compareMode) {
-            state.compareMode = mode;
-            track("compare_mode", { mode });
-            syncLocation("replace");
-          }
+        if (mode !== state.compareMode) {
+          state.compareMode = mode;
           hideGhostsKey = "";
           syncProjectionUI();
           bake(currentTransform);
           drawOverlay();
+          track("compare_mode", { mode });
+          syncLocation("replace");
         }
         closeSheets(true);
       });
@@ -1759,11 +1699,7 @@
       if (!isCompactView()) closeSearch();
     }
 
-    document.getElementById("aha-dismiss")?.addEventListener("click", () => {
-      dismissAha();
-    });
-
-    atlas = { resize: () => layout(), dismissSelection, dismissAha };
+    atlas = { resize: () => layout(), dismissSelection };
     syncProjectionUI();
     onAtlasLocaleChange(() => {
       syncProjectionUI();
@@ -2173,11 +2109,6 @@
         return;
       }
       if (atlas?.dismissSelection()) {
-        document.getElementById("atlas-stage")?.focus();
-        event.preventDefault();
-        return;
-      }
-      if (atlas?.dismissAha()) {
         document.getElementById("atlas-stage")?.focus();
         event.preventDefault();
       }

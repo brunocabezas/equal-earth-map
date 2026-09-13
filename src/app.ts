@@ -1244,6 +1244,8 @@
     }
 
     function showPlace(place: Place, focusInfo = false) {
+      const hadSelection = state.selected !== null;
+      state.selected = null;
       const kind = place.capital ? "Capital" : "City";
       info.classList.add("is-city");
       info.classList.remove("is-country");
@@ -1252,6 +1254,11 @@
       renderMeasures([]);
       requireElement("info-area").textContent = "";
       syncOverlayLegendFocus();
+      if (hadSelection) {
+        bake(currentTransform);
+        drawOverlay();
+        if (!applyingUrl) syncLocation("push");
+      }
       revealPlace(focusInfo);
     }
 
@@ -1327,11 +1334,17 @@
       );
     }
 
+    function hideSearchResults() {
+      results.hidden = true;
+      results.replaceChildren();
+      searchInput.setAttribute("aria-expanded", "false");
+      searchInput.removeAttribute("aria-activedescendant");
+    }
+
     function search(query: string) {
       const q = query.trim().toLowerCase();
       if (q.length < 1) {
-        results.hidden = true;
-        results.replaceChildren();
+        hideSearchResults();
         return;
       }
       const countryHits: CountryHit[] = countries.features
@@ -1345,6 +1358,7 @@
       const hits: SearchHit[] = [...countryHits, ...cityHits].slice(0, 8);
       results.replaceChildren();
       results.hidden = false;
+      searchInput.setAttribute("aria-expanded", "true");
       if (hits.length === 0) {
         const empty = document.createElement("li");
         empty.className = "search-empty";
@@ -1353,10 +1367,14 @@
         results.append(empty);
         return;
       }
-      hits.forEach((hit) => {
+      hits.forEach((hit, index) => {
         const item = document.createElement("li");
+        item.setAttribute("role", "presentation");
         const button = document.createElement("button");
         button.type = "button";
+        button.id = `search-opt-${index}`;
+        button.setAttribute("role", "option");
+        button.setAttribute("aria-selected", "false");
         const name = document.createTextNode(hit.name);
         const meta = document.createElement("small");
         meta.textContent = hit.kind === "country"
@@ -1364,10 +1382,10 @@
           : `${hit.country || "City"}${hit.capital ? " · capital" : ""}`;
         button.append(name, meta);
         button.addEventListener("click", () => {
-          results.hidden = true;
-          results.replaceChildren();
+          hideSearchResults();
           searchInput.value = hit.name;
           closeSheets();
+          closeSearch();
           if (hit.kind === "country") selectCountry(hit.feature, true);
           else {
             const xy = projection([hit.lon, hit.lat]);
@@ -1376,6 +1394,13 @@
               zoomToPoint(xy[0], xy[1], 8);
             }
           }
+        });
+        button.addEventListener("focus", () => {
+          results.querySelectorAll<HTMLElement>("[role='option']").forEach((node) => {
+            node.classList.toggle("is-active", node === button);
+            node.setAttribute("aria-selected", String(node === button));
+          });
+          searchInput.setAttribute("aria-activedescendant", button.id);
         });
         item.append(button);
         results.append(item);
@@ -1435,8 +1460,7 @@
       }
       if (event.key !== "Escape") return;
       if (!results.hidden) {
-        results.hidden = true;
-        results.replaceChildren();
+        hideSearchResults();
         event.preventDefault();
         event.stopPropagation();
         return;
@@ -1617,6 +1641,8 @@
       results.hidden = true;
       results.replaceChildren();
     }
+    document.getElementById("search")?.setAttribute("aria-expanded", "false");
+    document.getElementById("search")?.removeAttribute("aria-activedescendant");
     if (restoreFocus && toggle instanceof HTMLElement) toggle.focus();
   }
 
@@ -1636,6 +1662,7 @@
     const wasOpen = Boolean(document.querySelector(".sheet.is-open"));
     document.querySelectorAll(".sheet.is-open").forEach((sheet) => sheet.classList.remove("is-open"));
     document.querySelectorAll("[aria-expanded='true'][aria-controls]").forEach((toggle) => {
+      if (toggle.id === "search-toggle" || toggle.id === "search") return;
       toggle.setAttribute("aria-expanded", "false");
     });
     document.body.classList.remove("sheet-open");
@@ -1651,8 +1678,6 @@
     const open = !sheet.classList.contains("is-open");
     closeSheets();
     if (open) {
-      const results = document.getElementById("search-results");
-      if (results) results.hidden = true;
       closeSearch();
       sheet.classList.add("is-open");
       if (button instanceof HTMLElement) {
@@ -1663,6 +1688,29 @@
       sheet.querySelector<HTMLElement>(".sheet-close, [data-compare]")?.focus();
     }
   }
+
+  requireElement("mercator-menu").addEventListener("keydown", (event) => {
+    const items = [...requireElement("mercator-menu").querySelectorAll<HTMLElement>("[role='menuitemradio']")];
+    if (!items.length) return;
+    const current = document.activeElement instanceof HTMLElement ? items.indexOf(document.activeElement) : -1;
+    const nextIndex = (from: number, offset: number) => {
+      if (from < 0) return offset > 0 ? 0 : items.length - 1;
+      return (from + offset + items.length) % items.length;
+    };
+    if (event.key === "ArrowDown" || event.key === "ArrowRight") {
+      items[nextIndex(current, 1)]?.focus();
+      event.preventDefault();
+    } else if (event.key === "ArrowUp" || event.key === "ArrowLeft") {
+      items[nextIndex(current, -1)]?.focus();
+      event.preventDefault();
+    } else if (event.key === "Home") {
+      items[0]?.focus();
+      event.preventDefault();
+    } else if (event.key === "End") {
+      items[items.length - 1]?.focus();
+      event.preventDefault();
+    }
+  });
 
   requireElement("mercator-toggle").addEventListener("click", (event) => {
     event.stopPropagation();
@@ -1697,9 +1745,14 @@
     if (!(target instanceof Node)) return;
     const searchPanel = document.querySelector(".search-panel");
     const searchToggle = document.getElementById("search-toggle");
-    const results = document.getElementById("search-results");
     if (searchPanel && !searchPanel.contains(target) && !(searchToggle instanceof Node && searchToggle.contains(target))) {
-      if (results) results.hidden = true;
+      const results = document.getElementById("search-results");
+      if (results) {
+        results.hidden = true;
+        results.replaceChildren();
+      }
+      document.getElementById("search")?.setAttribute("aria-expanded", "false");
+      document.getElementById("search")?.removeAttribute("aria-activedescendant");
       closeSearch();
     }
     const sheet = document.querySelector(".sheet.is-open");
@@ -1782,13 +1835,22 @@
     if (event.target instanceof HTMLElement && event.target.matches("input, textarea")) return;
     const zoomRoot = document.getElementById("atlas-zoom");
     if (!zoomRoot) return;
-    if (event.key === "+" || event.key === "=") zoomRoot.querySelector<HTMLElement>("[data-zoom=in]")?.click();
-    if (event.key === "-" || event.key === "_") zoomRoot.querySelector<HTMLElement>("[data-zoom=out]")?.click();
-    if (event.key === "0") zoomRoot.querySelector<HTMLElement>("[data-zoom=home]")?.click();
+    const mapKeysBlocked = about.open
+      || Boolean(document.querySelector(".sheet.is-open"))
+      || Boolean(document.getElementById("search-panel")?.classList.contains("is-open"))
+      || Boolean(document.getElementById("search-results") && !document.getElementById("search-results")?.hidden);
+    if (!mapKeysBlocked) {
+      if (event.key === "+" || event.key === "=") zoomRoot.querySelector<HTMLElement>("[data-zoom=in]")?.click();
+      if (event.key === "-" || event.key === "_") zoomRoot.querySelector<HTMLElement>("[data-zoom=out]")?.click();
+      if (event.key === "0") zoomRoot.querySelector<HTMLElement>("[data-zoom=home]")?.click();
+    }
     if (event.key === "Escape") {
       const results = document.getElementById("search-results");
       if (results && !results.hidden) {
         results.hidden = true;
+        results.replaceChildren();
+        document.getElementById("search")?.setAttribute("aria-expanded", "false");
+        document.getElementById("search")?.removeAttribute("aria-activedescendant");
         const active = document.activeElement;
         if (active instanceof HTMLElement && results.contains(active)) {
           document.getElementById("search")?.focus();

@@ -608,8 +608,35 @@ legend {
 }
 
 .overlay-legend[hidden],
-#info-measures[hidden] {
+#info-measures[hidden],
+.aha-note[hidden] {
   display: none;
+}
+
+.aha-note {
+  flex: 1 1 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin: 2px 0 0;
+  color: var(--ink);
+  font-size: var(--type-meta);
+  font-weight: 450;
+  line-height: 1.35;
+}
+
+#aha-dismiss {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  min-height: 32px;
+  padding: 0 12px;
+  background: var(--field);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: var(--type-meta);
+  font-weight: 550;
+  cursor: pointer;
 }
 
 #atlas-view:has(#atlas-controls.is-open) .overlay-legend {
@@ -1688,6 +1715,11 @@ body:has(#about[open]) .map-chrome {
 
   .check {
     min-height: 44px;
+  }
+
+  #aha-dismiss {
+    min-height: 44px;
+    padding: 0 14px;
   }
 }
 

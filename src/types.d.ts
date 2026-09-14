@@ -1,6 +1,6 @@
 type WallLayer = "political" | "physical";
 type ProjectionName = "equalEarth" | "mercator";
-type CompareMode = "hover" | "always";
+type CompareMode = "hover" | "always" | "off";
 type ZoomAction = "in" | "out" | "home";
 type LayerName = "countries" | "lakes" | "rivers" | "cities" | "labels" | "graticule";
 type AtlasCenterName = "africa" | "americas" | "pacific";
@@ -56,13 +56,21 @@ interface AtlasMessages {
   languageMenu: string;
   mercatorSize: string;
   mercatorShort: string;
+  mercatorCompact: string;
+  mercatorOff: string;
+  mercatorOffShort: string;
+  mercatorOffCompact: string;
   mercatorMenu: string;
+  mercatorAria: string;
+  mercatorAriaHidden: string;
   compareAlways: string;
   compareHover: string;
   compareTap: string;
+  compareHide: string;
   hintAlways: string;
   hintHover: string;
   hintTap: string;
+  hintOff: string;
   search: string;
   searchCountryOrCity: string;
   searchPlaceholder: string;
@@ -77,10 +85,15 @@ interface AtlasMessages {
   layerCities: string;
   layerLabels: string;
   layerGraticule: string;
+  layerMore: string;
+  moreMapLayers: string;
+  centerMap: string;
+  countriesAlwaysOn: string;
   about: string;
   atlasView: string;
   loading: string;
   loadError: string;
+  canvasFail: string;
   tryAgain: string;
   clearSelection: string;
   zoomIn: string;
@@ -97,8 +110,12 @@ interface AtlasMessages {
   legendEqualEarthShort: string;
   legendMercator: string;
   legendMercatorShort: string;
+  legendLead: string;
+  legendLeadCompact: string;
+  legendRestoreStatus: string;
+  legendRestoreAction: string;
   attribFull: string;
-  attribShort: string;
+  attribCredit: string;
   close: string;
   politicalMap: string;
   physicalMap: string;
@@ -121,9 +138,8 @@ interface AtlasMessages {
   aboutCredit: string;
   versionLocal: string;
   versionLabel: string;
-  outlineMuted: string;
-  outlineScaled: string;
   equatorBarely: string;
+  compactOutline: string;
   equatorNoOutline: string;
   equalEarthTrue: string;
   wouldAppear: string;
@@ -133,6 +149,8 @@ interface AtlasMessages {
   difference: string;
   largerMercator: string;
   smallerMercator: string;
+  largerMercatorLabel: string;
+  smallerMercatorLabel: string;
   capital: string;
   city: string;
   country: string;
@@ -143,6 +161,7 @@ interface AtlasMessages {
   stageAriaTap: string;
   stageAriaHover: string;
   stageAriaPlain: string;
+  stageCenterCountry: string;
   searchKindCountry: string;
   faq: AtlasFaqItem[];
 }

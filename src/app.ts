@@ -5,6 +5,18 @@
     return el as T;
   }
 
+  function focusOverlayControl(el: HTMLElement | null) {
+    if (!el) return;
+    const apply = () => {
+      el.focus({ preventScroll: true });
+      if (el.classList.contains("is-overlay-focus")) return;
+      el.classList.add("is-overlay-focus");
+      el.addEventListener("blur", () => el.classList.remove("is-overlay-focus"), { once: true });
+    };
+    apply();
+    requestAnimationFrame(apply);
+  }
+
   function isWallLayer(value: string | undefined): value is WallLayer {
     return value === "political" || value === "physical";
   }
@@ -19,7 +31,7 @@
   }
 
   function isCompareMode(value: string | undefined): value is CompareMode {
-    return value === "hover" || value === "always";
+    return value === "hover" || value === "always" || value === "off";
   }
 
   function hasPath<T extends { path2d: Path2D | null }>(item: T): item is T & { path2d: Path2D } {
@@ -56,8 +68,8 @@
     mercStroke: cssToken("--accent", "#c26148"),
     mercMuteFill: cssToken("--merc-mute-fill", "rgba(194, 97, 72, 0.22)"),
     mercMuteStroke: cssToken("--merc-mute-stroke", "rgba(194, 97, 72, 0.62)"),
-    mercHatch: cssToken("--merc-hatch", "rgba(194, 97, 72, 0.42)"),
-    mercHatchMute: cssToken("--merc-hatch-mute", "rgba(194, 97, 72, 0.24)"),
+    mercHatch: cssToken("--merc-hatch", "rgba(194, 97, 72, 0.62)"),
+    mercHatchMute: cssToken("--merc-hatch-mute", "rgba(194, 97, 72, 0.34)"),
     capital: cssToken("--accent-bright", "#e29578"),
     city: cssToken("--night-deep", "#032f34"),
     cityHalo: cssToken("--city-halo", "#edf6f9"),
@@ -90,7 +102,7 @@
   let applyingUrl = false;
 
   function overlayMode() {
-    return state.projections.mercator;
+    return state.projections.mercator && state.compareMode !== "off";
   }
 
   function syncSettingsChrome() {
@@ -156,9 +168,11 @@
     return url.toString();
   }
 
-  const brandHome = document.getElementById("brand-home");
   function refreshBrandHome() {
-    if (brandHome instanceof HTMLAnchorElement) brandHome.href = atlasHomeHref();
+    const href = atlasHomeHref();
+    document.querySelectorAll<HTMLAnchorElement>("#brand-home, #attrib-home").forEach((link) => {
+      link.href = href;
+    });
   }
   refreshBrandHome();
 
@@ -167,7 +181,7 @@
     about.showModal();
     const body = about.querySelector(".about-body");
     if (body instanceof HTMLElement) body.scrollTop = 0;
-    requireElement("about-title").focus({ preventScroll: true });
+    focusOverlayControl(requireElement("about-close"));
   }
 
   function syncAboutDialog() {
@@ -238,7 +252,7 @@
   function formatAreaKm2(area: number, { approx = false }: { approx?: boolean } = {}) {
     if (!Number.isFinite(area) || area <= 0) return "—";
     const rounded = Math.round(area);
-    const text = `${formatAtlasNumber(rounded)} km²`;
+    const text = `${formatAtlasNumber(rounded)}\u00a0km²`;
     return approx ? `~${text}` : text;
   }
 
@@ -254,6 +268,13 @@
     if (ratio > 1) return t("largerMercator", { n: formatFactor(ratio) });
     if (ratio < 1) return t("smallerMercator", { n: formatFactor(1 / ratio) });
     return "1.00×";
+  }
+
+  function inflationMeasure(ratio: number | null | undefined) {
+    if (ratio == null || !Number.isFinite(ratio) || ratio <= 0) return null;
+    if (ratio > 1) return { label: t("largerMercatorLabel"), value: `${formatFactor(ratio)}×` };
+    if (ratio < 1) return { label: t("smallerMercatorLabel"), value: `${formatFactor(1 / ratio)}×` };
+    return { label: t("difference"), value: "1.00×" };
   }
 
   function equatorAnchor(projection: GeoProjection, lon0: number) {
@@ -365,21 +386,6 @@
     const stage = requireElement("atlas-stage");
     const mapCanvas = requireElement<HTMLCanvasElement>("atlas-map");
     const overlayCanvas = requireElement<HTMLCanvasElement>("atlas-overlay");
-    const mapCtxMaybe = mapCanvas.getContext("2d", { alpha: false });
-    const overCtxMaybe = overlayCanvas.getContext("2d");
-    if (!mapCtxMaybe || !overCtxMaybe) {
-      atlasLoading = false;
-      return;
-    }
-    const mapCtx = mapCtxMaybe;
-    const overCtx = overCtxMaybe;
-    const hideCanvas = document.createElement("canvas");
-    const hideCtxMaybe = hideCanvas.getContext("2d", { willReadFrequently: true });
-    if (!hideCtxMaybe) {
-      atlasLoading = false;
-      return;
-    }
-    const hideCtx = hideCtxMaybe;
     const tooltip = requireElement("tooltip");
     const info = requireElement("place-info");
     const searchInput = requireElement<HTMLInputElement>("search");
@@ -411,6 +417,24 @@
       });
       status.append(" ", retry);
     };
+
+    const mapCtxMaybe = mapCanvas.getContext("2d", { alpha: false });
+    const overCtxMaybe = overlayCanvas.getContext("2d");
+    if (!mapCtxMaybe || !overCtxMaybe) {
+      atlasLoading = false;
+      setStatus(t("canvasFail"), true);
+      return;
+    }
+    const mapCtx = mapCtxMaybe;
+    const overCtx = overCtxMaybe;
+    const hideCanvas = document.createElement("canvas");
+    const hideCtxMaybe = hideCanvas.getContext("2d", { willReadFrequently: true });
+    if (!hideCtxMaybe) {
+      atlasLoading = false;
+      setStatus(t("canvasFail"), true);
+      return;
+    }
+    const hideCtx = hideCtxMaybe;
 
     setStatus(t("loading"));
     {
@@ -526,9 +550,15 @@
         bake(event.transform);
         stage.classList.remove("is-zooming");
         drawOverlay();
+        syncMapCenterStatus();
       });
 
     d3.select(stage).call(zoom);
+    stage.addEventListener("focus", () => syncMapCenterStatus());
+    stage.addEventListener("blur", () => {
+      const status = document.getElementById("map-center-status");
+      if (status) status.textContent = "";
+    });
 
     stage.addEventListener("keydown", (event) => {
       if (!width || !height) return;
@@ -550,7 +580,13 @@
         event.preventDefault();
         const hit = countryAt(width / 2, height / 2);
         if (hit) selectCountry(hit.feature, true);
+      } else if (event.key === "Escape") {
+        event.preventDefault();
+        event.stopPropagation();
+        dismissSelection();
+        stage.blur();
       }
+      if (event.key.startsWith("Arrow") || event.key === "Enter") syncMapCenterStatus();
     });
 
     function applyCss(t: ZoomTransform) {
@@ -844,7 +880,7 @@
       const ink = tile.getContext("2d");
       if (!ink) return null;
       ink.strokeStyle = muted ? MAP.mercHatchMute : MAP.mercHatch;
-      ink.lineWidth = 0.9;
+      ink.lineWidth = muted ? 1.0 : 1.35;
       ink.lineCap = "square";
       ink.beginPath();
       ink.moveTo(-1, size - 1);
@@ -1000,7 +1036,8 @@
         for (const item of overlayGhosts) {
           const selected = item.name === state.selected;
           const hovering = item.name === hoverName;
-          const muted = !selected && !hovering;
+          const focusing = Boolean(state.selected || hoverName);
+          const muted = focusing && !selected && !hovering;
           const dimmed = Boolean(state.selected) && !selected;
           withOverlayDim(overCtx, dimmed, () => {
             drawApparentFill(overCtx, item, t.k, { muted });
@@ -1115,6 +1152,7 @@
       d3.select(stage).call(zoom.transform, next);
       bake(next);
       drawOverlay();
+      syncMapCenterStatus();
     }
 
     function countryAt(screenX: number, screenY: number) {
@@ -1127,6 +1165,14 @@
         if (mapCtx.isPointInPath(item.path2d, x * dpr, y * dpr, "evenodd")) return item;
       }
       return null;
+    }
+
+    function syncMapCenterStatus() {
+      const status = document.getElementById("map-center-status");
+      if (!status) return;
+      const hit = countryAt(width / 2, height / 2);
+      const next = hit ? t("stageCenterCountry", { name: hit.name }) : "";
+      if (status.textContent !== next) status.textContent = next;
     }
 
     function overlayAt(screenX: number, screenY: number) {
@@ -1183,11 +1229,20 @@
       legend.classList.toggle("is-focus", Boolean(hoverName) || selected);
     }
 
+    function dockLegend() {
+      const legend = document.getElementById("overlay-legend");
+      const home = document.getElementById("legend-home");
+      if (!legend || !home) return;
+      const target = info.hidden ? home : info;
+      if (legend.parentElement !== target) target.append(legend);
+    }
+
     function hidePlace() {
       const hadSelection = state.selected !== null;
       state.selected = null;
       lastCity = null;
       info.hidden = true;
+      dockLegend();
       const measures = document.getElementById("info-measures");
       if (measures) {
         measures.replaceChildren();
@@ -1249,14 +1304,19 @@
       dl.hidden = false;
       for (const row of rows) {
         const wrap = document.createElement("div");
-        wrap.title = row.label;
         const dt = document.createElement("dt");
-        const named = document.createElement("span");
-        named.className = "sr-only";
-        named.textContent = row.label;
-        dt.append(measureMark(row.kind, row.fill), named);
+        dt.append(measureMark(row.kind, row.fill));
         const dd = document.createElement("dd");
-        dd.textContent = row.value;
+        const named = document.createElement("span");
+        named.className = "measure-label";
+        named.textContent = row.label;
+        const value = document.createElement("span");
+        value.className = "measure-value";
+        const figure = document.createElement("span");
+        figure.dir = "ltr";
+        figure.textContent = row.value;
+        value.append(figure);
+        dd.append(named, value);
         wrap.append(dt, dd);
         dl.append(wrap);
       }
@@ -1276,14 +1336,25 @@
       const comparing = overlayMode();
       const hasOutline = apparentScaleFor(feature.properties.name) > 0;
       const compact = isCompactView();
+      const inflation = formatInflation(stats.ratio);
       const meta = requireElement("info-meta");
       const area = requireElement("info-area");
       if (compact) {
         meta.textContent = "";
-        area.textContent = "";
+        if (inflation && stats.ratio) {
+          area.textContent = "";
+        } else if (comparing && hasOutline) {
+          area.textContent = t("compactOutline");
+        } else if (comparing) {
+          area.textContent = t("equatorBarely");
+        } else {
+          area.textContent = inflation
+            ? t("wouldAppear", { note: inflation })
+            : t("equatorAgree");
+        }
       } else if (comparing && hasOutline) {
-        meta.textContent = t("outlineMuted");
-        area.textContent = t("outlineScaled");
+        meta.textContent = "";
+        area.textContent = "";
       } else if (comparing) {
         meta.textContent = t("equatorBarely");
         area.textContent = t("equatorNoOutline");
@@ -1301,19 +1372,28 @@
         value: formatAreaKm2(stats.trueKm2),
         fill: colorFor(feature.properties.name)
       }];
-      const inflation = formatInflation(stats.ratio);
-      if (inflation && stats.ratio) {
-        rows.push({ kind: "mercator", label: t("looksMercator"), value: formatAreaKm2(stats.trueKm2 * stats.ratio, { approx: true }) });
-        rows.push({ kind: "ratio", label: t("difference"), value: inflation });
+      const measure = inflationMeasure(stats.ratio);
+      if (measure && stats.ratio) {
+        rows.push({
+          kind: "mercator",
+          label: t("looksMercator"),
+          value: formatAreaKm2(stats.trueKm2 * stats.ratio, { approx: true })
+        });
+        rows.push({
+          kind: "ratio",
+          label: measure.label,
+          value: measure.value
+        });
       }
       renderMeasures(rows);
     }
 
     function revealPlace(focusInfo: boolean) {
       info.hidden = false;
+      closeSearch();
+      dockLegend();
       if (!focusInfo) return;
-      const title = requireElement("info-title");
-      title.focus();
+      focusOverlayControl(requireElement("info-close"));
     }
 
     function showPlace(place: Place, focusInfo = false) {
@@ -1357,6 +1437,7 @@
 
     function applyUrlView(view: AtlasUrlView) {
       const centerChanged = view.center !== state.center;
+      const compareChanged = view.compareMode !== state.compareMode;
       state.compareMode = view.compareMode;
       state.center = view.center;
       state.about = view.about;
@@ -1372,6 +1453,7 @@
       applyingUrl = true;
       try {
         if (centerChanged) layout({ reset: true });
+        else if (compareChanged) rebuildPaths();
         if (feature) selectCountry(feature);
         else hidePlace();
         if (!feature) drawOverlay();
@@ -1589,12 +1671,31 @@
       if (hint) {
         hint.textContent = state.compareMode === "always"
           ? t("hintAlways")
+          : state.compareMode === "off"
+            ? t("hintOff")
           : inspectOnTap()
             ? t("hintTap")
             : t("hintHover");
       }
       const legend = document.getElementById("overlay-legend");
-      if (legend) legend.hidden = !overlay;
+      const legendCompare = document.getElementById("legend-compare");
+      const legendRestore = document.getElementById("legend-restore");
+      const showRestore = state.projections.mercator && state.compareMode === "off";
+      if (legend) legend.hidden = !(overlay || showRestore);
+      if (legendCompare) legendCompare.hidden = !overlay;
+      if (legendRestore) legendRestore.hidden = !showRestore;
+      dockLegend();
+      const mercatorToggle = document.getElementById("mercator-toggle");
+      if (mercatorToggle) {
+        const compareOff = state.compareMode === "off";
+        mercatorToggle.classList.toggle("is-compare-off", compareOff);
+        mercatorToggle.setAttribute(
+          "aria-label",
+          compareOff
+            ? t("mercatorAriaHidden")
+            : t("mercatorAria")
+        );
+      }
       document.querySelectorAll<HTMLElement>("[data-compare]").forEach((node) => {
         const on = node.dataset.compare === state.compareMode;
         node.classList.toggle("is-active", on);
@@ -1612,19 +1713,29 @@
       );
     }
 
+    function applyCompareMode(mode: CompareMode) {
+      if (mode === state.compareMode) return;
+      state.compareMode = mode;
+      hideGhostsKey = "";
+      rebuildPaths();
+      syncProjectionUI();
+      const feature = selectedFeature();
+      if (feature) updateCountryInfo(feature);
+      bake(currentTransform);
+      drawOverlay();
+      track("compare_mode", { mode });
+      syncLocation("replace");
+    }
+
+    requireElement("legend-restore-action").addEventListener("click", () => {
+      applyCompareMode("always");
+    });
+
     document.querySelectorAll<HTMLElement>("[data-compare]").forEach((button) => {
       button.addEventListener("click", () => {
         const mode = button.dataset.compare;
         if (!isCompareMode(mode)) return;
-        if (mode !== state.compareMode) {
-          state.compareMode = mode;
-          hideGhostsKey = "";
-          syncProjectionUI();
-          bake(currentTransform);
-          drawOverlay();
-          track("compare_mode", { mode });
-          syncLocation("replace");
-        }
+        applyCompareMode(mode);
         closeSheets(true);
       });
     });
@@ -1834,9 +1945,11 @@
     ];
   }
 
-  function setSheetInert(on: boolean) {
+  function setSheetInert(on: boolean, live?: HTMLElement) {
     for (const node of sheetInertTargets()) {
-      if (node instanceof HTMLElement) node.inert = on;
+      if (!(node instanceof HTMLElement)) continue;
+      if (live && (node === live || node.contains(live))) continue;
+      node.inert = on;
     }
   }
 
@@ -1869,9 +1982,11 @@
       }
       if (modal) {
         document.body.classList.add("sheet-open");
-        setSheetInert(true);
+        setSheetInert(true, sheet);
       }
-      sheet.querySelector<HTMLElement>(".sheet-close, [data-compare], [data-lang]")?.focus();
+      const current = sheet.querySelector<HTMLElement>("[role='menuitemradio'][aria-checked='true']");
+      const fallback = sheet.querySelector<HTMLElement>(".sheet-close, [data-compare], [data-lang]");
+      focusOverlayControl(current ?? fallback);
     }
   }
 
@@ -1906,13 +2021,19 @@
   bindRadioMenu("mercator-menu");
   bindRadioMenu("lang-menu");
 
+  requireElement("mercator-toggle").addEventListener("pointerdown", (event) => {
+    event.stopPropagation();
+  });
   requireElement("mercator-toggle").addEventListener("click", (event) => {
     event.stopPropagation();
-    toggleSheet("mercator-menu", { modal: false });
+    toggleSheet("mercator-menu", { modal: isCompactView() });
+  });
+  requireElement("lang-toggle").addEventListener("pointerdown", (event) => {
+    event.stopPropagation();
   });
   requireElement("lang-toggle").addEventListener("click", (event) => {
     event.stopPropagation();
-    toggleSheet("lang-menu", { modal: false });
+    toggleSheet("lang-menu", { modal: isCompactView() });
   });
   document.querySelectorAll<HTMLElement>("[data-lang]").forEach((button) => {
     button.addEventListener("click", () => {
@@ -1942,9 +2063,10 @@
   });
 
   document.querySelector(".skip-link")?.addEventListener("click", (event) => {
-    if (!isCompactView()) return;
     event.preventDefault();
-    openSearch();
+    closeSheets();
+    closeSearch();
+    requireElement("atlas-stage").focus();
   });
   document.getElementById("search-toggle")?.addEventListener("pointerdown", (event) => {
     event.stopPropagation();
@@ -2093,10 +2215,15 @@
         event.preventDefault();
         return;
       }
-      if (atlas?.dismissSelection()) {
-        document.getElementById("atlas-stage")?.focus();
+      const stage = document.getElementById("atlas-stage");
+      const onStage = document.activeElement === stage;
+      const dismissed = atlas?.dismissSelection() ?? false;
+      if (onStage && stage) {
+        stage.blur();
         event.preventDefault();
+        return;
       }
+      if (dismissed) event.preventDefault();
     }
   });
 

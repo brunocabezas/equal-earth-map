@@ -16,11 +16,11 @@ const ATLAS_CENTER_LON: Record<AtlasCenterName, number> = {
 function defaultAtlasLayers(): LayerFlags {
   return {
     countries: true,
-    lakes: true,
-    rivers: true,
-    cities: true,
-    labels: true,
-    graticule: true
+    lakes: false,
+    rivers: false,
+    cities: false,
+    labels: false,
+    graticule: false
   };
 }
 
@@ -41,7 +41,7 @@ function isAtlasCenterName(value: string): value is AtlasCenterName {
 }
 
 function isAtlasCompareMode(value: string): value is CompareMode {
-  return value === "hover" || value === "always";
+  return value === "hover" || value === "always" || value === "off";
 }
 
 function defaultAtlasLocale(): AtlasLocaleId {
@@ -83,11 +83,18 @@ function atlasAboutOpen(params: URLSearchParams): boolean {
 function parseAtlasUrl(search: string): AtlasUrlView {
   const params = new URLSearchParams(search.startsWith("?") ? search.slice(1) : search);
   const layers = defaultAtlasLayers();
+  const on = params.get("on");
+  if (on) {
+    for (const token of on.split(",")) {
+      const name = token.trim();
+      if (isAtlasLayerName(name)) layers[name] = true;
+    }
+  }
   const off = params.get("off");
   if (off) {
     for (const token of off.split(",")) {
       const name = token.trim();
-      if (isAtlasLayerName(name)) layers[name] = false;
+      if (isAtlasLayerName(name) && name !== "countries") layers[name] = false;
     }
   }
   const compare = params.get("compare");
@@ -113,8 +120,11 @@ function formatAtlasSearch(state: Pick<AtlasState, "selected" | "compareMode" | 
   if (state.compareMode !== defaultAtlasCompareMode()) params.set("compare", state.compareMode);
   const center = atlasCenterName(state.center);
   if (center && center !== "africa") params.set("center", center);
-  const off = ATLAS_LAYER_ORDER.filter((name) => !state.layers[name]);
+  const defaults = defaultAtlasLayers();
+  const off = ATLAS_LAYER_ORDER.filter((name) => !state.layers[name] && defaults[name]);
+  const on = ATLAS_LAYER_ORDER.filter((name) => state.layers[name] && !defaults[name]);
   if (off.length) params.set("off", off.join(","));
+  if (on.length) params.set("on", on.join(","));
   if (state.about) params.set("about", "open");
   return params.toString();
 }

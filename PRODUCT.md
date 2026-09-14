@@ -24,7 +24,7 @@ Used in a browser on phone or desktop, often after looking at a conventional web
 
 ## Capabilities and Constraints
 
-- Interactive atlas: pan, zoom, search countries and cities, toggle layers, overlay Mercator size (always or on hover) on the Equal Earth globe, recentre on Africa, the Americas, or the Pacific.
+- Interactive atlas: pan, zoom, search countries and cities, toggle layers, overlay Mercator stretch (every country, when pointing, or hidden) on the Equal Earth globe, recentre on Africa, the Americas, or the Pacific.
 - Language switcher: English, Spanish, French, Portuguese, Arabic, Chinese, and Russian. UI chrome, About, and metadata switch; country and city names stay in English until translated place data exists. The choice lives in `?lang=` so shared links keep the language. First visit can follow the browser language. No cookies.
 - Wall maps: Patterson political and BMZ physical sheets as downloads.
 - Public name is Equal Earth / Equal Earth Map. trueearthmap.com is the URL, not the product name.

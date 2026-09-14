@@ -5,6 +5,18 @@
     return el as T;
   }
 
+  function focusOverlayControl(el: HTMLElement | null) {
+    if (!el) return;
+    const apply = () => {
+      el.focus({ preventScroll: true });
+      if (el.classList.contains("is-overlay-focus")) return;
+      el.classList.add("is-overlay-focus");
+      el.addEventListener("blur", () => el.classList.remove("is-overlay-focus"), { once: true });
+    };
+    apply();
+    requestAnimationFrame(apply);
+  }
+
   function isWallLayer(value: string | undefined): value is WallLayer {
     return value === "political" || value === "physical";
   }
@@ -169,7 +181,7 @@
     about.showModal();
     const body = about.querySelector(".about-body");
     if (body instanceof HTMLElement) body.scrollTop = 0;
-    requireElement("about-title").focus({ preventScroll: true });
+    focusOverlayControl(requireElement("about-close"));
   }
 
   function syncAboutDialog() {
@@ -1217,11 +1229,20 @@
       legend.classList.toggle("is-focus", Boolean(hoverName) || selected);
     }
 
+    function dockLegend() {
+      const legend = document.getElementById("overlay-legend");
+      const home = document.getElementById("legend-home");
+      if (!legend || !home) return;
+      const target = info.hidden ? home : info;
+      if (legend.parentElement !== target) target.append(legend);
+    }
+
     function hidePlace() {
       const hadSelection = state.selected !== null;
       state.selected = null;
       lastCity = null;
       info.hidden = true;
+      dockLegend();
       const measures = document.getElementById("info-measures");
       if (measures) {
         measures.replaceChildren();
@@ -1369,9 +1390,10 @@
 
     function revealPlace(focusInfo: boolean) {
       info.hidden = false;
+      closeSearch();
+      dockLegend();
       if (!focusInfo) return;
-      const title = requireElement("info-title");
-      title.focus();
+      focusOverlayControl(requireElement("info-close"));
     }
 
     function showPlace(place: Place, focusInfo = false) {
@@ -1662,6 +1684,7 @@
       if (legend) legend.hidden = !(overlay || showRestore);
       if (legendCompare) legendCompare.hidden = !overlay;
       if (legendRestore) legendRestore.hidden = !showRestore;
+      dockLegend();
       const mercatorToggle = document.getElementById("mercator-toggle");
       if (mercatorToggle) {
         const compareOff = state.compareMode === "off";
@@ -1730,10 +1753,6 @@
       input.addEventListener("change", () => {
         const layer = input.dataset.layer;
         if (!isLayerName(layer)) return;
-        if (layer === "countries" && !input.checked) {
-          input.checked = true;
-          return;
-        }
         state.layers[layer] = input.checked;
         bake(currentTransform);
         drawOverlay();
@@ -1965,7 +1984,9 @@
         document.body.classList.add("sheet-open");
         setSheetInert(true, sheet);
       }
-      sheet.querySelector<HTMLElement>(".sheet-close, [data-compare], [data-lang]")?.focus();
+      const current = sheet.querySelector<HTMLElement>("[role='menuitemradio'][aria-checked='true']");
+      const fallback = sheet.querySelector<HTMLElement>(".sheet-close, [data-compare], [data-lang]");
+      focusOverlayControl(current ?? fallback);
     }
   }
 

@@ -258,10 +258,10 @@
               </div>
               <fieldset class="layer-set layer-main">
                 <legend class="sr-only" data-i18n="mapLayers">Map layers</legend>
-                <label class="check" title="Land stays on so the globe has countries" data-i18n-title="countriesAlwaysOn">
-                  <input type="checkbox" data-layer="countries" checked disabled />
+                <p class="layer-locked">
                   <span data-i18n="layerCountries">Countries</span>
-                </label>
+                  <span class="layer-locked-meta" data-i18n="countriesAlwaysOn">Always on</span>
+                </p>
                 <label class="check"><input type="checkbox" data-layer="cities" /> <span data-i18n="layerCities">Cities</span></label>
                 <label class="check"><input type="checkbox" data-layer="labels" /> <span data-i18n="layerLabels">Labels</span></label>
               </fieldset>
@@ -340,7 +340,7 @@
             <p id="info-area"></p>
           </div>
         </div>
-        <div class="map-chrome bottom-left">
+        <div class="map-chrome bottom-left" id="legend-home">
           <div class="panel overlay-legend" id="overlay-legend">
             <div id="legend-compare">
               <p class="legend-lead">
@@ -398,7 +398,7 @@
         <button type="button" class="info-close" id="about-close" aria-label="Close about" data-i18n-aria="close">
           <svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" /></svg>
         </button>
-        <h2 id="about-title" tabindex="-1" data-i18n="aboutTitle">An interactive Equal Earth projection atlas</h2>
+        <h2 id="about-title" data-i18n="aboutTitle">An interactive Equal Earth projection atlas</h2>
         <div class="about-body">
           <p class="about-decoder" data-i18n="aboutP6">
             Filled countries are true size. Coral stripes show how large they look on Mercator. Click a

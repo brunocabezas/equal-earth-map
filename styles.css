@@ -123,7 +123,8 @@ html, body {
   color: var(--ink);
 }
 
-:focus-visible {
+:focus-visible,
+.is-overlay-focus {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
@@ -727,6 +728,24 @@ legend {
   display: none;
 }
 
+.info-panel .overlay-legend {
+  align-self: stretch;
+  width: auto;
+  min-width: 0;
+  max-width: none;
+  margin-top: 8px;
+  padding: 10px 0 0;
+  border: 0;
+  border-top: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.info-panel.is-country #legend-compare > span {
+  display: none;
+}
+
 #info-measures {
   display: flex;
   flex-direction: column;
@@ -885,24 +904,29 @@ legend {
   flex-shrink: 0;
 }
 
-.check input:disabled {
-  opacity: 1;
-  accent-color: var(--accent);
+.layer-locked {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+  grid-column: 1 / -1;
+  min-height: 32px;
+  margin: 2px 0 4px;
+  font-size: var(--type-ui);
 }
 
-.check:has(input:disabled) {
-  cursor: default;
-  color: var(--ink);
+.layer-locked-meta {
+  color: var(--ink-soft);
+  font-size: var(--type-meta);
+  font-weight: 450;
+  text-align: end;
+  overflow-wrap: anywhere;
 }
 
 .layer-set {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 0 12px;
-}
-
-.layer-main .check:first-child {
-  grid-column: 1 / -1;
 }
 
 .layer-set legend {
@@ -1168,7 +1192,6 @@ legend {
 
 .info-panel h2 {
   margin: 0;
-  padding-right: 8px;
   min-width: 0;
   overflow-wrap: anywhere;
   font-family: var(--serif);
@@ -1807,6 +1830,11 @@ body:has(#about[open]) .map-chrome {
     margin: 0;
   }
 
+  .layer-locked {
+    min-height: 32px;
+    margin: 0 0 4px;
+  }
+
   .info-panel {
     position: absolute;
     top: 12px;
@@ -1817,14 +1845,13 @@ body:has(#about[open]) .map-chrome {
     max-width: min(268px, calc(100% - 56px));
     padding: 8px 10px 10px;
     border-radius: var(--radius-lg);
-    overflow: visible;
     z-index: 4;
   }
 
   .info-panel:not([hidden]) {
     flex: none;
-    max-height: none;
-    overflow: visible;
+    max-height: min(28rem, calc(100dvh - 7rem));
+    overflow: auto;
   }
 
   .info-panel h2 {
@@ -1854,6 +1881,12 @@ body:has(#about[open]) .map-chrome {
     gap: 4px;
     padding: 8px 12px;
     font-size: var(--type-meta);
+  }
+
+  .info-panel .overlay-legend:not([hidden]) {
+    width: auto;
+    max-width: none;
+    padding: 8px 0 0;
   }
 
   .legend-lead-wide {
@@ -1990,6 +2023,10 @@ body:has(#about[open]) .map-chrome {
   }
 
   .check {
+    min-height: 44px;
+  }
+
+  .layer-locked {
     min-height: 44px;
   }
 }

@@ -199,9 +199,12 @@
         <div class="bar-menu">
           <div class="bar-seg">
             <button type="button" class="bar-btn" id="mercator-toggle" aria-label="How Mercator stretches countries" aria-expanded="false" aria-controls="mercator-menu" aria-haspopup="menu" data-i18n-aria="mercatorAria">
-              <span class="label-full" data-i18n="mercatorSize">How Mercator stretches</span>
-              <span class="label-short" data-i18n="mercatorShort">Mercator stretch</span>
-              <span class="label-compact" data-i18n="mercatorCompact">Mercator</span>
+              <span class="label-full label-compare-on" data-i18n="mercatorSize">How Mercator stretches</span>
+              <span class="label-short label-compare-on" data-i18n="mercatorShort">Mercator stretch</span>
+              <span class="label-compact label-compare-on" data-i18n="mercatorCompact">Mercator</span>
+              <span class="label-full label-compare-off" data-i18n="mercatorOff">Stripes off</span>
+              <span class="label-short label-compare-off" data-i18n="mercatorOffShort">Stripes off</span>
+              <span class="label-compact label-compare-off" data-i18n="mercatorOffCompact">Off</span>
               <svg class="icon chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6.25 8 10.25 12 6.25" /></svg>
             </button>
           </div>
@@ -382,7 +385,10 @@
         Equal Earth projection by Šavrič, Patterson &amp; Jenny · Wall maps by Tom Patterson / BMZ ·
         Vectors from Natural Earth
       </span>
-      <span class="attrib-short" data-i18n="attribShort">Equal Earth · Natural Earth</span>
+      <a class="attrib-brand" id="attrib-home" href="./" aria-label="Equal Earth home" data-i18n-aria="brandHome">
+        <span class="attrib-name">Equal Earth</span>
+      </a>
+      <span class="attrib-credit" data-i18n="attribCredit">Natural Earth</span>
     </footer>
 
     <div id="sheet-backdrop" class="sheet-backdrop"></div>

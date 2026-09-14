@@ -57,6 +57,9 @@ interface AtlasMessages {
   mercatorSize: string;
   mercatorShort: string;
   mercatorCompact: string;
+  mercatorOff: string;
+  mercatorOffShort: string;
+  mercatorOffCompact: string;
   mercatorMenu: string;
   mercatorAria: string;
   mercatorAriaHidden: string;
@@ -112,7 +115,7 @@ interface AtlasMessages {
   legendRestoreStatus: string;
   legendRestoreAction: string;
   attribFull: string;
-  attribShort: string;
+  attribCredit: string;
   close: string;
   politicalMap: string;
   physicalMap: string;

@@ -156,9 +156,11 @@
     return url.toString();
   }
 
-  const brandHome = document.getElementById("brand-home");
   function refreshBrandHome() {
-    if (brandHome instanceof HTMLAnchorElement) brandHome.href = atlasHomeHref();
+    const href = atlasHomeHref();
+    document.querySelectorAll<HTMLAnchorElement>("#brand-home, #attrib-home").forEach((link) => {
+      link.href = href;
+    });
   }
   refreshBrandHome();
 
@@ -1662,9 +1664,11 @@
       if (legendRestore) legendRestore.hidden = !showRestore;
       const mercatorToggle = document.getElementById("mercator-toggle");
       if (mercatorToggle) {
+        const compareOff = state.compareMode === "off";
+        mercatorToggle.classList.toggle("is-compare-off", compareOff);
         mercatorToggle.setAttribute(
           "aria-label",
-          showRestore
+          compareOff
             ? t("mercatorAriaHidden")
             : t("mercatorAria")
         );

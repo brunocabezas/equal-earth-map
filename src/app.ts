@@ -56,8 +56,8 @@
     mercStroke: cssToken("--accent", "#c26148"),
     mercMuteFill: cssToken("--merc-mute-fill", "rgba(194, 97, 72, 0.22)"),
     mercMuteStroke: cssToken("--merc-mute-stroke", "rgba(194, 97, 72, 0.62)"),
-    mercHatch: cssToken("--merc-hatch", "rgba(194, 97, 72, 0.42)"),
-    mercHatchMute: cssToken("--merc-hatch-mute", "rgba(194, 97, 72, 0.24)"),
+    mercHatch: cssToken("--merc-hatch", "rgba(194, 97, 72, 0.62)"),
+    mercHatchMute: cssToken("--merc-hatch-mute", "rgba(194, 97, 72, 0.34)"),
     capital: cssToken("--accent-bright", "#e29578"),
     city: cssToken("--night-deep", "#032f34"),
     cityHalo: cssToken("--city-halo", "#edf6f9"),
@@ -536,9 +536,15 @@
         bake(event.transform);
         stage.classList.remove("is-zooming");
         drawOverlay();
+        syncMapCenterStatus();
       });
 
     d3.select(stage).call(zoom);
+    stage.addEventListener("focus", () => syncMapCenterStatus());
+    stage.addEventListener("blur", () => {
+      const status = document.getElementById("map-center-status");
+      if (status) status.textContent = "";
+    });
 
     stage.addEventListener("keydown", (event) => {
       if (!width || !height) return;
@@ -560,7 +566,13 @@
         event.preventDefault();
         const hit = countryAt(width / 2, height / 2);
         if (hit) selectCountry(hit.feature, true);
+      } else if (event.key === "Escape") {
+        event.preventDefault();
+        event.stopPropagation();
+        dismissSelection();
+        stage.blur();
       }
+      if (event.key.startsWith("Arrow") || event.key === "Enter") syncMapCenterStatus();
     });
 
     function applyCss(t: ZoomTransform) {
@@ -854,7 +866,7 @@
       const ink = tile.getContext("2d");
       if (!ink) return null;
       ink.strokeStyle = muted ? MAP.mercHatchMute : MAP.mercHatch;
-      ink.lineWidth = 0.9;
+      ink.lineWidth = muted ? 1.0 : 1.35;
       ink.lineCap = "square";
       ink.beginPath();
       ink.moveTo(-1, size - 1);
@@ -1010,7 +1022,8 @@
         for (const item of overlayGhosts) {
           const selected = item.name === state.selected;
           const hovering = item.name === hoverName;
-          const muted = !selected && !hovering;
+          const focusing = Boolean(state.selected || hoverName);
+          const muted = focusing && !selected && !hovering;
           const dimmed = Boolean(state.selected) && !selected;
           withOverlayDim(overCtx, dimmed, () => {
             drawApparentFill(overCtx, item, t.k, { muted });
@@ -1125,6 +1138,7 @@
       d3.select(stage).call(zoom.transform, next);
       bake(next);
       drawOverlay();
+      syncMapCenterStatus();
     }
 
     function countryAt(screenX: number, screenY: number) {
@@ -1137,6 +1151,14 @@
         if (mapCtx.isPointInPath(item.path2d, x * dpr, y * dpr, "evenodd")) return item;
       }
       return null;
+    }
+
+    function syncMapCenterStatus() {
+      const status = document.getElementById("map-center-status");
+      if (!status) return;
+      const hit = countryAt(width / 2, height / 2);
+      const next = hit ? t("stageCenterCountry", { name: hit.name }) : "";
+      if (status.textContent !== next) status.textContent = next;
     }
 
     function overlayAt(screenX: number, screenY: number) {
@@ -1308,8 +1330,8 @@
             : t("equatorAgree");
         }
       } else if (comparing && hasOutline) {
-        meta.textContent = t("outlineMuted");
-        area.textContent = t("outlineScaled");
+        meta.textContent = "";
+        area.textContent = "";
       } else if (comparing) {
         meta.textContent = t("equatorBarely");
         area.textContent = t("equatorNoOutline");
@@ -2168,10 +2190,15 @@
         event.preventDefault();
         return;
       }
-      if (atlas?.dismissSelection()) {
-        document.getElementById("atlas-stage")?.focus();
+      const stage = document.getElementById("atlas-stage");
+      const onStage = document.activeElement === stage;
+      const dismissed = atlas?.dismissSelection() ?? false;
+      if (onStage && stage) {
+        stage.blur();
         event.preventDefault();
+        return;
       }
+      if (dismissed) event.preventDefault();
     }
   });
 

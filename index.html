@@ -201,6 +201,7 @@
             <button type="button" class="bar-btn" id="mercator-toggle" aria-label="How Mercator stretches countries" aria-expanded="false" aria-controls="mercator-menu" aria-haspopup="menu" data-i18n-aria="mercatorAria">
               <span class="label-full" data-i18n="mercatorSize">How Mercator stretches</span>
               <span class="label-short" data-i18n="mercatorShort">Mercator stretch</span>
+              <span class="label-compact" data-i18n="mercatorCompact">Mercator</span>
               <svg class="icon chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6.25 8 10.25 12 6.25" /></svg>
             </button>
           </div>
@@ -214,7 +215,7 @@
                 </button>
                 <button type="button" class="menu-item" role="menuitemradio" data-compare="off" aria-checked="false" data-i18n="compareHide">Hide comparison</button>
               </div>
-              <p class="panel-note" id="proj-hint" data-i18n="hintAlways">Outlines show how large countries look on Mercator.</p>
+              <p class="panel-note" id="proj-hint" data-i18n="hintAlways">Coral stripes show how large countries look on Mercator.</p>
             </div>
           </div>
         </div>
@@ -316,10 +317,14 @@
 
     <main>
       <section id="atlas-view" class="view is-visible" aria-label="Interactive Equal Earth atlas" data-i18n-aria="atlasView">
-        <div id="atlas-stage" tabindex="0" aria-label="Interactive Equal Earth map. Search for a country, or focus the map: arrow keys pan, Enter selects the country in the center, plus and minus zoom, Escape clears the selection." data-i18n-aria="stageAriaPlain">
+        <div id="atlas-stage" tabindex="0" aria-label="Interactive Equal Earth map. Search for a country, or focus the map: arrow keys pan, Enter selects the country in the center, plus and minus zoom, Escape clears the selection or leaves the map." data-i18n-aria="stageAriaPlain">
           <canvas id="atlas-map" aria-hidden="true"></canvas>
           <canvas id="atlas-overlay" aria-hidden="true"></canvas>
+          <svg class="map-reticle" viewBox="0 0 16 16" aria-hidden="true">
+            <path d="M8 1.75v3.5M8 10.75v3.5M1.75 8h3.5M10.75 8h3.5" />
+          </svg>
         </div>
+        <p id="map-center-status" class="sr-only" role="status"></p>
         <p id="atlas-status" class="atlas-status" role="status" data-i18n="loading">Loading Natural Earth data…</p>
         <div class="map-chrome left">
           <div class="panel info-panel" id="place-info" hidden role="region" aria-live="polite" aria-labelledby="info-title">
@@ -336,15 +341,15 @@
           <div class="panel overlay-legend" id="overlay-legend">
             <div id="legend-compare">
               <p class="legend-lead">
-                <span class="legend-lead-wide" data-i18n="legendLead">Filled countries are true size. Outlines are how they look on Mercator.</span>
-                <span class="legend-lead-compact" data-i18n="legendLeadCompact">Filled land is true size. Outlines are Mercator.</span>
+                <span class="legend-lead-wide" data-i18n="legendLead">Filled countries are true size. Coral stripes are how they look on Mercator.</span>
+                <span class="legend-lead-compact" data-i18n="legendLeadCompact">Filled land is true size. Stripes are Mercator.</span>
               </p>
               <span><span class="swatch swatch-ee" aria-hidden="true"></span> <span data-i18n="legendEqualEarth">This map: Equal Earth</span></span>
               <span><span class="swatch swatch-merc" aria-hidden="true"></span> <span data-i18n="legendMercator">Looks this size on Mercator</span></span>
             </div>
             <div class="legend-off" id="legend-restore" hidden>
               <p class="legend-status" data-i18n="legendRestoreStatus">True size only.</p>
-              <button type="button" class="legend-restore" id="legend-restore-action" data-i18n="legendRestoreAction">Show Mercator outlines</button>
+              <button type="button" class="legend-restore" id="legend-restore-action" data-i18n="legendRestoreAction">Show Mercator stripes</button>
             </div>
           </div>
         </div>
@@ -389,6 +394,10 @@
         </button>
         <h2 id="about-title" tabindex="-1" data-i18n="aboutTitle">An interactive Equal Earth projection atlas</h2>
         <div class="about-body">
+          <p class="about-decoder" data-i18n="aboutP6">
+            Filled countries are true size. Coral stripes show how large they look on Mercator. Click a
+            country for the numbers.
+          </p>
           <p data-i18n="aboutP1">
             This is an interactive atlas. You can pan, zoom, and search. The map uses the Equal Earth
             projection, not Mercator.
@@ -430,10 +439,6 @@
           <p class="fine">
             <span data-i18n="aboutVoteRecord">Recorded vote on 4 September 2026.</span>
             <a href="https://news.un.org/en/story/2026/09/1168284" target="_blank" rel="noopener noreferrer" data-i18n="aboutVoteLink">UN News report on the vote</a>.
-          </p>
-          <p data-i18n="aboutP6">
-            Muted outlines show how large those countries look on Mercator. The outlines turn coral
-            when you point at one. Click a country for the numbers.
           </p>
           <p data-i18n="aboutP7">
             The globe is Natural Earth 1:50 million vectors drawn in Equal Earth. The original wall

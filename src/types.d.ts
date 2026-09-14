@@ -56,6 +56,7 @@ interface AtlasMessages {
   languageMenu: string;
   mercatorSize: string;
   mercatorShort: string;
+  mercatorCompact: string;
   mercatorMenu: string;
   mercatorAria: string;
   mercatorAriaHidden: string;
@@ -159,6 +160,7 @@ interface AtlasMessages {
   stageAriaTap: string;
   stageAriaHover: string;
   stageAriaPlain: string;
+  stageCenterCountry: string;
   searchKindCountry: string;
   faq: AtlasFaqItem[];
 }

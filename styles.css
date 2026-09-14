@@ -435,6 +435,10 @@ main {
   pointer-events: none;
 }
 
+#atlas-stage:focus-visible {
+  outline-offset: -4px;
+}
+
 #atlas-stage:focus-visible .map-reticle {
   display: block;
 }
@@ -1862,7 +1866,15 @@ body:has(#about[open]) .map-chrome {
   .tooltip { display: none; }
 }
 
-@media (max-width: 359px), (max-width: 720px) and (max-height: 500px) {
+@media (max-width: 360px), (max-width: 720px) and (max-height: 500px) {
+  .topbar,
+  .bar-end {
+    flex-wrap: nowrap;
+    gap: var(--space-1);
+  }
+  .topbar {
+    gap: var(--space-1);
+  }
   .brand-copy { display: none; }
   .bar-btn .label-short { display: none; }
   .bar-btn .label-compact { display: inline; }
@@ -1880,8 +1892,8 @@ body:has(#about[open]) .map-chrome {
   }
   .lang-toggle .label-short { display: inline; }
   .lang-toggle .chevron { display: none; }
-  .bar-action:not(.search-toggle) .action-label { display: none; }
-  .bar-action:not(.search-toggle) {
+  .bar-action .action-label { display: none; }
+  .bar-action {
     width: var(--control);
     min-width: var(--control);
     padding: 0;

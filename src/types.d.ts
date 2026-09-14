@@ -135,8 +135,6 @@ interface AtlasMessages {
   aboutCredit: string;
   versionLocal: string;
   versionLabel: string;
-  outlineMuted: string;
-  outlineScaled: string;
   equatorBarely: string;
   compactOutline: string;
   equatorNoOutline: string;

@@ -48,6 +48,7 @@ interface AtlasMessages {
   ogImageAlt: string;
   selectedTitle: string;
   jsonLdAppDescription: string;
+  jsonLdDatasetDescription: string;
   jsonLdKeywords: string;
   skipToSearch: string;
   brandHome: string;

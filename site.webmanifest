@@ -1,7 +1,7 @@
 {
   "name": "Equal Earth Map",
   "short_name": "Equal Earth",
-  "description": "Interactive Equal Earth projection atlas with true relative country sizes.",
+  "description": "Interactive Equal Earth projection atlas: a true-size equal-area world map, unlike Mercator.",
   "start_url": "./",
   "display": "standalone",
   "background_color": "#032f34",
@@ -12,6 +12,11 @@
       "src": "favicon.svg",
       "sizes": "any",
       "type": "image/svg+xml"
+    },
+    {
+      "src": "apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
     }
   ]
 }

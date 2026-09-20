@@ -13,11 +13,12 @@ const ATLAS_LOCALE_META: Record<AtlasLocaleId, AtlasLocaleMeta> = {
 
 const EN: AtlasMessages = {
   metaTitle: "Equal Earth Projection — Interactive True-Size World Atlas",
-  metaDescription: "Interactive Equal Earth projection atlas. An equal-area world map with true country sizes, unlike Mercator. Search the map and download wall maps.",
-  ogImageAlt: "Equal Earth projection political world map centered on the Pacific",
+  metaDescription: "Interactive Equal Earth projection atlas: a true-size equal-area world map, unlike Mercator. See Africa's real size, search the map, download wall maps.",
+  ogImageAlt: "Equal Earth projection political world map with true country sizes, unlike Mercator",
   selectedTitle: "{name} — Equal Earth Map",
-  jsonLdAppDescription: "Interactive world atlas using the Equal Earth projection. Equal-area map with true relative country sizes, unlike Mercator, plus Natural Earth vectors and downloadable wall maps.",
-  jsonLdKeywords: "Equal Earth projection, equal-area projection, Mercator projection, true size world map, interactive world atlas, Africa true size",
+  jsonLdAppDescription: "Interactive Equal Earth projection atlas. An equal-area true-size world map with real country sizes, unlike Mercator, plus Natural Earth vectors and downloadable wall maps.",
+  jsonLdDatasetDescription: "Public-domain Natural Earth 1:50 million vectors used by this Equal Earth projection atlas to draw an equal-area true-size world map, including countries, lakes, rivers, and populated places.",
+  jsonLdKeywords: "Equal Earth, Equal Earth projection, equal-area projection, Mercator, Mercator projection, world map, true size map, real size map, interactive atlas, Africa true size",
   skipToSearch: "Skip to map",
   brandHome: "Equal Earth home",
   tagline: "Equal Earth projection, not Mercator",
@@ -166,11 +167,12 @@ const EN: AtlasMessages = {
 
 const ES: AtlasMessages = {
   metaTitle: "Proyección Equal Earth — Atlas mundial interactivo a tamaño real",
-  metaDescription: "Atlas interactivo en proyección Equal Earth. Un mapa de áreas equivalentes con el tamaño real de los países, a diferencia de Mercator. Busca en el mapa y descarga mapas de pared.",
-  ogImageAlt: "Mapa político mundial en proyección Equal Earth centrado en el Pacífico",
+  metaDescription: "Atlas interactivo en proyección Equal Earth: un mapa mundial de tamaño real e igual área, a diferencia de Mercator. Mira el tamaño real de África, busca en el mapa y descarga mapas de pared.",
+  ogImageAlt: "Mapa político mundial en proyección Equal Earth con el tamaño real de los países, a diferencia de Mercator",
   selectedTitle: "{name} — Equal Earth Map",
-  jsonLdAppDescription: "Atlas mundial interactivo con la proyección Equal Earth. Mapa de áreas equivalentes con tamaños relativos reales, a diferencia de Mercator, más vectores de Natural Earth y mapas de pared descargables.",
-  jsonLdKeywords: "proyección Equal Earth, proyección equivalente, proyección Mercator, mapa mundial a tamaño real, atlas mundial interactivo, África tamaño real",
+  jsonLdAppDescription: "Atlas interactivo en proyección Equal Earth. Mapa mundial de tamaño real e igual área, a diferencia de Mercator, más vectores de Natural Earth y mapas de pared descargables.",
+  jsonLdDatasetDescription: "Vectores Natural Earth 1:50 millones de dominio público usados por este atlas en proyección Equal Earth para un mapa mundial de tamaño real e igual área, incluidos países, lagos, ríos y lugares poblados.",
+  jsonLdKeywords: "Equal Earth, proyección Equal Earth, proyección equivalente, Mercator, proyección Mercator, mapa mundial, mapa a tamaño real, atlas interactivo, África tamaño real",
   skipToSearch: "Ir al mapa",
   brandHome: "Inicio de Equal Earth",
   tagline: "Proyección Equal Earth, no Mercator",
@@ -319,11 +321,12 @@ const ES: AtlasMessages = {
 
 const FR: AtlasMessages = {
   metaTitle: "Projection Equal Earth — Atlas mondial interactif à taille réelle",
-  metaDescription: "Atlas interactif en projection Equal Earth. Une carte équivalente avec la taille réelle des pays, contrairement à Mercator. Cherchez sur la carte et téléchargez des cartes murales.",
-  ogImageAlt: "Carte politique mondiale en projection Equal Earth centrée sur le Pacifique",
+  metaDescription: "Atlas interactif en projection Equal Earth : une carte mondiale à taille réelle, équivalente, contrairement à Mercator. Voyez la taille réelle de l’Afrique, cherchez sur la carte, téléchargez des cartes murales.",
+  ogImageAlt: "Carte politique mondiale en projection Equal Earth avec la taille réelle des pays, contrairement à Mercator",
   selectedTitle: "{name} — Equal Earth Map",
-  jsonLdAppDescription: "Atlas mondial interactif en projection Equal Earth. Carte équivalente aux tailles relatives réelles, contrairement à Mercator, plus les vecteurs Natural Earth et des cartes murales téléchargeables.",
-  jsonLdKeywords: "projection Equal Earth, projection équivalente, projection de Mercator, carte mondiale à taille réelle, atlas mondial interactif, Afrique taille réelle",
+  jsonLdAppDescription: "Atlas interactif en projection Equal Earth. Carte mondiale à taille réelle, équivalente, contrairement à Mercator, plus les vecteurs Natural Earth et des cartes murales téléchargeables.",
+  jsonLdDatasetDescription: "Vecteurs Natural Earth 1:50 millions, domaine public, utilisés par cet atlas en projection Equal Earth pour une carte mondiale à taille réelle, y compris pays, lacs, rivières et lieux peuplés.",
+  jsonLdKeywords: "Equal Earth, projection Equal Earth, projection équivalente, Mercator, projection de Mercator, carte mondiale, carte à taille réelle, atlas interactif, Afrique taille réelle",
   skipToSearch: "Aller à la carte",
   brandHome: "Accueil Equal Earth",
   tagline: "Projection Equal Earth, pas Mercator",
@@ -472,11 +475,12 @@ const FR: AtlasMessages = {
 
 const PT: AtlasMessages = {
   metaTitle: "Projeção Equal Earth — Atlas mundial interativo em tamanho real",
-  metaDescription: "Atlas interativo na projeção Equal Earth. Um mapa de áreas equivalentes com o tamanho real dos países, ao contrário de Mercator. Pesquise o mapa e baixe mapas de parede.",
-  ogImageAlt: "Mapa político mundial na projeção Equal Earth centrado no Pacífico",
+  metaDescription: "Atlas interativo na projeção Equal Earth: um mapa-múndi em tamanho real de áreas iguais, ao contrário de Mercator. Veja o tamanho real da África, pesquise o mapa e baixe mapas de parede.",
+  ogImageAlt: "Mapa político mundial na projeção Equal Earth com o tamanho real dos países, ao contrário de Mercator",
   selectedTitle: "{name} — Equal Earth Map",
-  jsonLdAppDescription: "Atlas mundial interativo com a projeção Equal Earth. Mapa de áreas equivalentes com tamanhos relativos reais, ao contrário de Mercator, além de vetores Natural Earth e mapas de parede para download.",
-  jsonLdKeywords: "projeção Equal Earth, projeção equivalente, projeção de Mercator, mapa mundial em tamanho real, atlas mundial interativo, África tamanho real",
+  jsonLdAppDescription: "Atlas interativo na projeção Equal Earth. Mapa-múndi em tamanho real de áreas iguais, ao contrário de Mercator, além de vetores Natural Earth e mapas de parede para download.",
+  jsonLdDatasetDescription: "Vetores Natural Earth 1:50 milhões de domínio público usados por este atlas na projeção Equal Earth para um mapa-múndi em tamanho real, incluindo países, lagos, rios e lugares povoados.",
+  jsonLdKeywords: "Equal Earth, projeção Equal Earth, projeção equivalente, Mercator, projeção de Mercator, mapa-múndi, mapa em tamanho real, atlas interativo, África tamanho real",
   skipToSearch: "Ir para o mapa",
   brandHome: "Início Equal Earth",
   tagline: "Projeção Equal Earth, não Mercator",
@@ -625,11 +629,12 @@ const PT: AtlasMessages = {
 
 const AR: AtlasMessages = {
   metaTitle: "مسقط Equal Earth — أطلس عالمي تفاعلي بالحجم الحقيقي",
-  metaDescription: "أطلس تفاعلي بمسقط Equal Earth. خريطة متساوية المساحات تُظهر الحجم الحقيقي للدول، بخلاف مركاتور. ابحث في الخريطة وحمّل خرائط جدارية.",
-  ogImageAlt: "خريطة سياسية عالمية بمسقط Equal Earth متمركزة على المحيط الهادئ",
+  metaDescription: "أطلس تفاعلي بمسقط Equal Earth: خريطة عالم متساوية المساحات بالحجم الحقيقي، بخلاف مركاتور. شاهد الحجم الحقيقي لأفريقيا، ابحث في الخريطة وحمّل خرائط جدارية.",
+  ogImageAlt: "خريطة سياسية عالمية بمسقط Equal Earth تُظهر الحجم الحقيقي للدول، بخلاف مركاتور",
   selectedTitle: "{name} — Equal Earth Map",
-  jsonLdAppDescription: "أطلس عالمي تفاعلي بمسقط Equal Earth. خريطة متساوية المساحات بأحجام نسبية حقيقية بخلاف مركاتور، مع متجهات Natural Earth وخرائط جدارية قابلة للتنزيل.",
-  jsonLdKeywords: "مسقط Equal Earth، مسقط متساوي المساحات، مسقط مركاتور، خريطة العالم بالحجم الحقيقي، أطلس عالمي تفاعلي، أفريقيا الحجم الحقيقي",
+  jsonLdAppDescription: "أطلس تفاعلي بمسقط Equal Earth. خريطة عالم متساوية المساحات بالحجم الحقيقي، بخلاف مركاتور، مع متجهات Natural Earth وخرائط جدارية قابلة للتنزيل.",
+  jsonLdDatasetDescription: "متجهات Natural Earth بمقياس 1:50 مليونًا، مشاع عام، يستخدمها هذا الأطلس بمسقط Equal Earth لرسم خريطة عالم بالحجم الحقيقي، وتشمل الدول والبحيرات والأنهار والأماكن المأهولة.",
+  jsonLdKeywords: "Equal Earth، مسقط Equal Earth، مسقط متساوي المساحات، مركاتور، مسقط مركاتور، خريطة العالم، خريطة بالحجم الحقيقي، أطلس تفاعلي، أفريقيا الحجم الحقيقي",
   skipToSearch: "تخطي إلى الخريطة",
   brandHome: "الصفحة الرئيسية لـ Equal Earth",
   tagline: "مسقط Equal Earth، وليس مركاتور",
@@ -778,11 +783,12 @@ const AR: AtlasMessages = {
 
 const ZH: AtlasMessages = {
   metaTitle: "Equal Earth 投影 — 真实面积互动世界地图集",
-  metaDescription: "Equal Earth 投影互动地图集。等积世界地图，国家面积真实，不同于墨卡托。可搜索地图并下载墙图。",
-  ogImageAlt: "以太平洋为中心的 Equal Earth 投影政治世界地图",
+  metaDescription: "Equal Earth 投影互动地图集：等积真实面积世界地图，不同于墨卡托。查看非洲真实大小，搜索地图并下载墙图。",
+  ogImageAlt: "Equal Earth 投影政治世界地图，国家面积真实，不同于墨卡托",
   selectedTitle: "{name} — Equal Earth Map",
-  jsonLdAppDescription: "使用 Equal Earth 投影的互动世界地图集。等积地图，国家相对面积真实，不同于墨卡托，并含 Natural Earth 矢量与可下载墙图。",
-  jsonLdKeywords: "Equal Earth 投影, 等积投影, 墨卡托投影, 真实面积世界地图, 互动世界地图集, 非洲真实面积",
+  jsonLdAppDescription: "Equal Earth 投影互动地图集。等积真实面积世界地图，不同于墨卡托，并含 Natural Earth 矢量与可下载墙图。",
+  jsonLdDatasetDescription: "本 Equal Earth 投影地图集所用的公有领域 Natural Earth 1:5000万矢量，用于绘制等积真实面积世界地图，包括国家、湖泊、河流和居民点。",
+  jsonLdKeywords: "Equal Earth, Equal Earth 投影, 等积投影, 墨卡托, 墨卡托投影, 世界地图, 真实面积地图, 互动地图集, 非洲真实面积",
   skipToSearch: "跳到地图",
   brandHome: "Equal Earth 首页",
   tagline: "Equal Earth 投影，而非墨卡托",
@@ -931,11 +937,12 @@ const ZH: AtlasMessages = {
 
 const RU: AtlasMessages = {
   metaTitle: "Проекция Equal Earth — интерактивный атлас истинного размера",
-  metaDescription: "Интерактивный атлас в проекции Equal Earth. Равновеликая карта мира с истинными размерами стран, в отличие от Меркатора. Ищите на карте и скачивайте настенные карты.",
-  ogImageAlt: "Политическая карта мира в проекции Equal Earth с центром на Тихом океане",
+  metaDescription: "Интерактивный атлас в проекции Equal Earth: равновеликая карта мира истинного размера, в отличие от Меркатора. Смотрите реальный размер Африки, ищите на карте, скачивайте настенные карты.",
+  ogImageAlt: "Политическая карта мира в проекции Equal Earth с истинными размерами стран, в отличие от Меркатора",
   selectedTitle: "{name} — Equal Earth Map",
-  jsonLdAppDescription: "Интерактивный атлас мира в проекции Equal Earth. Равновеликая карта с истинными относительными размерами стран, в отличие от Меркатора, плюс векторы Natural Earth и настенные карты для скачивания.",
-  jsonLdKeywords: "проекция Equal Earth, равновеликая проекция, проекция Меркатора, карта мира истинного размера, интерактивный атлас мира, Африка истинный размер",
+  jsonLdAppDescription: "Интерактивный атлас в проекции Equal Earth. Равновеликая карта мира истинного размера, в отличие от Меркатора, плюс векторы Natural Earth и настенные карты для скачивания.",
+  jsonLdDatasetDescription: "Общедоступные векторы Natural Earth масштаба 1:50 млн, которые этот атлас в проекции Equal Earth использует для равновеликой карты мира истинного размера, включая страны, озёра, реки и населённые пункты.",
+  jsonLdKeywords: "Equal Earth, проекция Equal Earth, равновеликая проекция, Меркатор, проекция Меркатора, карта мира, карта истинного размера, интерактивный атлас, Африка истинный размер",
   skipToSearch: "Перейти к карте",
   brandHome: "Главная Equal Earth",
   tagline: "Проекция Equal Earth, не Меркатор",
@@ -1212,6 +1219,9 @@ function applyAtlasSeo() {
         node.name = copy.metaTitle;
         node.description = copy.metaDescription;
         node.keywords = copy.jsonLdKeywords;
+      }
+      if (node["@type"] === "Dataset") {
+        node.description = copy.jsonLdDatasetDescription;
       }
       if (node["@type"] === "FAQPage" && Array.isArray(node.mainEntity)) {
         node.mainEntity = copy.faq.map((item) => ({

@@ -6,7 +6,7 @@
     <title>Equal Earth Projection — Interactive True-Size World Atlas</title>
     <meta
       name="description"
-      content="Interactive Equal Earth projection atlas. An equal-area world map with true country sizes, unlike Mercator. Search the map and download wall maps."
+      content="Interactive Equal Earth projection atlas: a true-size equal-area world map, unlike Mercator. See Africa's real size, search the map, download wall maps."
     />
     <link rel="canonical" href="https://trueearthmap.com/" />
     <link rel="alternate" hreflang="x-default" href="https://trueearthmap.com/" />
@@ -23,29 +23,36 @@
     <meta name="theme-color" content="#006d77" />
     <meta name="color-scheme" content="light" />
     <link rel="icon" href="favicon.svg" type="image/svg+xml" />
-    <link rel="apple-touch-icon" href="og-image.jpg" />
+    <link rel="apple-touch-icon" href="apple-touch-icon.png" sizes="180x180" />
     <link rel="manifest" href="site.webmanifest" />
     <meta property="og:type" content="website" />
     <meta property="og:locale" content="en_US" />
+    <meta property="og:locale:alternate" content="es_ES" />
+    <meta property="og:locale:alternate" content="fr_FR" />
+    <meta property="og:locale:alternate" content="pt_BR" />
+    <meta property="og:locale:alternate" content="ar_AR" />
+    <meta property="og:locale:alternate" content="zh_CN" />
+    <meta property="og:locale:alternate" content="ru_RU" />
     <meta property="og:site_name" content="Equal Earth Map" />
     <meta property="og:title" content="Equal Earth Projection — Interactive True-Size World Atlas" />
     <meta
       property="og:description"
-      content="Interactive Equal Earth projection atlas. An equal-area world map with true country sizes, unlike Mercator. Search the map and download wall maps."
+      content="Interactive Equal Earth projection atlas: a true-size equal-area world map, unlike Mercator. See Africa's real size, search the map, download wall maps."
     />
     <meta property="og:url" content="https://trueearthmap.com/" />
     <meta property="og:image" content="https://trueearthmap.com/og-image.jpg" />
+    <meta property="og:image:type" content="image/jpeg" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="Equal Earth projection political world map centered on the Pacific" />
+    <meta property="og:image:alt" content="Equal Earth projection political world map with true country sizes, unlike Mercator" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Equal Earth Projection — Interactive True-Size World Atlas" />
     <meta
       name="twitter:description"
-      content="Interactive Equal Earth projection atlas. True country sizes, unlike Mercator. Search the map and download wall maps."
+      content="Interactive Equal Earth projection atlas: a true-size equal-area world map, unlike Mercator. See Africa's real size, search the map, download wall maps."
     />
     <meta name="twitter:image" content="https://trueearthmap.com/og-image.jpg" />
-    <meta name="twitter:image:alt" content="Equal Earth projection political world map centered on the Pacific" />
+    <meta name="twitter:image:alt" content="Equal Earth projection political world map with true country sizes, unlike Mercator" />
     <link rel="stylesheet" href="styles.css" />
     <script>
       (function () {
@@ -84,12 +91,17 @@
             "name": "Equal Earth Map",
             "alternateName": "Equal Earth projection atlas",
             "url": "https://trueearthmap.com/",
-            "description": "Interactive world atlas using the Equal Earth projection. Equal-area map with true relative country sizes, unlike Mercator, plus Natural Earth vectors and downloadable wall maps.",
+            "description": "Interactive Equal Earth projection atlas. An equal-area true-size world map with real country sizes, unlike Mercator, plus Natural Earth vectors and downloadable wall maps.",
             "applicationCategory": "EducationalApplication",
             "operatingSystem": "Any",
             "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
             "inLanguage": "en",
-            "image": "https://trueearthmap.com/og-image.jpg",
+            "image": {
+              "@type": "ImageObject",
+              "url": "https://trueearthmap.com/og-image.jpg",
+              "width": 1200,
+              "height": 630
+            },
             "creator": [
               { "@type": "Person", "name": "Bojan Šavrič" },
               { "@type": "Person", "name": "Tom Patterson" },
@@ -100,9 +112,9 @@
             "@type": "WebPage",
             "name": "Equal Earth Projection — Interactive True-Size World Atlas",
             "url": "https://trueearthmap.com/",
-            "description": "Interactive Equal Earth projection atlas. An equal-area world map with true country sizes, unlike Mercator. Search the map and download wall maps.",
-            "keywords": "Equal Earth projection, equal-area projection, Mercator projection, true size world map, interactive world atlas, Africa true size",
-            "dateModified": "2026-09-13",
+            "description": "Interactive Equal Earth projection atlas: a true-size equal-area world map, unlike Mercator. See Africa's real size, search the map, download wall maps.",
+            "keywords": "Equal Earth, Equal Earth projection, equal-area projection, Mercator, Mercator projection, world map, true size map, real size map, interactive atlas, Africa true size",
+            "dateModified": "2026-09-20",
             "about": { "@type": "Thing", "name": "Equal Earth projection" },
             "speakable": {
               "@type": "SpeakableSpecification",
@@ -112,9 +124,28 @@
           {
             "@type": "Dataset",
             "name": "Natural Earth 1:50 million",
+            "alternateName": ["Natural Earth 50m", "NE 1:50m"],
+            "description": "Public-domain Natural Earth 1:50 million vectors used by this Equal Earth projection atlas to draw an equal-area true-size world map, including countries, lakes, rivers, and populated places.",
             "license": "https://creativecommons.org/publicdomain/zero/1.0/",
-            "creator": { "@type": "Organization", "name": "Natural Earth" },
-            "url": "https://www.naturalearthdata.com/"
+            "isAccessibleForFree": true,
+            "keywords": ["Natural Earth", "1:50 million", "Equal Earth projection", "equal-area map", "true size world map", "countries", "lakes", "rivers", "populated places"],
+            "creator": { "@type": "Organization", "name": "Natural Earth", "url": "https://www.naturalearthdata.com/" },
+            "url": "https://www.naturalearthdata.com/downloads/50m-cultural-vectors/",
+            "sameAs": [
+              "https://www.naturalearthdata.com/downloads/50m-cultural-vectors/",
+              "https://www.naturalearthdata.com/downloads/50m-physical-vectors/"
+            ],
+            "spatialCoverage": {
+              "@type": "Place",
+              "name": "Earth",
+              "geo": { "@type": "GeoShape", "box": "-90 -180 90 180" }
+            },
+            "variableMeasured": ["country boundaries", "lakes", "rivers", "populated places"],
+            "includedInDataCatalog": {
+              "@type": "DataCatalog",
+              "name": "Natural Earth",
+              "url": "https://www.naturalearthdata.com/"
+            }
           },
           {
             "@type": "FAQPage",
